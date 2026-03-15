@@ -707,6 +707,68 @@ app.include_router(policies_router, prefix="/v1")
 6. **DO NOT** allow policies from one org to affect another org's delegations.
 7. **DO NOT** use `eval()` or `exec()` for condition evaluation. All operators are hardcoded in `_evaluate_condition`.
 
+### Critical Implementation Notes
+
+**`caller_type` / `callee_type` in YAML `allow` block**: These map to `DelegationContext.caller_agent_type` and `DelegationContext.callee_agent_type`, which are the `capability_type` field of the Agent model (e.g., `"research"`, `"execution"`). They are NOT arbitrary labels. When writing policies, the `caller_type` and `callee_type` values must match the `capability_type` enum values from the Agent model.
+
+**`between` operator and midnight crossing**: The `between` operator uses string comparison (`str(value[0]) <= str(actual) <= str(value[1])`). This works for time ranges that don't cross midnight (e.g., `["06:00", "22:00"]`). For overnight ranges like `["22:00", "06:00"]`, the string comparison fails because `"22:00" <= "02:00"` is False. To support overnight ranges, the agent implementing this should add a special case:
+```python
+elif operator == "between":
+    low, high = str(value[0]), str(value[1])
+    actual_str = str(actual)
+    if low <= high:
+        return low <= actual_str <= high
+    else:
+        # Overnight range: e.g., ["22:00", "06:00"]
+        return actual_str >= low or actual_str <= high
+```
+
+**Policy YAML schema reference**: Every policy stored in `rule_yaml` must conform to this structure:
+```yaml
+name: "policy-name"
+description: "optional description"
+priority: 10
+enabled: true
+allow:
+  caller_type: "execution"       # optional — matches DelegationContext.caller_agent_type
+  callee_type: "research"        # optional — matches DelegationContext.callee_agent_type
+  capability_types:              # optional — list of allowed callee capability_types
+    - "research"
+    - "analysis"
+conditions:                      # list of condition objects, ALL must pass
+  - field: "callee_trust_score"
+    operator: ">="
+    value: 0.50
+  - field: "time_of_day"
+    operator: "between"
+    value: ["06:00", "22:00"]
+  - field: "context_scope"
+    operator: "subset_of"
+    value: ["deal_metadata", "company_info"]
+hil_threshold_usd: 1.00         # optional — triggers HiTL if estimated_cost exceeds this
+on_violation: "block_and_alert"  # block_and_alert | block_silent | audit_only | pause_for_approval
+```
+
+**DelegationContext construction guide**: Phase 6's `DelegationService.initiate()` constructs the `DelegationContext` from live data. Here is the exact mapping:
+
+| DelegationContext field | Source |
+|---|---|
+| `caller_agent_id` | `caller_agent.agent_id` |
+| `caller_agent_type` | `caller_agent.capability_type` |
+| `caller_org_id` | `str(org.id)` |
+| `caller_budget_remaining_usd` | `request.budget_cap_usd` (simplified for MVP; full impl reads from BudgetService) |
+| `callee_agent_id` | `callee.agent_id` |
+| `callee_agent_type` | `callee.capability_type` |
+| `callee_trust_score` | `float(callee.trust_score)` |
+| `callee_org_id` | `str(callee.org_id)` |
+| `capability_type` | `callee.capability_type` |
+| `context_scope` | `request.context_scope` |
+| `estimated_cost_usd` | `float(callee.pricing.get("per_call_usd", 0))` |
+| `budget_cap_usd` | `request.budget_cap_usd` |
+| `time_of_day` | `datetime.now(timezone.utc).strftime("%H:%M")` |
+| `delegation_depth` | Computed from parent chain (0 for top-level) |
+| `timestamp` | `datetime.now(timezone.utc)` |
+
 ---
 
 ## 6. Verification Checklist

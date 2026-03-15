@@ -1337,6 +1337,61 @@ app.include_router(siem.router, prefix="/v1")
 
 ## 7. Guardrails
 
+### 7.0 Stripe Connect Onboarding Endpoint
+
+**CRITICAL**: The marketplace requires callee orgs to complete Stripe Connect onboarding before receiving payouts. Add this endpoint to `api/routers/compliance.py` (or a new `api/routers/marketplace.py`):
+
+```python
+@router.post("/marketplace/connect-onboard")
+async def start_connect_onboarding(
+    request: Request,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    """Start Stripe Connect onboarding for the authenticated org.
+
+    Returns a Stripe Connect onboarding URL. The org completes KYC on Stripe's hosted page.
+    After completion, Stripe sends a webhook to update the org's stripe_connect_account_id.
+    """
+    import stripe
+    from core.config import get_settings
+    settings = get_settings()
+    stripe.api_key = settings.stripe_secret_key
+
+    if org.stripe_connect_account_id:
+        return {"data": {"status": "already_onboarded", "account_id": org.stripe_connect_account_id}}
+
+    # Create a Stripe Connect Express account
+    import asyncio
+    loop = asyncio.get_running_loop()
+    account = await loop.run_in_executor(
+        None,
+        lambda: stripe.Account.create(
+            type="express",
+            metadata={"nexra_org_id": str(org.id)},
+        ),
+    )
+
+    # Save the account ID
+    org.stripe_connect_account_id = account.id
+    await db.commit()
+
+    # Create an onboarding link
+    link = await loop.run_in_executor(
+        None,
+        lambda: stripe.AccountLink.create(
+            account=account.id,
+            refresh_url=f"{settings.api_base_url}/v1/marketplace/connect-refresh",
+            return_url=f"{settings.api_base_url}/v1/marketplace/connect-complete",
+            type="account_onboarding",
+        ),
+    )
+
+    return {"data": {"onboarding_url": link.url, "account_id": account.id}}
+```
+
+Also add a webhook handler for Stripe Connect events (account.updated) to mark onboarding as complete and trigger `process_pending_payouts()`.
+
 1. **DO NOT** allow cross-org discovery without explicit `include_cross_org=true`. Default is org-scoped only.
 2. **DO NOT** transfer funds to Stripe Connect accounts that have not completed KYC. Queue in `pending_payouts` instead.
 3. **DO NOT** allow the platform fee percentage to be configurable per-org in P2. Hardcode at 20%. Per-org pricing is a v3 feature.

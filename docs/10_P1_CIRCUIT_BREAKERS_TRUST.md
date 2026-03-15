@@ -123,11 +123,10 @@ class TrustService:
         success_rate = completed / len(delegations)
 
         # Component 2: Latency score (1.0 = all within SLA, 0.0 = all over 2x SLA)
+        sla_ms = int(agent.sla.get("p99_latency_ms", 8000)) if agent.sla else 8000
         latency_scores = []
         for d in delegations:
             if d.latency_ms and d.status == "completed":
-                # Assume 8000ms SLA for simplicity; real impl reads from agent.sla
-                sla_ms = 8000
                 ratio = d.latency_ms / sla_ms
                 if ratio <= 1.0:
                     latency_scores.append(1.0)
@@ -420,9 +419,93 @@ class CircuitBreakerService:
         if len(entries) < 5:
             return False  # Not enough data
 
-        failures = sum(1 for e in entries if e.startswith("fail:"))
+        # IMPORTANT: If Redis is configured with decode_responses=True (as in api/dependencies.py),
+        # entries are strings. If decode_responses=False, entries are bytes.
+        # Normalize to str for safe comparison.
+        failures = sum(
+            1 for e in entries
+            if (e if isinstance(e, str) else e.decode("utf-8")).startswith("fail:")
+        )
         failure_rate = failures / len(entries)
         return failure_rate > CIRCUIT_BREAKER_THRESHOLD
+```
+
+### 4.5 Agent Trust & Status Endpoints
+
+**Path**: Add to `nexra/api/routers/agents.py` (extends Phase 3 router)
+
+```python
+from services.trust_service import TrustService
+from services.anomaly_service import AnomalyService
+
+
+@router.get("/{agent_ref}/trust")
+async def get_agent_trust(
+    request: Request,
+    agent_ref: str,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get trust score and recent score events for an agent."""
+    service = AgentService(db, _get_openai_client())
+    agent = await service.get_by_agent_id(str(org.id), agent_ref)
+    if not agent:
+        from core.errors import NexraError, AGENT_NOT_FOUND
+        raise NexraError(404, AGENT_NOT_FOUND, f"Agent '{agent_ref}' not found")
+
+    from models.trust_score_event import TrustScoreEvent
+    from sqlalchemy import select
+    events_result = await db.execute(
+        select(TrustScoreEvent)
+        .where(TrustScoreEvent.agent_id == agent_ref, TrustScoreEvent.org_id == org.id)
+        .order_by(TrustScoreEvent.created_at.desc())
+        .limit(10)
+    )
+    events = events_result.scalars().all()
+
+    return {
+        "data": {
+            "agent_id": agent.agent_id,
+            "trust_score": float(agent.trust_score),
+            "status": agent.status,
+            "delegation_count": agent.delegation_count,
+            "recent_events": [
+                {
+                    "score_before": float(e.score_before),
+                    "score_after": float(e.score_after),
+                    "components": e.components,
+                    "created_at": e.created_at.isoformat(),
+                }
+                for e in events
+            ],
+        },
+    }
+
+
+@router.post("/{agent_ref}/quarantine")
+async def quarantine_agent(
+    request: Request,
+    agent_ref: str,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    """Manually quarantine an agent. Quarantined agents cannot participate in delegations."""
+    service = AgentService(db, _get_openai_client())
+    agent = await service.update_status(str(org.id), agent_ref, "quarantined")
+    return {"data": {"agent_id": agent.agent_id, "status": agent.status}}
+
+
+@router.post("/{agent_ref}/activate")
+async def activate_agent(
+    request: Request,
+    agent_ref: str,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    """Manually activate an agent (override probationary/quarantined status)."""
+    service = AgentService(db, _get_openai_client())
+    agent = await service.update_status(str(org.id), agent_ref, "active")
+    return {"data": {"agent_id": agent.agent_id, "status": agent.status}}
 ```
 
 ---

@@ -266,8 +266,9 @@ class AuditService:
         q = select(AuditLog).where(AuditLog.org_id == org_id)
 
         if agent_id:
+            from sqlalchemy import or_
             q = q.where(
-                (AuditLog.actor_agent_id == agent_id) | (AuditLog.target_agent_id == agent_id)
+                or_(AuditLog.actor_agent_id == agent_id, AuditLog.target_agent_id == agent_id)
             )
         if event_type:
             q = q.where(AuditLog.event_type == event_type)
@@ -278,7 +279,9 @@ class AuditService:
         if delegation_id:
             q = q.where(AuditLog.delegation_id == delegation_id)
         if cursor:
-            q = q.where(AuditLog.created_at < cursor)
+            from datetime import datetime as _dt
+            cursor_dt = _dt.fromisoformat(cursor)
+            q = q.where(AuditLog.created_at < cursor_dt)
 
         q = q.order_by(AuditLog.created_at.desc()).limit(limit + 1)
         result = await self.db.execute(q)
@@ -454,6 +457,64 @@ async def spend_summary(
     }
 ```
 
+### 3.6 Budget Cap Setting Endpoint
+
+Add to `api/routers/analytics.py`:
+
+```python
+from pydantic import BaseModel, Field
+from decimal import Decimal
+from datetime import date
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from models.agent_budget import AgentBudget
+
+
+class SetBudgetCapRequest(BaseModel):
+    agent_id: str = Field(..., description="Agent to set cap for")
+    period_type: str = Field(..., description="'daily' or 'monthly'")
+    cap_usd: float = Field(..., gt=0, description="Budget cap in USD")
+
+
+@router.post("/spend/budget-cap")
+async def set_budget_cap(
+    request: Request,
+    body: SetBudgetCapRequest,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    """Set a daily or monthly budget cap for an agent.
+
+    Without this, agents have no budget cap (default is $999,999).
+    """
+    if body.period_type not in ("daily", "monthly"):
+        from core.errors import NexraError, INVALID_REQUEST
+        raise NexraError(400, INVALID_REQUEST, "period_type must be 'daily' or 'monthly'")
+
+    period = date.today() if body.period_type == "daily" else date.today().replace(day=1)
+
+    stmt = pg_insert(AgentBudget).values(
+        agent_id=body.agent_id,
+        org_id=str(org.id),
+        period=period,
+        period_type=body.period_type,
+        cap_usd=Decimal(str(body.cap_usd)),
+        spent_usd=Decimal("0"),
+    ).on_conflict_do_update(
+        index_elements=["agent_id", "org_id", "period", "period_type"],
+        set_={"cap_usd": Decimal(str(body.cap_usd))},
+    )
+    await db.execute(stmt)
+    await db.commit()
+
+    return {
+        "data": {
+            "agent_id": body.agent_id,
+            "period_type": body.period_type,
+            "cap_usd": body.cap_usd,
+        },
+    }
+```
+
 **Register both in `api/main.py`**:
 ```python
 from api.routers.audit import router as audit_router
@@ -466,14 +527,115 @@ app.include_router(analytics_router, prefix="/v1")
 
 ## 4. Integration with Delegation Flow
 
-Update `services/delegation_service.py` to wire in BudgetService and AuditService:
+Update `services/delegation_service.py` to wire in BudgetService, AuditService, and TrustService.
 
-- **Step 5**: Replace stub budget check with `BudgetService.check_and_reserve()`
-- **Step 8**: After creating delegation record, call `AuditService.append()` with event_type='policy_evaluated'
-- **Step 9 (block)**: Call `AuditService.append()` with event_type='delegation_blocked'
-- **Step 12**: Call `AuditService.append()` with event_type='delegation_initiated'
-- **Step 13 (success)**: Call `BudgetService.settle()` and `AuditService.append()` with event_type='delegation_completed'
-- **Step 13 (failure)**: Call `AuditService.append()` with event_type='delegation_failed' or 'delegation_timeout'
+**Updated constructor** (replaces the Phase 6 constructor):
+```python
+class DelegationService:
+    def __init__(
+        self,
+        db: AsyncSession,
+        redis_client: aioredis.Redis,
+        policy_engine: PolicyEngine,
+        webhook_service: WebhookService,
+        budget_service: BudgetService,
+        audit_service: AuditService,
+        trust_service: TrustService,
+    ) -> None:
+        self.db = db
+        self.redis = redis_client
+        self.policy_engine = policy_engine
+        self.webhook_service = webhook_service
+        self.budget_service = budget_service
+        self.audit_service = audit_service
+        self.trust_service = trust_service
+```
+
+**Updated `_build_delegation_service` in `api/routers/delegations.py`**:
+```python
+from services.budget_service import BudgetService
+from services.audit_service import AuditService
+from services.trust_service import TrustService
+
+def _build_delegation_service(db: AsyncSession, redis_client: aioredis.Redis) -> DelegationService:
+    policy_engine = PolicyEngine(redis_client, db)
+    webhook_service = WebhookService()
+    budget_service = BudgetService(db)
+    audit_service = AuditService(db)
+    trust_service = TrustService(db)
+    return DelegationService(
+        db, redis_client, policy_engine, webhook_service,
+        budget_service, audit_service, trust_service,
+    )
+```
+
+**Exact integration points in `initiate()`**:
+
+- **Step 5**: Replace the stub with:
+  ```python
+  budget_check = await self.budget_service.check_and_reserve(
+      str(org.id), caller_agent.agent_id, estimated_cost, request.budget_cap_usd
+  )
+  if not budget_check.allowed:
+      raise NexraError(
+          402, BUDGET_EXCEEDED,
+          f"Budget exceeded: {budget_check.reason}",
+          {"remaining_budget_usd": budget_check.remaining_usd},
+      )
+  ```
+
+- **Step 8** (after `self.db.add(delegation)` and `await self.db.commit()`):
+  ```python
+  await self.audit_service.append(
+      org_id=str(org.id), event_type="policy_evaluated",
+      actor_agent_id=caller_agent.agent_id, target_agent_id=callee.agent_id,
+      details={"decision": decision.decision, "policy_id": decision.policy_id, "reason": decision.reason},
+      delegation_id=str(delegation.id),
+  )
+  ```
+
+- **Step 9 (block)** (before `raise NexraError`):
+  ```python
+  await self.audit_service.append(
+      org_id=str(org.id), event_type="delegation_blocked",
+      actor_agent_id=caller_agent.agent_id, target_agent_id=callee.agent_id,
+      details={"reason": decision.reason, "policy_id": decision.policy_id},
+      delegation_id=str(delegation.id),
+  )
+  ```
+
+- **Step 12** (after setting status to `in_flight`):
+  ```python
+  await self.audit_service.append(
+      org_id=str(org.id), event_type="delegation_initiated",
+      actor_agent_id=caller_agent.agent_id, target_agent_id=callee.agent_id,
+      details={"task_hash": delegation.task_hash, "budget_cap_usd": float(request.budget_cap_usd)},
+      delegation_id=str(delegation.id),
+  )
+  ```
+
+- **Step 13 (success)** (after updating delegation to completed):
+  ```python
+  await self.budget_service.settle(str(org.id), callee.agent_id, actual_cost)
+  await self.trust_service.update_after_delegation(callee.agent_id, str(callee.org_id), delegation)
+  await self.audit_service.append(
+      org_id=str(org.id), event_type="delegation_completed",
+      actor_agent_id=caller_agent.agent_id, target_agent_id=callee.agent_id,
+      details={"result_keys": list(callee_response.get("result", {}).keys()) if isinstance(callee_response.get("result"), dict) else []},
+      delegation_id=str(delegation.id), cost_usd=actual_cost,
+  )
+  ```
+
+- **Step 13 (failure)** (in the `except NexraError` block):
+  ```python
+  event_type = "delegation_timeout" if e.code == "DELEGATION_TIMEOUT" else "delegation_failed"
+  await self.audit_service.append(
+      org_id=str(org.id), event_type=event_type,
+      actor_agent_id=caller_agent.agent_id, target_agent_id=callee.agent_id,
+      details={"error_code": e.code, "error_message": e.message},
+      delegation_id=str(delegation.id),
+  )
+  ```
 
 ---
 

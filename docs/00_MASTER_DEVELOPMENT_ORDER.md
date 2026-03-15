@@ -187,7 +187,8 @@ nexra/
 │   │   ├── rate_limit.py          (Redis sliding window)
 │   │   └── logging.py             (structured JSON logging)
 │   └── routers/
-│       └── health.py              (/health endpoint)
+│       ├── health.py              (/health endpoint)
+│       └── orgs.py                (POST /v1/orgs/register — bootstrap org creation)
 ```
 
 ### Phase 3 — Agent Registry
@@ -263,11 +264,11 @@ nexra/
 │   └── billing_worker.py          (Stripe event batching)
 ├── sdk/
 │   └── nexra-py/
-│       ├── nexra/
+│       ├── nexra_sdk/             (IMPORTANT: nexra_sdk, not nexra — avoids import collision)
 │       │   ├── __init__.py
 │       │   ├── client.py          (NexraClient)
 │       │   └── types.py           (typed response dataclasses)
-│       ├── pyproject.toml
+│       ├── pyproject.toml         (name = "nexra-sdk")
 │       └── README.md
 ```
 
@@ -366,6 +367,171 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 ─┐
 **Critical path**: Phases 1 → 2 → 3 → 4 → 6 → 7 → 8 → 9 (8 sequential phases).
 
 Phases 3+5 can run in parallel. If parallelized, the critical path is 7 sequential phases.
+
+---
+
+## 7.1 Cumulative `api/main.py` — Final State After All Phases
+
+Each phase adds routers and middleware to `create_app()`. Here is the complete `api/main.py` after all 13 phases are implemented. This serves as a reference — the agent should build it incrementally per phase, not copy this wholesale.
+
+```python
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from core.errors import NexraError
+from core.config import get_settings
+import uuid
+
+
+def create_app() -> FastAPI:
+    settings = get_settings()
+
+    app = FastAPI(
+        title="Nexra API",
+        description="The control plane for AI agent networks",
+        version="0.1.0",
+        docs_url="/docs" if settings.environment != "production" else None,
+        redoc_url=None,
+    )
+
+    # ── Middleware (order matters: last added = first executed) ──
+    from api.middleware.logging import RequestLoggingMiddleware
+    app.add_middleware(RequestLoggingMiddleware)
+
+    @app.middleware("http")
+    async def add_request_id(request: Request, call_next):
+        request_id = str(uuid.uuid4())
+        request.state.request_id = request_id
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
+
+    # ── Exception Handlers ──
+    @app.exception_handler(NexraError)
+    async def nexra_error_handler(request: Request, exc: NexraError):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": {
+                    "code": exc.code,
+                    "message": exc.message,
+                    "details": exc.details,
+                    "request_id": getattr(request.state, "request_id", None),
+                }
+            },
+        )
+
+    # ── Routers ──
+    # Phase 2: Health (no prefix — /health at root)
+    from api.routers.health import router as health_router
+    app.include_router(health_router)
+
+    # Phase 2: Org creation
+    from api.routers.orgs import router as orgs_router
+    app.include_router(orgs_router, prefix="/v1")
+
+    # Phase 3: Agent registry
+    from api.routers.agents import router as agents_router
+    app.include_router(agents_router, prefix="/v1")
+
+    # Phase 4: Discovery
+    from api.routers.capabilities import router as capabilities_router
+    app.include_router(capabilities_router, prefix="/v1")
+
+    # Phase 5: Policies
+    from api.routers.policies import router as policies_router
+    app.include_router(policies_router, prefix="/v1")
+
+    # Phase 6: Delegations
+    from api.routers.delegations import router as delegations_router
+    app.include_router(delegations_router, prefix="/v1")
+
+    # Phase 7: Audit + Analytics
+    from api.routers.audit import router as audit_router
+    from api.routers.analytics import router as analytics_router
+    app.include_router(audit_router, prefix="/v1")
+    app.include_router(analytics_router, prefix="/v1")
+
+    # Phase 12: Dashboard analytics + SIEM
+    # from api.routers.analytics import router as dashboard_router  # extends existing
+    # from api.routers.siem import router as siem_router
+    # app.include_router(siem_router, prefix="/v1")
+
+    # Phase 13: Compliance + Marketplace
+    # from api.routers.compliance import router as compliance_router
+    # app.include_router(compliance_router, prefix="/v1")
+
+    # ── Lifecycle ──
+    from api.dependencies import close_redis
+
+    @app.on_event("shutdown")
+    async def shutdown():
+        await close_redis()
+
+    # ── Sentry ──
+    if settings.sentry_dsn:
+        import sentry_sdk
+        sentry_sdk.init(
+            dsn=settings.sentry_dsn,
+            traces_sample_rate=0.1 if settings.environment == "production" else 1.0,
+            environment=settings.environment,
+        )
+
+    return app
+
+
+app = create_app()
+```
+
+**Note**: P1/P2 routers (Phases 10-13) are commented out above. Uncomment them as each phase is implemented. The agent should add each router at the end of the corresponding phase.
+
+---
+
+## 7.2 MCP Server Stub (Future — Not in MVP)
+
+Nexra's architecture is designed to be protocol-agnostic. The current MVP exposes a REST API. A future iteration will add an **MCP (Model Context Protocol) server** that wraps the same service layer, allowing LLM tool-use clients to interact with Nexra natively.
+
+**Stub location**: `nexra/mcp/` (create when implementing)
+
+**Scope**: The MCP server is **NOT** part of the 48-hour MVP (Phases 1-9) or P1 (Phases 10-12). It is a P2+ item. However, the service layer is designed to be transport-agnostic, so adding an MCP transport later requires no refactoring of business logic — only a new thin adapter layer that calls the same `AgentService`, `DelegationService`, `DiscoveryService`, etc.
+
+**When to implement**: After Phase 13, or when MCP adoption reaches critical mass in the agent ecosystem.
+
+---
+
+## 7.3 Priority & Scope Notes
+
+### What "P0 / P1 / P2" means in this project
+
+| Priority | Phases | Timeline | Meaning |
+|----------|--------|----------|---------|
+| **P0** | 1-9 | 48 hours | Core MVP — must ship for product to function |
+| **P1** | 10-12 | Post-MVP, weeks 1-2 | Trust, safety, and ecosystem features — required for production readiness |
+| **P2** | 13+ | Post-P1 | Marketplace, compliance, MCP — growth and enterprise features |
+
+### Concurrent delegation limit
+
+The delegation flow (Phase 6) processes delegations **sequentially per caller agent** — there is no built-in concurrency limit in the MVP. For production (P1+), the following constraint should be enforced:
+
+- **Per-agent concurrent delegation cap**: Default 10 active (in-flight) delegations per agent.
+- **Implementation**: Add a Redis counter (`INCR`/`DECR` with TTL) in `DelegationService.initiate()` before Step 1. If the counter exceeds the cap, return HTTP 429 with error code `CONCURRENT_DELEGATION_LIMIT`.
+- **Configuration**: Add `max_concurrent_delegations_per_agent: int = 10` to `core/config.py`.
+
+```python
+# In DelegationService.initiate(), before Step 1:
+concurrent_key = f"nexra:delegations:active:{caller_agent.agent_id}"
+current = await self._redis.incr(concurrent_key)
+if current == 1:
+    await self._redis.expire(concurrent_key, 3600)  # 1h TTL safety net
+if current > settings.max_concurrent_delegations_per_agent:
+    await self._redis.decr(concurrent_key)
+    raise NexraError(429, "CONCURRENT_DELEGATION_LIMIT",
+                     f"Agent has {current - 1} active delegations (max {settings.max_concurrent_delegations_per_agent})")
+
+# In DelegationService._finalize() (called on complete/fail/timeout):
+await self._redis.decr(concurrent_key)
+```
+
+This is **not** implemented in Phase 6 (MVP). Add it in Phase 10 alongside circuit breakers.
 
 ---
 

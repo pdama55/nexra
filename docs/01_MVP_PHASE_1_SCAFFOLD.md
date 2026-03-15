@@ -143,6 +143,7 @@ WEBHOOK_TIMEOUT_DEFAULT_MS=30000
 HIL_APPROVAL_TTL_HOURS=24
 ANOMALY_SIGMA_THRESHOLD=3.0
 CELERY_BROKER_URL=
+API_BASE_URL=http://localhost:8000
 ```
 
 ### 4.3 `.gitignore`
@@ -184,7 +185,9 @@ Empty file. Required for Python package.
 This file defines all environment configuration using Pydantic Settings. Every environment variable from TDD §19.1 is represented.
 
 ```python
+import re
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from functools import lru_cache
 
 
@@ -209,6 +212,17 @@ class Settings(BaseSettings):
     hil_approval_ttl_hours: int = 24
     anomaly_sigma_threshold: float = 3.0
     celery_broker_url: str | None = None
+    api_base_url: str = "http://localhost:8000"  # Override in production: https://api.usenexra.com
+
+    @field_validator("secret_key_encryption_key")
+    @classmethod
+    def validate_encryption_key(cls, v: str) -> str:
+        if not re.fullmatch(r"[0-9a-fA-F]{64}", v):
+            raise ValueError(
+                "secret_key_encryption_key must be exactly 64 hex characters (32 bytes). "
+                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        return v
 
     @property
     def celery_broker(self) -> str:
@@ -993,7 +1007,50 @@ else:
     run_migrations_online()
 ```
 
-**Step 3**: Edit `alembic.ini` — set `script_location = db/migrations`.
+**Step 3**: Create `alembic.ini` in the project root (`nexra/alembic.ini`):
+
+```ini
+[alembic]
+script_location = db/migrations
+prepend_sys_path = .
+sqlalchemy.url = driver://user:pass@localhost/dbname
+
+[loggers]
+keys = root,sqlalchemy,alembic
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = WARN
+handlers = console
+qualname =
+
+[logger_sqlalchemy]
+level = WARN
+handlers =
+qualname = sqlalchemy.engine
+
+[logger_alembic]
+level = INFO
+handlers =
+qualname = alembic
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(levelname)-5.5s [%(name)s] %(message)s
+datefmt = %H:%M:%S
+```
+
+**Note**: The `sqlalchemy.url` value in `alembic.ini` is a placeholder. It is overridden at runtime by `env.py` which reads from `get_settings().database_url`. The `prepend_sys_path = .` ensures Python can find the `models`, `core`, etc. packages.
 
 **Step 4**: Create the initial migration file.
 
@@ -1244,6 +1301,12 @@ services:
     ports:
       - "8000:8000"
     env_file: ../.env
+    environment:
+      # Override DATABASE_URL and REDIS_URL to use Docker service hostnames.
+      # The .env file uses 'localhost' which works for host-machine dev,
+      # but inside Docker the services are reached by their compose service names.
+      DATABASE_URL: postgresql+asyncpg://nexra:nexra@postgres:5432/nexra
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       postgres:
         condition: service_healthy
@@ -1282,6 +1345,8 @@ services:
 volumes:
   pgdata:
 ```
+
+**Critical fix**: The `environment` block overrides `DATABASE_URL` and `REDIS_URL` to use Docker Compose service hostnames (`postgres`, `redis`) instead of `localhost`. Without this, the API container cannot reach the database or Redis because `localhost` inside a container refers to the container itself, not the host machine.
 
 ### 4.23 Dockerfile
 
@@ -1326,7 +1391,7 @@ WORKDIR /app
 RUN pip install poetry==1.8.0
 COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.in-project true \
-    && poetry install --no-interaction --no-ansi
+    && poetry install --no-interaction --no-ansi --no-root
 
 FROM python:3.12-slim AS runtime
 RUN adduser --disabled-password --gecos '' appuser
@@ -1335,6 +1400,7 @@ COPY --from=builder /app/.venv ./.venv
 COPY . .
 USER appuser
 ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app"
 CMD ["celery", "-A", "workers.celery_app", "worker", "--loglevel=info", "-Q", "webhooks,billing,anomaly"]
 ```
 
@@ -1348,6 +1414,7 @@ CMD ["celery", "-A", "workers.celery_app", "worker", "--loglevel=info", "-Q", "w
 import pytest
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy import text
 from models import Base
 
 TEST_DATABASE_URL = "postgresql+asyncpg://nexra:nexra@localhost:5432/nexra_test"
@@ -1364,6 +1431,9 @@ def event_loop():
 async def test_engine():
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     async with engine.begin() as conn:
+        # Enable pgvector extension BEFORE creating tables (agents.embedding needs it)
+        await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "vector"'))
+        await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "pgcrypto"'))
         await conn.run_sync(Base.metadata.create_all)
     yield engine
     async with engine.begin() as conn:
@@ -1373,11 +1443,28 @@ async def test_engine():
 
 @pytest.fixture
 async def db_session(test_engine) -> AsyncSession:
+    """Yields a session wrapped in a SAVEPOINT.
+
+    Each test runs inside a nested transaction (savepoint). After the test,
+    the savepoint is rolled back — so tests never commit real data and cannot
+    interfere with each other. This is faster than DROP/CREATE per test.
+    """
     session_factory = async_sessionmaker(test_engine, expire_on_commit=False)
     async with session_factory() as session:
-        yield session
-        await session.rollback()
+        async with session.begin():
+            # Create a savepoint
+            nested = await session.begin_nested()
+            yield session
+            # Rollback the savepoint (undo all test writes)
+            if nested.is_active:
+                await nested.rollback()
+            # Rollback the outer transaction too
+        # session.close() is called by the context manager
 ```
+
+**Critical fix**: The original `db_session` fixture called `session.rollback()` after yield, but if the test called `session.commit()` (which many services do), the transaction was already committed and rollback had no effect — leaving test data in the database. The savepoint pattern wraps each test in a nested transaction so `commit()` inside the test only commits to the savepoint, and the outer rollback undoes everything.
+
+**Critical fix**: `CREATE EXTENSION IF NOT EXISTS "vector"` must run before `Base.metadata.create_all` because the `agents` table has a `VECTOR(1536)` column. Without the extension, table creation fails with `type "vector" does not exist`.
 
 **Path**: `nexra/tests/fixtures/__init__.py` — empty
 

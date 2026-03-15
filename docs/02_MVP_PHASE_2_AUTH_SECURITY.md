@@ -181,6 +181,7 @@ def sha256_json(data: dict) -> str:
 - NEVER store the raw JWT secret. Always encrypt with AES-GCM before writing to the `jwt_secret_enc` column.
 - The `encryption_key_hex` comes from `get_settings().secret_key_encryption_key`. Do NOT hardcode it.
 - `sign_webhook_payload` and `verify_webhook_signature` MUST use the same serialization (sorted keys, no whitespace). Any difference causes signature mismatch.
+- **CRITICAL**: When Nexra sends a webhook, it uses `sign_webhook_payload(payload_dict, secret)` which serializes the dict internally. The callee receives the HTTP body as raw bytes. `verify_webhook_signature(body_bytes, secret, sig)` re-computes the HMAC over those raw bytes. This works correctly ONLY if the HTTP body was serialized with `json.dumps(payload, separators=(",",":"), sort_keys=True)`. When using `httpx.AsyncClient.post(url, json=payload)`, httpx serializes the payload itself — which does NOT use sorted keys or compact separators. **Therefore, `WebhookService.deliver_and_await` must serialize the payload manually and send it as `content=` (raw bytes), NOT `json=`**. See Phase 6 for the corrected implementation.
 
 ### 4.2 `core/jwt.py`
 
@@ -560,10 +561,150 @@ async def health_check(
     }
 ```
 
+**Fix: Health endpoint must return correct HTTP status code**. The function currently returns a dict but the `status_code` local variable is not used. Fix by returning a `JSONResponse`:
+
+```python
+from fastapi.responses import JSONResponse
+
+@router.get("/health")
+async def health_check(
+    db: AsyncSession = Depends(get_db),
+    redis_client: aioredis.Redis = Depends(get_redis),
+):
+    components = {}
+    all_healthy = True
+
+    try:
+        await db.execute(text("SELECT 1"))
+        components["postgres"] = "healthy"
+    except Exception as e:
+        components["postgres"] = f"unhealthy: {str(e)[:100]}"
+        all_healthy = False
+
+    try:
+        await redis_client.ping()
+        components["redis"] = "healthy"
+    except Exception as e:
+        components["redis"] = f"unhealthy: {str(e)[:100]}"
+        all_healthy = False
+
+    status_code = 200 if all_healthy else 503
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": "healthy" if all_healthy else "degraded",
+            "components": components,
+        },
+    )
+```
+
 **Register in `api/main.py`** — add to `create_app()`:
 ```python
 from api.routers.health import router as health_router
 app.include_router(health_router)
+```
+
+### 4.8a `api/routers/orgs.py` — Organization Creation
+
+**Path**: `nexra/api/routers/orgs.py`
+
+**CRITICAL**: No other phase creates organizations. Without this endpoint, there is no way to create an org, generate an API key, or use any authenticated endpoint. This is the bootstrap mechanism.
+
+```python
+from fastapi import APIRouter, Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel, Field
+
+from db.session import get_db
+from core.crypto import generate_api_key, generate_org_jwt_secret, encrypt_aes_gcm
+from core.config import get_settings
+from models.organization import Organization
+from api.schemas.common import DataResponse, MetaResponse
+
+router = APIRouter(prefix="/orgs", tags=["organizations"])
+
+
+class OrgCreateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    plan: str = Field("starter", description="starter | growth | enterprise")
+
+
+class OrgCreateResponse(BaseModel):
+    org_id: str
+    name: str
+    plan: str
+    api_key: str  # Returned ONCE — never stored or retrievable again
+
+
+@router.post("/register", status_code=201)
+async def create_organization(
+    request: Request,
+    body: OrgCreateRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a new organization and return its API key.
+
+    The API key is returned exactly once in this response.
+    It is bcrypt-hashed before storage and cannot be retrieved again.
+    """
+    settings = get_settings()
+
+    raw_key, hashed_key, prefix = generate_api_key()
+    jwt_secret = generate_org_jwt_secret()
+    jwt_secret_enc = encrypt_aes_gcm(jwt_secret, settings.secret_key_encryption_key)
+
+    org = Organization(
+        name=body.name,
+        plan=body.plan,
+        api_key_hash=hashed_key,
+        api_key_prefix=prefix,
+        jwt_secret_enc=jwt_secret_enc,
+    )
+    db.add(org)
+    await db.commit()
+    await db.refresh(org)
+
+    return DataResponse(
+        data=OrgCreateResponse(
+            org_id=str(org.id),
+            name=org.name,
+            plan=org.plan,
+            api_key=raw_key,
+        ),
+        meta=MetaResponse(
+            request_id=getattr(request.state, "request_id", None),
+        ),
+    )
+```
+
+**Register in `api/main.py`**:
+```python
+from api.routers.orgs import router as orgs_router
+app.include_router(orgs_router, prefix="/v1")
+```
+
+**Note**: This endpoint is intentionally unauthenticated (no API key required) because it IS the bootstrap mechanism. In production, add a separate admin secret or disable after initial setup.
+
+### 4.8b Redis Lifecycle — Shutdown Handler
+
+Add to `api/dependencies.py`:
+
+```python
+async def close_redis() -> None:
+    """Close the Redis connection pool on app shutdown."""
+    global _redis_pool
+    if _redis_pool is not None:
+        await _redis_pool.aclose()
+        _redis_pool = None
+```
+
+Wire into `api/main.py` `create_app()`:
+```python
+from api.dependencies import close_redis
+
+@app.on_event("shutdown")
+async def shutdown():
+    await close_redis()
 ```
 
 ### 4.8 Update `api/main.py`

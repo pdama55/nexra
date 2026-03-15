@@ -161,7 +161,7 @@ class DiscoveryService:
                     AND (:budget_cap IS NULL OR (a.pricing->>'per_call_usd')::float <= :budget_cap)
                     AND (:max_latency IS NULL OR (a.sla->>'p99_latency_ms')::int <= :max_latency)
                     AND (a.org_id = CAST(:caller_org_id AS uuid) OR (a.is_public = TRUE AND :include_cross_org = TRUE))
-                    AND a.agent_id != ALL(:exclude_agents)
+                    AND a.agent_id != ALL(CAST(:exclude_agents AS text[]))
             ),
             price_stats AS (
                 SELECT
@@ -328,18 +328,34 @@ app.include_router(capabilities_router, prefix="/v1")
 
 No new migrations. The IVFFlat index on `agents.embedding` was created in Phase 1.
 
-**Performance note**: For the IVFFlat index to be effective, set `ivfflat.probes` at session level:
-```sql
-SET ivfflat.probes = 10;  -- default, >95% recall for <1000 agents
+**Performance note**: For the IVFFlat index to be effective, set `ivfflat.probes` at session level. Add this as a connection-init event in `db/session.py`:
+
+```python
+from sqlalchemy import event, text
+
+@event.listens_for(engine.sync_engine, "connect")
+def set_ivfflat_probes(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("SET ivfflat.probes = 10")
+    cursor.close()
 ```
 
-This should be set in the SQLAlchemy session factory or as a connection init command.
+Alternatively, set it per-query in the discovery service before executing the CTE:
+```python
+await self.db.execute(text("SET LOCAL ivfflat.probes = 10"))
+```
+
+`SET LOCAL` scopes the setting to the current transaction, which is safer for connection pooling.
 
 ---
 
 ## 6. Guardrails
 
 1. **DO NOT** compute composite scores in Python. The entire scoring runs in PostgreSQL via the CTE query.
+
+**CRITICAL — Embedding vector format**: The `query_embedding` is formatted as `"[0.1,0.2,...]"` (a string) and cast to `vector` in the SQL via `CAST(:query_embedding AS vector)`. This is the correct pgvector text representation. Do NOT pass a Python list directly — asyncpg cannot serialize it as a pgvector type. The string format `"[val1,val2,...]"` is what pgvector expects.
+
+**CRITICAL — asyncpg array parameter**: The `exclude_agents` parameter is a Python list of strings. asyncpg requires an explicit `CAST(:exclude_agents AS text[])` in the SQL for the `!= ALL()` operator to work. Without the cast, asyncpg raises a type error because it cannot infer the array type from an empty list.
 2. **DO NOT** return agents with `embedding IS NULL`. These agents haven't been embedded yet (edge case during registration failure).
 3. **DO NOT** return quarantined agents in discovery results — they are excluded by the hard filter.
 4. **DO NOT** return private agents (`is_public=false`) from other orgs even if `include_cross_org=true`.

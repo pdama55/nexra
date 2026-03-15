@@ -626,8 +626,25 @@ No new migrations. All tables exist from Phase 1.
 3. **DO NOT** skip JSON Schema validation on input_schema/output_schema. Both Pydantic and the service layer validate — defense in depth.
 4. **DO NOT** allow agent_id with uppercase letters, spaces, or special characters. Regex: `^[a-z0-9-]+$`.
 5. **DO NOT** overwrite trust_score or delegation_count on re-registration. These are preserved.
-6. **DO NOT** create a new OpenAI client per request in production — use a shared instance. For MVP, per-request is acceptable.
+6. **DO NOT** create a new OpenAI client per request in production — use a shared instance. For MVP, per-request is acceptable. **Recommended**: Add a module-level singleton in `api/routers/agents.py`:
+   ```python
+   _openai_client: AsyncOpenAI | None = None
+   
+   def _get_openai_client() -> AsyncOpenAI:
+       global _openai_client
+       if _openai_client is None:
+           settings = get_settings()
+           _openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
+       return _openai_client
+   ```
 7. **DO NOT** embed empty strings. The description field has a minimum length of 20 characters.
+8. **CURSOR PAGINATION TYPE SAFETY**: The `cursor` parameter in `list_for_org` is compared against `Agent.created_at` (a `datetime`). When the cursor comes from a query string, it is a string. SQLAlchemy will cast it automatically for `<` comparison, but for type safety, parse it explicitly:
+   ```python
+   if cursor:
+       from datetime import datetime
+       cursor_dt = datetime.fromisoformat(cursor)
+       q = q.where(Agent.created_at < cursor_dt)
+   ```
 
 ---
 

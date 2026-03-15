@@ -71,13 +71,20 @@ class BillingService:
             return
 
         try:
-            stripe.billing.MeterEvent.create(
-                event_name="nexra_delegation",
-                payload={
-                    "stripe_customer_id": org.stripe_id,
-                    "value": "1",
-                },
-                timestamp=int(delegation.created_at.timestamp()),
+            # IMPORTANT: stripe.billing.MeterEvent.create() is a synchronous blocking call.
+            # In an async context, run it in a thread pool to avoid blocking the event loop.
+            import asyncio
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(
+                None,
+                lambda: stripe.billing.MeterEvent.create(
+                    event_name="nexra_delegation",
+                    payload={
+                        "stripe_customer_id": org.stripe_id,
+                        "value": "1",
+                    },
+                    timestamp=int(delegation.created_at.timestamp()),
+                ),
             )
             logger.info(f"Stripe usage event recorded for delegation {delegation.id}")
         except stripe.StripeError as e:
@@ -178,12 +185,12 @@ def record_stripe_usage(self, stripe_customer_id: str, delegation_id: str, times
 
 ```toml
 [tool.poetry]
-name = "nexra"
+name = "nexra-sdk"
 version = "0.1.0"
 description = "Python SDK for Nexra — the control plane for AI agent networks"
 authors = ["Parth"]
 readme = "README.md"
-packages = [{ include = "nexra" }]
+packages = [{ include = "nexra_sdk" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -194,16 +201,18 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 ```
 
-#### `sdk/nexra-py/nexra/__init__.py`
+**CRITICAL**: The SDK package is named `nexra-sdk` (installable name) with the Python package directory `nexra_sdk/` to avoid collision with the server's `nexra` package. When both are installed in the same environment (e.g., for the demo), `import nexra` would be ambiguous. Using `nexra_sdk` eliminates this.
+
+#### `sdk/nexra-py/nexra_sdk/__init__.py`
 
 ```python
-from nexra.client import NexraClient
-from nexra.types import RegisterResult, AgentMatch, DelegationResult
+from nexra_sdk.client import NexraClient
+from nexra_sdk.types import RegisterResult, AgentMatch, DelegationResult
 
 __all__ = ["NexraClient", "RegisterResult", "AgentMatch", "DelegationResult"]
 ```
 
-#### `sdk/nexra-py/nexra/types.py`
+#### `sdk/nexra-py/nexra_sdk/types.py`
 
 ```python
 from dataclasses import dataclass, field
@@ -255,12 +264,12 @@ class DelegationResult:
     poll_url: str | None = None
 ```
 
-#### `sdk/nexra-py/nexra/client.py`
+#### `sdk/nexra-py/nexra_sdk/client.py`
 
 ```python
 import httpx
 from typing import Any
-from nexra.types import RegisterResult, AgentMatch, DelegationResult, PolicyResult, Usage
+from nexra_sdk.types import RegisterResult, AgentMatch, DelegationResult, PolicyResult, Usage
 
 
 class NexraClient:
@@ -289,7 +298,7 @@ class NexraClient:
     async def register(self, **kwargs) -> RegisterResult:
         """Register an agent capability."""
         resp = await self._client.post(f"{self.base_url}/agents/register", json=kwargs)
-        resp.raise_for_status()
+        self._check_response(resp)
         data = resp.json()["data"]
         return RegisterResult(**data)
 
@@ -382,11 +391,38 @@ class NexraClient:
             poll_url=data.get("poll_url"),
         )
 
+    def _check_response(self, resp: httpx.Response) -> None:
+        """Check response and raise NexraAPIError with server error details."""
+        if resp.is_success:
+            return
+        try:
+            body = resp.json()
+            error = body.get("error", {})
+            raise NexraAPIError(
+                status_code=resp.status_code,
+                code=error.get("code", "UNKNOWN"),
+                message=error.get("message", resp.text[:200]),
+                details=error.get("details", {}),
+            )
+        except (ValueError, KeyError):
+            resp.raise_for_status()
+
     async def __aenter__(self):
         return self
 
     async def __aexit__(self, *_):
         await self._client.aclose()
+
+
+class NexraAPIError(Exception):
+    """Raised when the Nexra API returns an error response."""
+
+    def __init__(self, status_code: int, code: str, message: str, details: dict | None = None):
+        self.status_code = status_code
+        self.code = code
+        self.message = message
+        self.details = details or {}
+        super().__init__(f"[{status_code}] {code}: {message}")
 ```
 
 #### `sdk/nexra-py/README.md`
@@ -399,13 +435,13 @@ Python SDK for [Nexra](https://usenexra.com) — the control plane for AI agent 
 ## Installation
 
 ```bash
-pip install nexra
+pip install nexra-sdk
 ```
 
 ## Quick Start
 
 ```python
-from nexra import NexraClient
+from nexra_sdk import NexraClient
 
 async with NexraClient(api_key="nx_live_...", agent_id="sales-agent-v1") as client:
     # Discover + delegate in one call

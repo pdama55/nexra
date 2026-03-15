@@ -73,9 +73,16 @@ async def engine():
 
 @pytest_asyncio.fixture(scope="session")
 async def setup_database(engine):
-    """Create all tables once per test session."""
+    """Create all tables once per test session.
+
+    CRITICAL: pgvector and pgcrypto extensions must be created BEFORE tables,
+    because the agents table has a VECTOR(1536) column and UUIDs use gen_random_uuid().
+    """
     from models.base import Base
+    from sqlalchemy import text
     async with engine.begin() as conn:
+        await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "vector"'))
+        await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "pgcrypto"'))
         await conn.run_sync(Base.metadata.create_all)
     yield
     async with engine.begin() as conn:
@@ -84,12 +91,22 @@ async def setup_database(engine):
 
 @pytest_asyncio.fixture
 async def db(engine, setup_database) -> AsyncGenerator[AsyncSession, None]:
-    """Per-test database session with automatic rollback."""
+    """Per-test database session with SAVEPOINT isolation.
+
+    Each test runs inside a nested transaction (savepoint). When the test calls
+    session.commit(), it only commits to the savepoint. After the test, the outer
+    transaction is rolled back — so no test data persists between tests.
+
+    This is critical because many services call session.commit() internally.
+    Without savepoints, those commits would persist data and cause test interference.
+    """
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     async with session_factory() as session:
         async with session.begin():
+            nested = await session.begin_nested()
             yield session
-            await session.rollback()
+            if nested.is_active:
+                await nested.rollback()
 
 
 @pytest_asyncio.fixture
@@ -142,6 +159,7 @@ class OrganizationFactory:
     def create(
         name: str = "Test Org",
         api_key_hash: str = "$2b$12$test_hash_placeholder",
+        api_key_prefix: str = "nx_live_test1234",
         plan: str = "growth",
         approval_url: str | None = None,
         stripe_id: str | None = "cus_test_123",
@@ -152,11 +170,12 @@ class OrganizationFactory:
             id=overrides.get("id", uuid.uuid4()),
             name=name,
             api_key_hash=api_key_hash,
+            api_key_prefix=api_key_prefix,
             plan=plan,
             approval_url=approval_url,
             stripe_id=stripe_id,
             jwt_secret_enc=jwt_secret_enc,
-            **{k: v for k, v in overrides.items() if k != "id"},
+            **{k: v for k, v in overrides.items() if k not in ("id",)},
         )
 
 
@@ -983,6 +1002,48 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: railway up --detach
+```
+
+### 6.3 Celery Task Testing Infrastructure
+
+Celery tasks (billing_worker, webhook_worker, anomaly_worker) run in a separate process and use `asyncio.run()` internally. For testing, use Celery's `ALWAYS_EAGER` mode which executes tasks synchronously in the same process:
+
+```python
+# tests/conftest.py — add this fixture
+
+@pytest.fixture
+def celery_eager(monkeypatch):
+    """Run Celery tasks eagerly (synchronously) for testing."""
+    from workers.celery_app import celery_app
+    celery_app.conf.update(
+        task_always_eager=True,
+        task_eager_propagates=True,
+    )
+    yield celery_app
+    celery_app.conf.update(
+        task_always_eager=False,
+        task_eager_propagates=False,
+    )
+```
+
+**Usage in tests**:
+```python
+class TestBillingWorker:
+    async def test_stripe_usage_recorded(self, celery_eager):
+        """Test that billing worker records Stripe usage."""
+        from workers.billing_worker import record_stripe_usage
+        with patch("stripe.billing.MeterEvent.create") as mock_stripe:
+            record_stripe_usage("cus_test_123", "del-123", 1700000000)
+            mock_stripe.assert_called_once()
+```
+
+**For webhook_worker tests** (which use async internally), test the underlying async function directly instead of the Celery task:
+```python
+class TestWebhookWorker:
+    async def test_webhook_delivery_with_retry(self, db):
+        """Test async webhook delivery logic directly."""
+        from workers.webhook_worker import _deliver_webhook_async
+        # Test the async function, not the Celery task wrapper
 ```
 
 ---

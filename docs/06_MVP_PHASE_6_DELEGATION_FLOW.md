@@ -164,8 +164,15 @@ class WebhookService:
             NexraError(503, CALLEE_WEBHOOK_FAILED)
             NexraError(503, WEBHOOK_SIGNATURE_REJECTED)
         """
+        import json as _json
         signature = sign_webhook_payload(payload, webhook_secret)
         effective_timeout = min(timeout_ms / 1000, self.MAX_TIMEOUT_SECONDS - 0.1)
+
+        # CRITICAL: Serialize payload with sorted keys and no whitespace.
+        # This MUST match the serialization used by sign_webhook_payload().
+        # Using httpx's json= parameter would use a different serialization
+        # (unsorted keys, with spaces) which would cause HMAC mismatch on the callee side.
+        body_bytes = _json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
 
         headers = {
             "Content-Type": "application/json",
@@ -176,7 +183,7 @@ class WebhookService:
 
         async with httpx.AsyncClient(timeout=effective_timeout) as client:
             try:
-                resp = await client.post(webhook_url, json=payload, headers=headers)
+                resp = await client.post(webhook_url, content=body_bytes, headers=headers)
             except httpx.TimeoutException:
                 raise NexraError(408, DELEGATION_TIMEOUT, f"Callee did not respond within {timeout_ms}ms")
             except httpx.RequestError as e:
@@ -194,7 +201,7 @@ class WebhookService:
                 logger.warning(f"Webhook returned {resp.status_code}, retrying once...")
                 await asyncio.sleep(1)
                 try:
-                    resp = await client.post(webhook_url, json=payload, headers=headers)
+                    resp = await client.post(webhook_url, content=body_bytes, headers=headers)
                 except (httpx.TimeoutException, httpx.RequestError) as e:
                     raise NexraError(503, CALLEE_WEBHOOK_FAILED, f"Webhook retry failed: {str(e)[:200]}")
 
@@ -388,7 +395,7 @@ class DelegationService:
             "budget_cap_usd": request.budget_cap_usd,
             "timeout_ms": request.timeout_ms,
             "delegation_token": delegation_token,
-            "complete_url": f"https://api.usenexra.com/v1/delegations/{delegation.id}/complete",
+            "complete_url": f"{settings.api_base_url}/v1/delegations/{delegation.id}/complete",
         }
 
         # ── STEP 12: Deliver webhook ──────────────────────────
@@ -603,12 +610,17 @@ async def delegate(
     latency = round((time.perf_counter() - start) * 1000, 2)
 
     status_code = 200 if result.status == "completed" else 202
-    return DataResponse(
+    from fastapi.responses import JSONResponse
+    response_body = DataResponse(
         data=result,
         meta=MetaResponse(
             request_id=getattr(request.state, "request_id", None),
             latency_ms=latency,
         ),
+    )
+    return JSONResponse(
+        status_code=status_code,
+        content=response_body.model_dump(mode="json"),
     )
 
 
@@ -673,24 +685,26 @@ async def complete_delegation(
 
     token = authorization[7:]
 
-    # We need the org to decrypt the JWT secret.
-    # Load delegation to find the org.
+    # We need the caller org to decrypt the JWT secret (JWT was signed with caller org's secret).
     from sqlalchemy import select
     from models.delegation import Delegation
-    result = await db.execute(
+    from models.organization import Organization as OrgModel
+    from core.errors import NexraError, DELEGATION_NOT_FOUND
+
+    deleg_result = await db.execute(
         select(Delegation).where(Delegation.id == delegation_id)
     )
-    delegation = result.scalar_one_or_none()
+    delegation = deleg_result.scalar_one_or_none()
     if not delegation:
-        from core.errors import NexraError, DELEGATION_NOT_FOUND
         raise NexraError(404, DELEGATION_NOT_FOUND, "Delegation not found")
 
-    # Load the callee's org (for JWT secret)
-    from models.organization import Organization
+    # Load the CALLER org (the JWT was signed with the caller org's per-org secret)
     org_result = await db.execute(
-        select(Organization).where(Organization.id == delegation.callee_org_id or delegation.caller_org_id)
+        select(OrgModel).where(OrgModel.id == delegation.caller_org_id)
     )
     org = org_result.scalar_one_or_none()
+    if not org:
+        raise NexraError(500, "INTERNAL_ERROR", "Caller organization not found")
 
     service = _build_delegation_service(db, redis_client)
     resp = await service.complete(
@@ -769,3 +783,79 @@ app.include_router(delegations_router, prefix="/v1")
 | T-DEL-015 | Status | GET /delegations/{id} returns correct status | All fields match |
 | T-DEL-016 | Hash | task_hash is SHA-256 of canonical JSON | Verify hash matches |
 | T-023 | E2E | Full round-trip: register → discover → delegate → complete → settle | All audit entries present, status completed, budget updated |
+
+---
+
+## Appendix A: Cumulative `DelegationService` Constructor (Final State)
+
+The `DelegationService` is built incrementally across phases. After Phase 7 (Budget/Audit) and Phase 10 (Trust/Circuit Breakers), the final constructor looks like this. Use this as a reference — build incrementally per phase.
+
+```python
+class DelegationService:
+    """Orchestrates the 13-step delegation flow."""
+
+    def __init__(
+        self,
+        db: AsyncSession,
+        policy_service: PolicyService,
+        webhook_service: WebhookService,
+        budget_service: BudgetService,       # Added in Phase 7
+        audit_service: AuditService,         # Added in Phase 7
+        trust_service: TrustService,         # Added in Phase 10
+    ):
+        self._db = db
+        self._policy = policy_service
+        self._webhook = webhook_service
+        self._budget = budget_service
+        self._audit = audit_service
+        self._trust = trust_service
+```
+
+**Phase-by-phase constructor evolution:**
+
+| Phase | Constructor Parameters |
+|-------|----------------------|
+| Phase 6 (initial) | `db`, `policy_service`, `webhook_service` |
+| Phase 7 (budget/audit) | + `budget_service`, `audit_service` |
+| Phase 10 (trust) | + `trust_service` |
+
+**Integration points within `DelegationService.initiate()`:**
+
+| Step | Service Call | Phase |
+|------|-------------|-------|
+| Step 3 (policy check) | `self._policy.evaluate(context)` | 6 |
+| Step 4 (budget check) | `self._budget.check_and_reserve(caller_agent_id, callee.price_per_call_usd)` | 7 |
+| Step 8 (webhook delivery) | `self._webhook.deliver_and_await(callee, payload)` | 6 |
+| Step 12 (record spend) | `self._budget.record_spend(caller_agent_id, callee.price_per_call_usd, delegation.id)` | 7 |
+| Step 12 (audit log) | `self._audit.log(...)` | 7 |
+| Step 12 (trust update) | `self._trust.update_after_delegation(callee, delegation)` | 10 |
+
+**Factory / dependency injection in the router:**
+
+```python
+# api/routers/delegations.py — inside the route handler
+
+async def initiate_delegation(
+    request: Request,
+    body: DelegateRequest,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    from services.policy_service import PolicyService
+    from services.webhook_service import WebhookService
+    from services.budget_service import BudgetService
+    from services.audit_service import AuditService
+    from services.trust_service import TrustService
+    from api.dependencies import get_redis
+
+    redis = await get_redis()
+    service = DelegationService(
+        db=db,
+        policy_service=PolicyService(db),
+        webhook_service=WebhookService(db),
+        budget_service=BudgetService(db, redis),
+        audit_service=AuditService(db),
+        trust_service=TrustService(db, redis),
+    )
+    # ...
+```

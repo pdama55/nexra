@@ -46,7 +46,7 @@ Usage:
 """
 import asyncio
 import os
-from nexra import NexraClient
+from nexra_sdk import NexraClient
 
 
 async def main():
@@ -135,7 +135,7 @@ import hmac
 import hashlib
 from fastapi import FastAPI, Request, HTTPException
 import uvicorn
-from nexra import NexraClient
+from nexra_sdk import NexraClient
 
 app = FastAPI(title="Research Agent")
 
@@ -146,6 +146,8 @@ WEBHOOK_SECRET = "whs_research_agent_secret_key_that_is_long_enough"
 async def handle_delegation(request: Request):
     """Receive delegation webhook from Nexra, process task, return result."""
     # Verify HMAC signature
+    # IMPORTANT: Nexra signs the payload with json.dumps(sorted_keys=True, separators=(",",":"))
+    # and sends it as raw bytes via content= (not json=). So request.body() IS the canonical form.
     signature = request.headers.get("X-Nexra-Signature", "")
     body = await request.body()
     expected = "sha256=" + hmac.new(
@@ -210,7 +212,14 @@ async def register():
             },
             pricing={"per_call_usd": 0.15},
             sla={"p99_latency_ms": 8000, "availability": 0.99},
-            webhook_url="https://localhost:8001/webhook",
+            # For local demo, use http:// — the HTTPS CHECK constraint in the DB
+            # must be temporarily relaxed, OR use a tunnel like ngrok.
+            # Option 1: Use ngrok (recommended for demo):
+            #   ngrok http 8001 → use the https://xxx.ngrok.io/webhook URL
+            # Option 2: For local-only testing, temporarily disable the CHECK constraint:
+            #   ALTER TABLE agents DROP CONSTRAINT ck_agents_webhook_https;
+            # Option 3: Use the env var NEXRA_RESEARCH_WEBHOOK_URL
+            webhook_url=os.environ.get("NEXRA_RESEARCH_WEBHOOK_URL", "https://localhost:8001/webhook"),
             webhook_secret=WEBHOOK_SECRET,
         )
         print("[Research Agent] Registered with Nexra.")
@@ -246,8 +255,14 @@ Two AI agents (Sales and Research) coordinate through Nexra with zero hardcoded 
 cd nexra && docker compose -f docker/docker-compose.yml up
 
 # Terminal 2: Run migrations + create org
-alembic upgrade head
-# Create an org via your preferred method and get the API key
+cd nexra && alembic upgrade head
+
+# Create an org and get the API key (returned ONCE — save it!)
+curl -X POST http://localhost:8000/v1/orgs/register \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Demo Org", "plan": "growth"}'
+# Response: { "data": { "org_id": "...", "api_key": "nx_live_..." } }
+# SAVE the api_key — it is shown only once
 
 # Terminal 3: Start Research Agent
 export NEXRA_API_KEY=nx_live_...
