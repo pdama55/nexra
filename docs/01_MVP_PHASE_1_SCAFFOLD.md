@@ -488,7 +488,8 @@ class Agent(UUIDMixin, TimestampMixin, Base):
 
 ```python
 import uuid
-from sqlalchemy import Text, Integer, Boolean, ForeignKey, UniqueConstraint, Index
+from datetime import datetime, timezone
+from sqlalchemy import Text, Integer, Boolean, ForeignKey, UniqueConstraint, Index, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from models.base import Base, UUIDMixin
@@ -514,9 +515,11 @@ class Policy(UUIDMixin, Base):
     enabled: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="true"
     )
-    created_at: Mapped = mapped_column(
-        # Reuse from TimestampMixin pattern but Policy only has created_at
-        # (no updated_at — policies are versioned, not updated in place)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
+        nullable=False,
     )
 
     # Relationships
@@ -532,7 +535,7 @@ class Policy(UUIDMixin, Base):
     )
 ```
 
-**Note**: Policy does NOT use `TimestampMixin` because it only has `created_at` (no `updated_at`). Policies are versioned — updates create new rows with incremented version numbers. Manually add `created_at` using the same DateTime(timezone=True) pattern from TimestampMixin.
+**Note**: Policy does NOT use `TimestampMixin` because it only has `created_at` (no `updated_at`). Policies are versioned — updates create new rows with incremented version numbers. The `created_at` column is explicitly defined with `DateTime(timezone=True)`, `server_default=func.now()`, and a Python-side default matching the TimestampMixin pattern.
 
 ### 4.11 `models/delegation.py`
 
@@ -1291,7 +1294,7 @@ WORKDIR /app
 RUN pip install poetry==1.8.0
 COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.in-project true \
-    && poetry install --no-interaction --no-ansi
+    && poetry install --no-interaction --no-ansi --no-root
 
 # Stage 2: Runtime
 FROM python:3.12-slim AS runtime
@@ -1301,11 +1304,17 @@ COPY --from=builder /app/.venv ./.venv
 COPY . .
 USER appuser
 ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app"
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
 ```
+
+**Critical fixes vs naive approach**:
+- `--no-root` on `poetry install` avoids installing the project itself in the builder stage (only deps).
+- `PYTHONPATH="/app"` ensures `from models import ...`, `from core import ...` etc. resolve correctly. Without this, Python cannot find the top-level packages.
+- The `HEALTHCHECK` uses Python's `urllib` instead of `curl` because `python:3.12-slim` does NOT include `curl`. Installing `curl` would bloat the image.
 
 ### 4.24 Dockerfile.worker
 
