@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexra — Control Plane for AI Agents</title>
+<meta name="description" content="Governance, policy, and observability that makes multi-agent systems safe to run in production. Works with LangGraph, CrewAI, and anything that handles a webhook.">
+<meta property="og:title" content="Nexra — Control Plane for AI Agents">
+<meta property="og:description" content="Every delegation, governed. Every agent, accounted for. Policy engine, spend metering, and immutable audit trail for AI agent networks.">
+<meta property="og:url" content="https://usenexra.com">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Nexra — Control Plane for AI Agents">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   NEXRA DESIGN TOKENS
+   ═══════════════════════════════════════════ */
+:root {
+  --bg: #0A0A08;
+  --fg: #E8E6DE;
+  --accent-cta: #E8E6DE;
+  --accent-label: #6B6B67;
+  --accent-code: #C8C4B8;
+  --muted: #9A9A94;
+  --border: #1E1E1A;
+  --code-bg: #0D0D0B;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'DM Mono', monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ═══════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.7;
+  cursor: none;
+  opacity: 0;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* ═══════════════════════════════════════════
+   GRAIN OVERLAY
+   ═══════════════════════════════════════════ */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* ═══════════════════════════════════════════
+   CUSTOM CURSOR
+   ═══════════════════════════════════════════ */
+.cursor-dot {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  background: var(--fg);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10000;
+  mix-blend-mode: difference;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s var(--ease), height 0.3s var(--ease);
+}
+
+.cursor-dot.expanded {
+  width: 40px;
+  height: 40px;
+}
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════════ */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 0 24px; }
+}
+
+/* ═══════════════════════════════════════════
+   NAV
+   ═══════════════════════════════════════════ */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background 0.4s var(--ease), border-color 0.4s var(--ease);
+}
+
+.nav.scrolled {
+  background: rgba(10, 10, 8, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom-color: var(--border);
+}
+
+.nav-wordmark {
+  font-family: var(--font-display);
+  font-size: 28px;
+  letter-spacing: 2px;
+  color: var(--fg);
+  text-transform: uppercase;
+  cursor: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 40px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  position: relative;
+  cursor: none;
+  transition: color 0.3s var(--ease);
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--fg);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s var(--ease);
+}
+
+.nav-links a:hover { color: var(--fg); }
+.nav-links a:hover::after { transform: scaleX(1); }
+
+.nav-cta {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--accent-cta);
+  padding: 10px 24px;
+  border: none;
+  cursor: none;
+  transition: opacity 0.3s var(--ease);
+}
+
+.nav-cta:hover { opacity: 0.85; }
+
+@media (max-width: 768px) {
+  .nav { padding: 0 24px; }
+  .nav-links { display: none; }
+}
+
+/* ═══════════════════════════════════════════
+   HERO
+   ═══════════════════════════════════════════ */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding-top: 72px;
+}
+
+.hero-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: clamp(200px, 22vw, 360px);
+  letter-spacing: 16px;
+  text-transform: uppercase;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--border);
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-left { display: flex; flex-direction: column; gap: 0; }
+
+.hero-eyebrow {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent-label);
+  margin-bottom: 24px;
+  opacity: 0;
+}
+
+.hero-headline {
+  font-family: var(--font-display);
+  font-size: clamp(64px, 8vw, 96px);
+  line-height: 0.95;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--fg);
+  margin-bottom: 0;
+}
+
+.hero-headline .line {
+  display: block;
+  overflow: hidden;
+}
+
+.hero-headline .char {
+  display: inline-block;
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+.hero-right {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  opacity: 0;
+}
+
+.hero-body {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.hero-body p + p { margin-top: 16px; }
+
+.waitlist-form {
+  display: flex;
+  max-width: 420px;
+}
+
+.waitlist-input {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 300;
+  padding: 14px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-right: none;
+  color: var(--fg);
+  outline: none;
+  cursor: none;
+  transition: border-color 0.3s var(--ease);
+}
+
+.waitlist-input::placeholder { color: var(--muted); }
+.waitlist-input:focus { border-color: var(--muted); }
+
+.waitlist-btn {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 14px 28px;
+  background: var(--accent-cta);
+  color: var(--bg);
+  border: none;
+  cursor: none;
+  white-space: nowrap;
+  transition: opacity 0.3s var(--ease);
+}
+
+.waitlist-btn:hover { opacity: 0.85; }
+
+.waitlist-success {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--fg);
+  letter-spacing: 0.5px;
+}
+
+.hero-footnote {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+}
+
+@media (max-width: 900px) {
+  .hero-inner {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   TICKER
+   ═══════════════════════════════════════════ */
+.ticker {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  padding: 20px 0;
+  position: relative;
+}
+
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 40s linear infinite;
+}
+
+.ticker:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+.ticker-item {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  padding: 0 32px;
+  transition: color 0.3s var(--ease);
+}
+
+.ticker:hover .ticker-item { color: var(--fg); opacity: 0.6; }
+
+.ticker-item::after {
+  content: '·';
+  margin-left: 32px;
+  color: var(--border);
+}
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ═══════════════════════════════════════════
+   SECTION REVEAL
+   ═══════════════════════════════════════════ */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════════
+   PROBLEM SECTION
+   ═══════════════════════════════════════════ */
+.problem {
+  padding: 120px 0;
+}
+
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: start;
+}
+
+.problem-headline {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 5vw, 64px);
+  line-height: 1;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.problem-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.problem-body p {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.problem-body strong {
+  color: var(--fg);
+  font-weight: 400;
+}
+
+.section-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent-label);
+  margin-bottom: 32px;
+  display: block;
+}
+
+.section-label .counter {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .problem-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   HOW IT WORKS
+   ═══════════════════════════════════════════ */
+.how {
+  padding: 120px 0;
+  border-top: 1px solid var(--border);
+}
+
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.how-step {
+  padding: 40px 32px;
+  border-right: 1px solid var(--border);
+  transition: background 0.4s var(--ease);
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+.how-step:last-child { border-right: none; }
+
+.how-step:hover { background: rgba(255, 255, 255, 0.02); }
+
+.how-step.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.how-num {
+  font-family: var(--font-display);
+  font-size: 48px;
+  color: var(--accent-label);
+  line-height: 1;
+  margin-bottom: 24px;
+}
+
+.how-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--fg);
+  margin-bottom: 16px;
+}
+
+.how-desc {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .how-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .how-step:nth-child(2) { border-right: none; }
+  .how-step:nth-child(1),
+  .how-step:nth-child(2) { border-bottom: 1px solid var(--border); }
+}
+
+@media (max-width: 600px) {
+  .how-grid { grid-template-columns: 1fr; }
+  .how-step { border-right: none; border-bottom: 1px solid var(--border); }
+  .how-step:last-child { border-bottom: none; }
+}
+
+/* ═══════════════════════════════════════════
+   CODE BLOCK
+   ═══════════════════════════════════════════ */
+.code-section {
+  background: var(--code-bg);
+  padding: 80px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.code-block {
+  position: relative;
+  border: 1px solid var(--border);
+  padding: 40px;
+  overflow-x: auto;
+}
+
+.code-tab {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent-label);
+  padding: 8px 16px;
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.code-block pre {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.8;
+  margin: 0;
+  white-space: pre;
+}
+
+.code-block .code-line {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+}
+
+.code-block .code-line.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.c-comment { color: #4A4A46; }
+.c-key { color: var(--muted); }
+.c-str { color: var(--fg); }
+.c-val { color: var(--accent-code); }
+.c-fn { color: var(--fg); opacity: 0.7; }
+
+/* ═══════════════════════════════════════════
+   WHY NEXRA
+   ═══════════════════════════════════════════ */
+.why {
+  padding: 120px 0;
+}
+
+.why-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 1.2fr;
+  gap: 48px;
+  align-items: start;
+  padding: 40px 0;
+  border-bottom: 1px solid var(--border);
+  opacity: 0;
+  transform: translateX(-24px);
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+}
+
+.why-row:first-of-type { border-top: 1px solid var(--border); }
+
+.why-row.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.why-num {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--muted);
+  padding-top: 4px;
+}
+
+.why-title {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--fg);
+  transition: color 0.4s var(--ease);
+}
+
+.why-row:hover .why-title { color: var(--muted); }
+
+.why-desc {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.7;
+  color: var(--muted);
+  padding-top: 4px;
+}
+
+@media (max-width: 900px) {
+  .why-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   FOOTER CTA
+   ═══════════════════════════════════════════ */
+.footer-cta {
+  position: relative;
+  padding: 160px 0 80px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.footer-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: clamp(120px, 16vw, 280px);
+  letter-spacing: 12px;
+  text-transform: uppercase;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--border);
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: slow-rotate 60s linear infinite;
+}
+
+@keyframes slow-rotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.footer-headline {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 5vw, 64px);
+  line-height: 1.05;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--fg);
+  margin-bottom: 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-form {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-footnote {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════════
+   BOTTOM BAR
+   ═══════════════════════════════════════════ */
+.bottom-bar {
+  border-top: 1px solid var(--border);
+  padding: 24px 0;
+}
+
+.bottom-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bottom-wordmark {
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.bottom-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+
+.bottom-links a {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--muted);
+  transition: color 0.3s var(--ease);
+  cursor: none;
+}
+
+.bottom-links a:hover { color: var(--fg); }
+
+.bottom-copy {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .bottom-inner {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Custom cursor -->
+<div class="cursor-dot" id="cursor"></div>
+
+<!-- ═══════════════════════════════════════════
+     NAV
+     ═══════════════════════════════════════════ -->
+<nav class="nav" id="nav">
+  <a href="#" class="nav-wordmark">NEXRA</a>
+  <ul class="nav-links">
+    <li><a href="#how" data-scroll>How it works</a></li>
+    <li><a href="#why" data-scroll>Why Nexra</a></li>
+    <li><a href="https://github.com/nexra" target="_blank" rel="noopener">GitHub</a></li>
+  </ul>
+  <a href="#footer-cta" class="nav-cta" data-scroll>Request access</a>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     HERO
+     ═══════════════════════════════════════════ -->
+<section class="hero" id="hero">
+  <div class="hero-watermark" id="hero-watermark">NEXRA</div>
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-left">
+        <span class="hero-eyebrow" id="hero-eyebrow">Control plane for AI agents</span>
+        <h1 class="hero-headline" id="hero-headline">
+          <span class="line" data-line>Every</span>
+          <span class="line" data-line>agent,</span>
+          <span class="line" data-line>governed.</span>
+        </h1>
+      </div>
+      <div class="hero-right" id="hero-right">
+        <div class="hero-body">
+          <p>Nexra wraps any multi-agent system with a policy engine, spend metering, and an immutable audit trail. No framework migration required.</p>
+          <p>Works with LangGraph, CrewAI, A2A, and anything that handles a signed webhook. Registry, discovery, delegation, and governance — in one API.</p>
+        </div>
+        <form class="waitlist-form" id="waitlist-hero" onsubmit="return handleWaitlist(event, this)">
+          <input type="email" class="waitlist-input" placeholder="you@company.com" required>
+          <button type="submit" class="waitlist-btn">Join waitlist</button>
+        </form>
+        <span class="hero-footnote">Invite-only. Q2 2026.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     TICKER
+     ═══════════════════════════════════════════ -->
+<div class="ticker">
+  <div class="ticker-track" id="ticker-track">
+    <span class="ticker-item">Policy engine</span>
+    <span class="ticker-item">Spend metering</span>
+    <span class="ticker-item">Immutable audit log</span>
+    <span class="ticker-item">Circuit breakers</span>
+    <span class="ticker-item">Agent discovery</span>
+    <span class="ticker-item">Human-in-the-loop gates</span>
+    <span class="ticker-item">HMAC-signed delegation</span>
+    <span class="ticker-item">LangGraph compatible</span>
+    <span class="ticker-item">CrewAI compatible</span>
+    <span class="ticker-item">A2A native</span>
+    <!-- Duplicate for seamless loop -->
+    <span class="ticker-item">Policy engine</span>
+    <span class="ticker-item">Spend metering</span>
+    <span class="ticker-item">Immutable audit log</span>
+    <span class="ticker-item">Circuit breakers</span>
+    <span class="ticker-item">Agent discovery</span>
+    <span class="ticker-item">Human-in-the-loop gates</span>
+    <span class="ticker-item">HMAC-signed delegation</span>
+    <span class="ticker-item">LangGraph compatible</span>
+    <span class="ticker-item">CrewAI compatible</span>
+    <span class="ticker-item">A2A native</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PROBLEM
+     ═══════════════════════════════════════════ -->
+<section class="problem" id="problem">
+  <div class="container">
+    <span class="section-label reveal"><span class="counter" data-count="1">00</span> — The problem</span>
+    <div class="problem-grid">
+      <div class="reveal">
+        <h2 class="problem-headline">Agents don't have a compliance layer.</h2>
+      </div>
+      <div class="problem-body reveal">
+        <p>A2A and MCP solved the protocol layer. Agents can discover each other and delegate tasks. But <strong>there is nothing governing what they are allowed to do</strong> — no authorization model, no spend controls, no record of what happened.</p>
+        <p>Compliance teams are blocking agent deployment. Finance teams cannot explain AI spend. <strong>Engineering teams lose 20–40% of their time</strong> wiring agents together instead of making them better.</p>
+        <p>The protocol works. The governance does not exist. <strong>Every cross-agent interaction is unaudited and unconstrained.</strong> Nexra is the missing layer between the protocol and production.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     HOW IT WORKS
+     ═══════════════════════════════════════════ -->
+<section class="how" id="how">
+  <div class="container">
+    <span class="section-label reveal"><span class="counter" data-count="2">00</span> — How it works</span>
+    <div class="how-grid">
+      <div class="how-step" data-step-delay="0">
+        <div class="how-num">01</div>
+        <h3 class="how-title">Register</h3>
+        <p class="how-desc">Agent publishes capabilities, typed I/O schema, pricing, and SLA to Nexra's registry. Description is embedded for semantic discovery.</p>
+      </div>
+      <div class="how-step" data-step-delay="120">
+        <div class="how-num">02</div>
+        <h3 class="how-title">Discover</h3>
+        <p class="how-desc">Another agent queries at runtime by capability or natural language. Ranked matches filtered by budget, latency, and trust score.</p>
+      </div>
+      <div class="how-step" data-step-delay="240">
+        <div class="how-num">03</div>
+        <h3 class="how-title">Delegate</h3>
+        <p class="how-desc">Policy engine evaluates the delegation. Budget verified, scoped JWT issued, task routed to callee webhook with HMAC-SHA256 signature.</p>
+      </div>
+      <div class="how-step" data-step-delay="360">
+        <div class="how-num">04</div>
+        <h3 class="how-title">Audit</h3>
+        <p class="how-desc">Cost metered, budget updated, immutable audit entry appended, trust score recalculated, billing event queued. Every delegation, governed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     CODE BLOCK
+     ═══════════════════════════════════════════ -->
+<section class="code-section" id="code">
+  <div class="container">
+    <div class="code-block reveal" id="code-block">
+      <span class="code-tab">Quickstart</span>
+      <pre id="code-pre"><span class="code-line"><span class="c-comment"># Install the SDK</span></span>
+<span class="code-line"><span class="c-fn">pip install</span> <span class="c-str">nexra</span></span>
+<span class="code-line"></span>
+<span class="code-line"><span class="c-comment"># Initialize client</span></span>
+<span class="code-line"><span class="c-key">from</span> <span class="c-str">nexra</span> <span class="c-key">import</span> <span class="c-str">NexraClient</span></span>
+<span class="code-line"><span class="c-fn">client</span> <span class="c-key">=</span> <span class="c-str">NexraClient</span>(<span class="c-key">api_key=</span><span class="c-val">"nx_live_..."</span>)</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="c-comment"># Register an agent</span></span>
+<span class="code-line"><span class="c-fn">client.register</span>(</span>
+<span class="code-line">    <span class="c-key">agent_id=</span><span class="c-val">"research-agent-v2"</span>,</span>
+<span class="code-line">    <span class="c-key">capability_type=</span><span class="c-val">"research"</span>,</span>
+<span class="code-line">    <span class="c-key">webhook_url=</span><span class="c-val">"https://your-agent.com/execute"</span>,</span>
+<span class="code-line">    <span class="c-key">pricing=</span>{<span class="c-val">"per_call_usd"</span>: <span class="c-val">0.15</span>}</span>
+<span class="code-line">)</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="c-comment"># Discover + delegate in one call</span></span>
+<span class="code-line"><span class="c-fn">result</span> <span class="c-key">=</span> <span class="c-key">await</span> <span class="c-fn">client.hire</span>(</span>
+<span class="code-line">    <span class="c-key">capability=</span><span class="c-val">"research"</span>,</span>
+<span class="code-line">    <span class="c-key">task=</span>{<span class="c-val">"company"</span>: <span class="c-val">"Acme Corp"</span>},</span>
+<span class="code-line">    <span class="c-key">budget_cap=</span><span class="c-val">0.25</span></span>
+<span class="code-line">)</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     WHY NEXRA
+     ═══════════════════════════════════════════ -->
+<section class="why" id="why">
+  <div class="container">
+    <span class="section-label reveal"><span class="counter" data-count="3">00</span> — Why Nexra</span>
+    <div class="why-row" data-row-delay="0">
+      <span class="why-num">01</span>
+      <h3 class="why-title">Framework agnostic</h3>
+      <p class="why-desc">Works with any agent that can receive a signed HTTPS webhook. LangGraph, CrewAI, Bedrock, A2A-native, or custom Python — no migration, no lock-in. Add Nexra to your existing stack in under an hour.</p>
+    </div>
+    <div class="why-row" data-row-delay="100">
+      <span class="why-num">02</span>
+      <h3 class="why-title">Compliance-first</h3>
+      <p class="why-desc">Immutable audit trail built for regulators. YAML-defined policies evaluated on every delegation. Spend caps enforced before the webhook fires. Structured for SOC 2, GDPR, and HIPAA compliance exports.</p>
+    </div>
+    <div class="why-row" data-row-delay="200">
+      <span class="why-num">03</span>
+      <h3 class="why-title">Ships in hours</h3>
+      <p class="why-desc">pip install nexra. Three lines to register an agent. One call to discover and delegate. Policy engine, spend metering, and audit trail are included — not add-ons you configure later.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     FOOTER CTA
+     ═══════════════════════════════════════════ -->
+<section class="footer-cta" id="footer-cta">
+  <div class="footer-watermark">CONTROL</div>
+  <div class="container">
+    <h2 class="footer-headline reveal">Ready to govern<br>your agents?</h2>
+    <div class="footer-form reveal">
+      <form class="waitlist-form" id="waitlist-footer" onsubmit="return handleWaitlist(event, this)">
+        <input type="email" class="waitlist-input" placeholder="you@company.com" required>
+        <button type="submit" class="waitlist-btn">Join waitlist</button>
+      </form>
+    </div>
+    <p class="footer-footnote reveal">No credit card. Invite-only access begins Q2 2026.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     BOTTOM BAR
+     ═══════════════════════════════════════════ -->
+<footer class="bottom-bar">
+  <div class="container">
+    <div class="bottom-inner">
+      <span class="bottom-wordmark">NEXRA</span>
+      <ul class="bottom-links">
+        <li><a href="https://github.com/nexra" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="mailto:parth@usenexra.com">Contact</a></li>
+        <li><a href="https://x.com/usenexra" target="_blank" rel="noopener">X</a></li>
+      </ul>
+      <span class="bottom-copy">&copy; 2026 Nexra</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════
+   CUSTOM CURSOR
+   ═══════════════════════════════════════════ */
+(function() {
+  const cursor = document.getElementById('cursor');
+  let cx = -100, cy = -100;
+
+  document.addEventListener('mousemove', function(e) {
+    cx = e.clientX;
+    cy = e.clientY;
+    cursor.style.left = cx + 'px';
+    cursor.style.top = cy + 'px';
+  });
+
+  const hoverables = 'a, button, input, .how-step, .why-row, .ticker';
+  document.addEventListener('mouseover', function(e) {
+    if (e.target.closest(hoverables)) cursor.classList.add('expanded');
+  });
+  document.addEventListener('mouseout', function(e) {
+    if (e.target.closest(hoverables)) cursor.classList.remove('expanded');
+  });
+
+  if ('ontouchstart' in window) {
+    cursor.style.display = 'none';
+    document.body.style.cursor = 'auto';
+  }
+})();
+
+/* ═══════════════════════════════════════════
+   PAGE LOAD SEQUENCE
+   ═══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    document.body.style.transition = 'opacity 0.3s ease';
+    document.body.style.opacity = '1';
+  }, 50);
+
+  var nav = document.getElementById('nav');
+  nav.style.opacity = '0';
+  nav.style.transition = 'opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+  setTimeout(function() { nav.style.opacity = '1'; }, 200);
+
+  var eyebrow = document.getElementById('hero-eyebrow');
+  setTimeout(function() {
+    eyebrow.style.transition = 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+    eyebrow.style.opacity = '1';
+  }, 400);
+
+  setTimeout(function() { animateHeadline(); }, 600);
+
+  var heroRight = document.getElementById('hero-right');
+  setTimeout(function() {
+    heroRight.style.transition = 'opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
+    heroRight.style.transform = 'translateY(0)';
+    heroRight.style.opacity = '1';
+  }, 900);
+  heroRight.style.transform = 'translateY(20px)';
+});
+
+/* ═══════════════════════════════════════════
+   HERO HEADLINE CHARACTER SPLIT
+   ═══════════════════════════════════════════ */
+function animateHeadline() {
+  var lines = document.querySelectorAll('[data-line]');
+  var charIndex = 0;
+
+  lines.forEach(function(line) {
+    var text = line.textContent;
+    line.textContent = '';
+    for (var i = 0; i < text.length; i++) {
+      var span = document.createElement('span');
+      span.className = 'char';
+      span.textContent = text[i] === ' ' ? '\u00A0' : text[i];
+      line.appendChild(span);
+
+      (function(el, delay) {
+        setTimeout(function() {
+          el.style.transition = 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
+          el.style.transform = 'translateY(0)';
+          el.style.opacity = '1';
+        }, delay);
+      })(span, charIndex * 30);
+
+      charIndex++;
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════
+   NAV SCROLL BORDER
+   ═══════════════════════════════════════════ */
+(function() {
+  var nav = document.getElementById('nav');
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 10) {
+      nav.classList.add('scrolled');
+    } else {
+      nav.classList.remove('scrolled');
+    }
+  }, { passive: true });
+})();
+
+/* ═══════════════════════════════════════════
+   HERO WATERMARK PARALLAX
+   ═══════════════════════════════════════════ */
+(function() {
+  var wm = document.getElementById('hero-watermark');
+  window.addEventListener('scroll', function() {
+    var y = window.scrollY;
+    wm.style.transform = 'translate(-50%, calc(-50% - ' + (y * 0.3) + 'px))';
+  }, { passive: true });
+})();
+
+/* ═══════════════════════════════════════════
+   SECTION REVEAL (IntersectionObserver)
+   ═══════════════════════════════════════════ */
+(function() {
+  var reveals = document.querySelectorAll('.reveal');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  reveals.forEach(function(el) { observer.observe(el); });
+})();
+
+/* ═══════════════════════════════════════════
+   SECTION NUMBER COUNTER ANIMATION
+   ═══════════════════════════════════════════ */
+(function() {
+  var counters = document.querySelectorAll('.counter[data-count]');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var el = entry.target;
+        var target = parseInt(el.getAttribute('data-count'), 10);
+        var current = 0;
+        var targetStr = target.toString().padStart(2, '0');
+        var interval = setInterval(function() {
+          current++;
+          el.textContent = current.toString().padStart(2, '0');
+          if (current >= target) {
+            clearInterval(interval);
+            el.textContent = targetStr;
+          }
+        }, 60);
+        observer.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  counters.forEach(function(el) { observer.observe(el); });
+})();
+
+/* ═══════════════════════════════════════════
+   HOW IT WORKS — STAGGERED COLUMN REVEAL
+   ═══════════════════════════════════════════ */
+(function() {
+  var steps = document.querySelectorAll('.how-step');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var delay = parseInt(entry.target.getAttribute('data-step-delay') || '0', 10);
+        setTimeout(function() {
+          entry.target.style.transition = 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+          entry.target.classList.add('visible');
+        }, delay);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  steps.forEach(function(el) { observer.observe(el); });
+})();
+
+/* ═══════════════════════════════════════════
+   WHY NEXRA — SLIDE-IN FROM LEFT
+   ═══════════════════════════════════════════ */
+(function() {
+  var rows = document.querySelectorAll('.why-row');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var delay = parseInt(entry.target.getAttribute('data-row-delay') || '0', 10);
+        setTimeout(function() {
+          entry.target.classList.add('visible');
+        }, delay);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  rows.forEach(function(el) { observer.observe(el); });
+})();
+
+/* ═══════════════════════════════════════════
+   CODE BLOCK LINE REVEAL
+   ═══════════════════════════════════════════ */
+(function() {
+  var block = document.getElementById('code-block');
+  var lines = block.querySelectorAll('.code-line');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        lines.forEach(function(line, i) {
+          setTimeout(function() {
+            line.classList.add('visible');
+          }, i * 40);
+        });
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  observer.observe(block);
+})();
+
+/* ═══════════════════════════════════════════
+   SMOOTH ANCHOR SCROLL
+   ═══════════════════════════════════════════ */
+(function() {
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  function smoothScroll(target, duration) {
+    var el = document.querySelector(target);
+    if (!el) return;
+    var start = window.scrollY;
+    var end = el.getBoundingClientRect().top + start - 72;
+    var startTime = null;
+
+    function step(timestamp) {
+      if (!startTime) startTime = timestamp;
+      var progress = Math.min((timestamp - startTime) / duration, 1);
+      var eased = easeInOutCubic(progress);
+      window.scrollTo(0, start + (end - start) * eased);
+      if (progress < 1) requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  document.querySelectorAll('[data-scroll]').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      var href = this.getAttribute('href');
+      smoothScroll(href, 800);
+    });
+  });
+})();
+
+/* ═══════════════════════════════════════════
+   WAITLIST FORM HANDLER
+   ═══════════════════════════════════════════ */
+function handleWaitlist(e, form) {
+  e.preventDefault();
+  var input = form.querySelector('.waitlist-input');
+  if (!input.value || !input.value.includes('@')) return false;
+
+  var parent = form.parentElement;
+  form.style.transition = 'opacity 0.3s ease';
+  form.style.opacity = '0';
+
+  setTimeout(function() {
+    var msg = document.createElement('span');
+    msg.className = 'waitlist-success';
+    msg.textContent = "You're on the list.";
+    msg.style.opacity = '0';
+    msg.style.transition = 'opacity 0.4s ease';
+    parent.replaceChild(msg, form);
+    setTimeout(function() { msg.style.opacity = '1'; }, 50);
+  }, 300);
+
+  return false;
+}
+</script>
+</body>
+</html>
