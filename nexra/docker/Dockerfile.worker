@@ -1,0 +1,16 @@
+FROM python:3.12-slim AS builder
+WORKDIR /app
+RUN pip install poetry==1.8.0
+COPY pyproject.toml poetry.lock ./
+RUN poetry config virtualenvs.in-project true \
+    && poetry install --no-interaction --no-ansi --no-root
+
+FROM python:3.12-slim AS runtime
+RUN adduser --disabled-password --gecos '' appuser
+WORKDIR /app
+COPY --from=builder /app/.venv ./.venv
+COPY . .
+USER appuser
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app"
+CMD ["celery", "-A", "workers.celery_app", "worker", "--loglevel=info", "-Q", "webhooks,billing,anomaly"]
