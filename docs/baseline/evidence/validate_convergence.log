@@ -1,7 +1,7 @@
 poetry not found; skipping ruff/mypy checks in local validation script
 OpenAPI snapshot check passed
 .................................................................        [100%]
-65 passed in 3.71s
+65 passed in 3.82s
 ....                                                                     [100%]
 =============================== warnings summary ===============================
 tests/contracts/test_api_contracts.py::test_required_dashboard_paths_and_methods_present
@@ -23,7 +23,7 @@ tests/contracts/test_api_contracts.py::test_required_dashboard_paths_and_methods
     return self.router.on_event(event_type)
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-4 passed, 2 warnings in 1.50s
+4 passed, 2 warnings in 1.68s
 
 > nexra-dashboard@0.0.0 build
 > tsc -b && vite build
@@ -56,7 +56,7 @@ dist/assets/AgentDetail-D95NY4Eb.js         7.69 kB │ gzip:   2.35 kB │ map:
 dist/assets/useQuery-CMdczVsP.js           10.47 kB │ gzip:   3.75 kB │ map:    41.07 kB
 dist/assets/index-D_qEOmcW.js             269.46 kB │ gzip:  85.40 kB │ map: 1,458.67 kB
 dist/assets/LineChart-B_-jdrJZ.js         346.01 kB │ gzip: 103.58 kB │ map: 1,799.92 kB
-✓ built in 2.44s
+✓ built in 2.49s
 
 > @nexra/sdk@0.1.0 build
 > tsc

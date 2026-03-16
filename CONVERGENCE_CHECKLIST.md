@@ -6,7 +6,7 @@ This checklist is the release-gate tracker for PRD/TDD convergence.
 - [x] OpenAPI snapshot generated: `docs/baseline/openapi.snapshot.json`
 - [x] Dashboard route map generated: `docs/baseline/dashboard_route_map.md`
 - [x] Validation snapshot generated: `docs/baseline/validation_snapshot.md`
-- [ ] Dedicated stabilization branch created (blocked in sandbox due `.git` ref write permissions)
+- [x] Dedicated stabilization branch created: `stabilization/prd-tdd-convergence`
 
 ## Phase 1 — Core Delegation Correctness
 - [x] Delegation depth derived from parent chain (`parent_delegation_id` + persisted `delegation_depth`)
@@ -41,7 +41,7 @@ This checklist is the release-gate tracker for PRD/TDD convergence.
 ## Phase 5 — CI/CD Hardening
 - [x] CI workflow added for python + dashboard + sdk checks
 - [x] Postgres/Redis services wired for integration/e2e in CI
-- [ ] Branch protection configured in repository settings
+- [ ] Branch protection configured in repository settings (blocked by GitHub plan limitation: private repo requires Pro/public for protection rules)
 - [x] Release workflow with deploy smoke checks
 
 ## Phase 6 — P1/P2 Validation
