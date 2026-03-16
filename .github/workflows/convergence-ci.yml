@@ -74,7 +74,10 @@ jobs:
           poetry run mypy \
             --ignore-missing-imports \
             --allow-untyped-defs \
-            --disable-error-code assignment,type-arg,no-untyped-def,import-untyped \
+            --disable-error-code assignment \
+            --disable-error-code type-arg \
+            --disable-error-code no-untyped-def \
+            --disable-error-code import-untyped \
             services/budget_service.py \
             services/delegation_service.py \
             services/hitl_service.py \
