@@ -25,6 +25,7 @@ from core.errors import (
     OUTPUT_SCHEMA_FAILED,
     POLICY_BLOCKED,
     SCHEMA_VALIDATION_FAILED,
+    INVALID_REQUEST,
     NexraError,
 )
 from core.jwt import issue_delegation_token, verify_delegation_token
@@ -33,6 +34,7 @@ from models.delegation import Delegation
 from models.organization import Organization
 from services.audit_service import AuditService
 from services.budget_service import BudgetService
+from services.marketplace_service import MarketplaceService
 from services.policy_engine import DelegationContext, PolicyEngine
 from services.trust_service import TrustService
 from services.webhook_service import WebhookService
@@ -67,7 +69,7 @@ class DelegationService:
         caller_agent: Agent,
         request: DelegateRequest,
     ) -> DelegationResponse:
-        """Execute the 13-step delegation flow."""
+        """Execute the delegation lifecycle with deterministic budget accounting."""
         start_time = time.perf_counter()
         settings = get_settings()
 
@@ -93,29 +95,73 @@ class DelegationService:
         # Step 4: Estimate cost
         estimated_cost = float(callee.pricing.get("per_call_usd", 0))
 
-        # Step 5: Check budget
+        # Step 5: Compute delegation depth
+        parent_id, depth = await self._derive_depth(str(org.id), request.parent_delegation_id)
+        max_depth = settings.max_delegation_depth_default
+        if depth > max_depth:
+            raise NexraError(400, MAX_DEPTH_EXCEEDED, f"Delegation depth {depth} exceeds limit {max_depth}")
+
+        # Step 6: Create delegation record (policy + budget outcomes are applied below)
+        delegation = Delegation(
+            caller_org_id=org.id,
+            caller_agent_id=caller_agent.agent_id,
+            callee_org_id=callee.org_id,
+            callee_agent_id=callee.agent_id,
+            task=request.task,
+            task_hash=sha256_json(request.task),
+            context_scope=request.context_scope,
+            policy_id=None,
+            policy_version=None,
+            policy_decision=None,
+            budget_cap_usd=request.budget_cap_usd,
+            estimated_cost_usd=estimated_cost,
+            callback_url=request.callback_url,
+            delegation_depth=depth,
+            parent_delegation_id=parent_id,
+            status="pending",
+        )
+        self.db.add(delegation)
+        await self.db.flush()
+
+        # Step 7: Reserve budget against caller principal
         budget_check = await self.budget_service.check_and_reserve(
-            str(org.id), caller_agent.agent_id, estimated_cost, request.budget_cap_usd
+            str(org.id),
+            caller_agent.agent_id,
+            estimated_cost,
+            request.budget_cap_usd,
+            str(delegation.id),
         )
         if not budget_check.allowed:
+            delegation.status = "blocked"
+            delegation.completed_at = datetime.now(timezone.utc)
+            delegation.actual_cost_usd = 0
+            await self.db.commit()
+            await self.audit_service.append(
+                org_id=str(org.id),
+                event_type="budget_exceeded",
+                actor_agent_id=caller_agent.agent_id,
+                target_agent_id=request.callee_agent_id,
+                details={
+                    "reason": budget_check.reason,
+                    "remaining_budget_usd": budget_check.remaining_usd,
+                    "estimated_cost_usd": estimated_cost,
+                    "requested_budget_cap_usd": request.budget_cap_usd,
+                },
+                delegation_id=str(delegation.id),
+            )
             raise NexraError(
-                402, BUDGET_EXCEEDED,
+                402,
+                BUDGET_EXCEEDED,
                 f"Budget exceeded: {budget_check.reason}",
                 {"remaining_budget_usd": budget_check.remaining_usd},
             )
 
-        # Step 6: Compute delegation depth
-        depth = 0
-        max_depth = settings.max_delegation_depth_default
-        if depth >= max_depth:
-            raise NexraError(400, MAX_DEPTH_EXCEEDED, f"Delegation depth {depth} exceeds limit {max_depth}")
-
-        # Step 7: Policy evaluation
+        # Step 8: Policy evaluation
         ctx = DelegationContext(
             caller_agent_id=caller_agent.agent_id,
             caller_agent_type=caller_agent.capability_type,
             caller_org_id=str(org.id),
-            caller_budget_remaining_usd=request.budget_cap_usd,
+            caller_budget_remaining_usd=budget_check.remaining_usd,
             callee_agent_id=callee.agent_id,
             callee_agent_type=callee.capability_type,
             callee_trust_score=float(callee.trust_score),
@@ -130,42 +176,42 @@ class DelegationService:
         )
         decision = await self.policy_engine.evaluate(ctx, str(org.id))
 
-        # Step 8: Create delegation record
-        delegation = Delegation(
-            caller_org_id=org.id,
-            caller_agent_id=caller_agent.agent_id,
-            callee_org_id=callee.org_id,
-            callee_agent_id=callee.agent_id,
-            task=request.task,
-            task_hash=sha256_json(request.task),
-            context_scope=request.context_scope,
-            policy_id=decision.policy_id,
-            policy_version=decision.policy_version,
-            policy_decision=decision.decision,
-            budget_cap_usd=request.budget_cap_usd,
-            estimated_cost_usd=estimated_cost,
-            callback_url=request.callback_url,
-            delegation_depth=depth,
-            status="pending",
-        )
+        delegation.policy_id = decision.policy_id
+        delegation.policy_version = decision.policy_version
+        delegation.policy_decision = decision.decision
 
         # Audit: policy evaluated
         await self.audit_service.append(
             org_id=str(org.id), event_type="policy_evaluated",
             actor_agent_id=caller_agent.agent_id, target_agent_id=callee.agent_id,
-            details={"decision": decision.decision, "policy_id": decision.policy_id, "reason": decision.reason},
-            delegation_id=str(delegation.id) if hasattr(delegation, "id") and delegation.id else None,
+            details={
+                "decision": decision.decision,
+                "policy_id": decision.policy_id,
+                "policy_version": decision.policy_version,
+                "reason": decision.reason,
+            },
+            delegation_id=str(delegation.id),
         )
 
         # Step 9: Handle non-allow decisions
         if decision.decision == "block":
             delegation.status = "blocked"
-            self.db.add(delegation)
+            delegation.completed_at = datetime.now(timezone.utc)
+            delegation.actual_cost_usd = 0
             await self.db.commit()
+            await self.budget_service.release(
+                str(org.id),
+                caller_agent.agent_id,
+                str(delegation.id),
+            )
             await self.audit_service.append(
                 org_id=str(org.id), event_type="delegation_blocked",
                 actor_agent_id=caller_agent.agent_id, target_agent_id=callee.agent_id,
-                details={"reason": decision.reason, "policy_id": decision.policy_id},
+                details={
+                    "reason": decision.reason,
+                    "policy_id": decision.policy_id,
+                    "policy_version": decision.policy_version,
+                },
                 delegation_id=str(delegation.id),
             )
             raise NexraError(
@@ -175,8 +221,19 @@ class DelegationService:
 
         if decision.decision == "pause":
             delegation.status = "pending_approval"
-            self.db.add(delegation)
             await self.db.commit()
+            await self.audit_service.append(
+                org_id=str(org.id),
+                event_type="hil_triggered",
+                actor_agent_id=caller_agent.agent_id,
+                target_agent_id=callee.agent_id,
+                details={
+                    "reason": decision.reason,
+                    "policy_id": decision.policy_id,
+                    "policy_version": decision.policy_version,
+                },
+                delegation_id=str(delegation.id),
+            )
             return DelegationResponse(
                 delegation_id=str(delegation.id),
                 status="pending_approval",
@@ -207,7 +264,6 @@ class DelegationService:
 
         # Step 12: Deliver webhook
         delegation.status = "in_flight"
-        self.db.add(delegation)
         await self.db.commit()
 
         await self.audit_service.append(
@@ -228,12 +284,23 @@ class DelegationService:
         except NexraError as e:
             delegation.status = "timeout" if e.code == "DELEGATION_TIMEOUT" else "failed"
             delegation.completed_at = datetime.now(timezone.utc)
+            delegation.actual_cost_usd = 0
             await self.db.commit()
+            await self.budget_service.release(
+                str(org.id),
+                caller_agent.agent_id,
+                str(delegation.id),
+            )
             event_type = "delegation_timeout" if e.code == "DELEGATION_TIMEOUT" else "delegation_failed"
             await self.audit_service.append(
                 org_id=str(org.id), event_type=event_type,
                 actor_agent_id=caller_agent.agent_id, target_agent_id=callee.agent_id,
-                details={"error_code": e.code, "error_message": e.message},
+                details={
+                    "error_code": e.code,
+                    "error_message": e.message,
+                    "policy_id": decision.policy_id,
+                    "policy_version": decision.policy_version,
+                },
                 delegation_id=str(delegation.id),
             )
             raise
@@ -250,15 +317,25 @@ class DelegationService:
         delegation.completed_at = datetime.now(timezone.utc)
         await self.db.commit()
 
-        await self.budget_service.settle(str(org.id), callee.agent_id, actual_cost)
+        await self.budget_service.settle(
+            str(org.id),
+            caller_agent.agent_id,
+            str(delegation.id),
+            actual_cost,
+        )
         await self.trust_service.update_after_delegation(callee.agent_id, str(callee.org_id), delegation)
         result_keys = list(callee_response.get("result", {}).keys()) if isinstance(callee_response.get("result"), dict) else []
         await self.audit_service.append(
             org_id=str(org.id), event_type="delegation_completed",
             actor_agent_id=caller_agent.agent_id, target_agent_id=callee.agent_id,
-            details={"result_keys": result_keys},
+            details={
+                "result_keys": result_keys,
+                "policy_id": decision.policy_id,
+                "policy_version": decision.policy_version,
+            },
             delegation_id=str(delegation.id), cost_usd=actual_cost,
         )
+        await self._maybe_settle_marketplace_payout(delegation, actual_cost)
 
         return DelegationResponse(
             delegation_id=str(delegation.id),
@@ -275,6 +352,25 @@ class DelegationService:
                 llm_tokens=delegation.llm_tokens,
             ),
         )
+
+    async def _derive_depth(self, org_id: str, parent_delegation_id: str | None) -> tuple[str | None, int]:
+        if not parent_delegation_id:
+            return None, 0
+
+        result = await self.db.execute(
+            select(Delegation).where(
+                Delegation.id == parent_delegation_id,
+                Delegation.caller_org_id == org_id,
+            )
+        )
+        parent = result.scalar_one_or_none()
+        if not parent:
+            raise NexraError(
+                400,
+                INVALID_REQUEST,
+                f"parent_delegation_id '{parent_delegation_id}' not found in caller org",
+            )
+        return str(parent.id), int(parent.delegation_depth) + 1
 
     async def complete(
         self,
@@ -319,16 +415,88 @@ class DelegationService:
         delegation.status = "completed"
         delegation.result = result
         delegation.completed_at = datetime.now(timezone.utc)
+
+        external_cost = 0.0
         if usage:
             delegation.llm_tokens = usage.get("llm_tokens")
-            external_cost = usage.get("external_api_cost_usd", 0)
-            delegation.actual_cost_usd = float(delegation.estimated_cost_usd or 0) + float(external_cost)
+            external_cost = float(usage.get("external_api_cost_usd", 0) or 0)
+        actual_cost = float(delegation.estimated_cost_usd or 0) + external_cost
+        delegation.actual_cost_usd = actual_cost
         await self.db.commit()
+
+        await self.budget_service.settle(
+            str(delegation.caller_org_id),
+            delegation.caller_agent_id,
+            str(delegation.id),
+            actual_cost,
+        )
+        await self.trust_service.update_after_delegation(
+            delegation.callee_agent_id,
+            str(delegation.callee_org_id),
+            delegation,
+        )
+        await self.audit_service.append(
+            org_id=str(delegation.caller_org_id),
+            event_type="delegation_completed",
+            actor_agent_id=delegation.caller_agent_id,
+            target_agent_id=delegation.callee_agent_id,
+            details={
+                "result_keys": list(result.keys()) if isinstance(result, dict) else [],
+                "policy_id": str(delegation.policy_id) if delegation.policy_id else None,
+                "policy_version": delegation.policy_version,
+                "completion_mode": "callee_complete_endpoint",
+            },
+            delegation_id=str(delegation.id),
+            cost_usd=actual_cost,
+        )
+        await self._maybe_settle_marketplace_payout(delegation, actual_cost)
 
         return DelegationResponse(
             delegation_id=str(delegation.id),
             status="completed",
+            policy_result=PolicyResultResponse(
+                policy_id=str(delegation.policy_id) if delegation.policy_id else None,
+                policy_version=delegation.policy_version,
+                decision=delegation.policy_decision or "allow",
+            ),
             result=result,
+            usage=UsageResponse(
+                cost_usd=actual_cost,
+                latency_ms=delegation.latency_ms or 0,
+                llm_tokens=delegation.llm_tokens,
+            ),
+        )
+
+    async def _maybe_settle_marketplace_payout(
+        self, delegation: Delegation, actual_cost: float
+    ) -> None:
+        if actual_cost <= 0:
+            return
+        if not delegation.callee_org_id:
+            return
+        if delegation.caller_org_id == delegation.callee_org_id:
+            return
+
+        marketplace = MarketplaceService(self.db)
+        await marketplace.create_pending_payout(
+            delegation=delegation,
+            callee_org_id=str(delegation.callee_org_id),
+            amount_usd=actual_cost,
+        )
+        settled = await marketplace.settle_pending_payouts()
+        await self.audit_service.append(
+            org_id=str(delegation.caller_org_id),
+            event_type="marketplace_payout",
+            actor_agent_id=delegation.caller_agent_id,
+            target_agent_id=delegation.callee_agent_id,
+            details={
+                "delegation_id": str(delegation.id),
+                "gross_amount_usd": actual_cost,
+                "platform_fee_rate": 0.20,
+                "settled_count": settled,
+            },
+            delegation_id=str(delegation.id),
+            cost_usd=actual_cost,
         )
 
     async def get_status(self, org_id: str, delegation_id: str) -> Delegation:

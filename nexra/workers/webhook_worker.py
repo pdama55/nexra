@@ -9,10 +9,14 @@ from workers.celery_app import celery_app
 
 logger = logging.getLogger("nexra.workers.webhook")
 
-DLQ_MAX_RETRIES = 5
+DLQ_MAX_RETRIES = 3
 
 
-@celery_app.task(bind=True, max_retries=DLQ_MAX_RETRIES, default_retry_delay=10)
+class NonRetryableWebhookError(Exception):
+    """Raised for webhook responses that must not be retried."""
+
+
+@celery_app.task(bind=True, max_retries=DLQ_MAX_RETRIES, default_retry_delay=2)
 def deliver_webhook_async(
     self,
     webhook_url: str,
@@ -28,8 +32,14 @@ def deliver_webhook_async(
         asyncio.run(
             _deliver(webhook_url, payload, webhook_secret, delegation_id)
         )
+    except NonRetryableWebhookError as exc:
+        logger.error(
+            "Webhook delivery non-retryable failure for %s: %s",
+            delegation_id,
+            exc,
+        )
     except Exception as exc:
-        backoff = min(10 * (2 ** self.request.retries), 300)
+        backoff = min(2 * (2 ** self.request.retries), 30)
         logger.warning(
             f"Webhook delivery failed for {delegation_id}, "
             f"retry {self.request.retries + 1}/{DLQ_MAX_RETRIES} in {backoff}s: {exc}"
@@ -59,4 +69,8 @@ async def _deliver(
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.post(webhook_url, content=body_bytes, headers=headers)
+        if resp.status_code in (401, 403):
+            raise NonRetryableWebhookError(
+                f"received {resp.status_code}; stopping retries"
+            )
         resp.raise_for_status()

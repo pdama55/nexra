@@ -1,0 +1,49 @@
+"""add marketplace_payout to audit_log event constraint
+
+Revision ID: 005
+Revises: 004
+Create Date: 2026-03-16
+"""
+
+from alembic import op
+import sqlalchemy as sa
+
+revision = "005"
+down_revision = "004"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.drop_constraint("ck_audit_log_event_type", "audit_log", type_="check")
+    op.create_check_constraint(
+        "ck_audit_log_event_type",
+        "audit_log",
+        "("
+        "event_type IN ("
+        "'policy_evaluated','delegation_initiated','delegation_completed',"
+        "'delegation_failed','delegation_blocked','delegation_timeout',"
+        "'agent_quarantined','agent_activated','budget_exceeded',"
+        "'hil_triggered','hil_approved','hil_expired',"
+        "'anomaly_detected','circuit_breaker_tripped',"
+        "'marketplace_payout'"
+        ")"
+        ")",
+    )
+
+
+def downgrade() -> None:
+    op.drop_constraint("ck_audit_log_event_type", "audit_log", type_="check")
+    op.create_check_constraint(
+        "ck_audit_log_event_type",
+        "audit_log",
+        "("
+        "event_type IN ("
+        "'policy_evaluated','delegation_initiated','delegation_completed',"
+        "'delegation_failed','delegation_blocked','delegation_timeout',"
+        "'agent_quarantined','agent_activated','budget_exceeded',"
+        "'hil_triggered','hil_approved','hil_expired',"
+        "'anomaly_detected','circuit_breaker_tripped'"
+        ")"
+        ")",
+    )

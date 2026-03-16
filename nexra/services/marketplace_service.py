@@ -19,7 +19,7 @@ logger = logging.getLogger("nexra.services.marketplace")
 class MarketplaceService:
     """Stripe Connect marketplace settlement for cross-org delegations."""
 
-    PLATFORM_FEE_RATE = Decimal("0.10")  # 10% platform fee
+    PLATFORM_FEE_RATE = Decimal("0.20")  # 20% platform fee
 
     def __init__(self, db: AsyncSession) -> None:
         self.db = db

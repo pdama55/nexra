@@ -72,3 +72,8 @@ class PolicyResponse(BaseModel):
 class PolicyListResponse(BaseModel):
     policies: list[PolicyResponse]
     total_count: int
+
+
+class PolicyVersionsResponse(BaseModel):
+    policy_id: str
+    versions: list[PolicyResponse]

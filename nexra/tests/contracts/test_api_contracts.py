@@ -1,0 +1,115 @@
+"""Contract tests for dashboard-consumed API surface."""
+
+import json
+import os
+from pathlib import Path
+from typing import Any
+
+
+def _required_env() -> dict[str, str]:
+    return {
+        "DATABASE_URL": "postgresql+asyncpg://user:pass@localhost:5432/nexra",
+        "REDIS_URL": "redis://localhost:6379/0",
+        "OPENAI_API_KEY": "test-openai-key",
+        "STRIPE_SECRET_KEY": "test-stripe-key",
+        "STRIPE_WEBHOOK_SECRET": "test-stripe-whsec",
+        "STRIPE_DELEGATION_METER_ID": "meter_test",
+        "SECRET_KEY_ENCRYPTION_KEY": "a" * 64,
+    }
+
+
+def _openapi() -> dict[str, Any]:
+    env = _required_env()
+    for key, value in env.items():
+        os.environ.setdefault(key, value)
+
+    from api.main import app
+
+    return app.openapi()
+
+
+def _resolve_schema(schema: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
+    if "$ref" not in schema:
+        return schema
+    ref = schema["$ref"]
+    assert ref.startswith("#/components/schemas/")
+    name = ref.replace("#/components/schemas/", "")
+    return spec["components"]["schemas"][name]
+
+
+def _json_response_schema(spec: dict[str, Any], path: str, method: str = "get") -> dict[str, Any]:
+    method_obj = spec["paths"][path][method]
+    response = method_obj["responses"]["200"]
+    content = response["content"]["application/json"]
+    return _resolve_schema(content["schema"], spec)
+
+
+def test_required_dashboard_paths_and_methods_present() -> None:
+    spec = _openapi()
+    paths = spec.get("paths", {})
+    required = {
+        "/v1/analytics/usage": "get",
+        "/v1/delegations": "get",
+        "/v1/delegations/{delegation_id}": "get",
+        "/v1/agents/registry": "get",
+        "/v1/audit/log": "get",
+        "/v1/policies": "get",
+        "/v1/policies/{policy_id}": "get",
+        "/v1/policies/{policy_id}/versions": "get",
+        "/v1/spend/summary": "get",
+        "/v1/agents/{agent_ref}/trust": "get",
+    }
+    for path, method in required.items():
+        assert path in paths, f"Missing required API path in OpenAPI: {path}"
+        assert method in paths[path], f"Missing required method {method} for path: {path}"
+
+
+def test_required_json_endpoints_use_data_meta_envelope() -> None:
+    spec = _openapi()
+    envelope_paths = [
+        "/v1/analytics/usage",
+        "/v1/delegations",
+        "/v1/delegations/{delegation_id}",
+        "/v1/agents/registry",
+        "/v1/audit/log",
+        "/v1/policies",
+        "/v1/policies/{policy_id}",
+        "/v1/policies/{policy_id}/versions",
+        "/v1/spend/summary",
+        "/v1/agents/{agent_ref}/trust",
+    ]
+    for path in envelope_paths:
+        schema = _json_response_schema(spec, path)
+        properties = schema.get("properties", {})
+        assert "data" in properties, f"{path} must expose envelope.data"
+        assert "meta" in properties, f"{path} must expose envelope.meta"
+        required = schema.get("required", [])
+        assert "data" in required, f"{path} must require data"
+
+
+def test_enums_and_required_fields_for_dashboard_contracts() -> None:
+    spec = _openapi()
+    components = spec.get("components", {}).get("schemas", {})
+
+    delegations_schema = _json_response_schema(spec, "/v1/delegations/{delegation_id}")
+    assert "data" in delegations_schema.get("properties", {})
+    assert "meta" in delegations_schema.get("properties", {})
+
+    policy_result = components.get("PolicyResultResponse")
+    if policy_result is not None:
+        assert "decision" in policy_result.get("properties", {})
+
+    delegate_request = components.get("DelegateRequest")
+    assert delegate_request is not None
+    request_required = set(delegate_request.get("required", []))
+    assert {"callee_agent_id", "task", "budget_cap_usd"}.issubset(request_required)
+
+
+def test_openapi_snapshot_contains_required_paths() -> None:
+    snapshot_path = Path(__file__).resolve().parents[3] / "docs" / "baseline" / "openapi.snapshot.json"
+    assert snapshot_path.exists(), f"Missing OpenAPI snapshot: {snapshot_path}"
+    snapshot = json.loads(snapshot_path.read_text())
+    paths = snapshot.get("paths", {})
+    assert "/v1/analytics/usage" in paths
+    assert "/v1/delegations" in paths
+    assert "/v1/delegations/{delegation_id}" in paths

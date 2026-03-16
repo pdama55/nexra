@@ -15,6 +15,7 @@ from api.schemas.delegations import DelegateRequest
 from core.crypto import encrypt_aes_gcm, generate_api_key, generate_org_jwt_secret
 from core.errors import NexraError
 from models.delegation import Delegation
+from models.agent_budget import AgentBudget
 from models.organization import Organization
 from models.policy import Policy
 from services.agent_service import AgentService
@@ -189,6 +190,18 @@ class TestDelegationWithPolicy:
             assert result.status == "completed"
             assert result.delegation_id is not None
             assert result.result is not None
+
+            budget_result = await db_session.execute(
+                select(AgentBudget).where(
+                    AgentBudget.org_id == org.id,
+                    AgentBudget.agent_id.in_(["caller-agent-2", "callee-agent-2"]),
+                )
+            )
+            budget_rows = list(budget_result.scalars().all())
+            caller_rows = [r for r in budget_rows if r.agent_id == "caller-agent-2"]
+            callee_rows = [r for r in budget_rows if r.agent_id == "callee-agent-2"]
+            assert caller_rows, "caller budget rows must exist after settlement"
+            assert not callee_rows, "callee budget rows must not be charged for caller-initiated delegation"
         finally:
             await redis_client.aclose()
 
@@ -236,5 +249,65 @@ class TestDelegationHiTL:
 
             assert result.status == "pending_approval"
             assert result.poll_url is not None
+        finally:
+            await redis_client.aclose()
+
+
+class TestDelegationDepth:
+    @pytest.mark.asyncio
+    async def test_parent_delegation_increments_depth(self, db_session: AsyncSession) -> None:
+        org = await _create_org(db_session)
+        await _register_agent(db_session, str(org.id), "depth-caller")
+        await _register_agent(db_session, str(org.id), "depth-callee", "analysis")
+
+        await _add_policy(db_session, org.id, {
+            "allow": {},
+            "conditions": [],
+            "on_violation": "block_and_alert",
+        })
+
+        redis_client = aioredis.from_url("redis://localhost:6379/1", decode_responses=True)
+        try:
+            policy_engine = PolicyEngine(redis_client, db_session)
+            budget_service = BudgetService(db_session)
+            audit_service = AuditService(db_session)
+            trust_service = TrustService(db_session)
+            webhook_service = WebhookService()
+            webhook_service.deliver_and_await = AsyncMock(
+                return_value={"result": {"answer": "ok"}, "usage": {"llm_tokens": 1}}
+            )
+            service = DelegationService(
+                db_session, redis_client, policy_engine,
+                webhook_service, budget_service, audit_service, trust_service,
+            )
+            caller = await AgentService(db_session, _mock_openai()).get_by_agent_id(
+                str(org.id), "depth-caller"
+            )
+            first = await service.initiate(
+                org,
+                caller,
+                DelegateRequest(
+                    callee_agent_id="depth-callee",
+                    task={"input": {"query": "depth one"}},
+                    budget_cap_usd=1.0,
+                ),
+            )
+            second = await service.initiate(
+                org,
+                caller,
+                DelegateRequest(
+                    callee_agent_id="depth-callee",
+                    task={"input": {"query": "depth two"}},
+                    budget_cap_usd=1.0,
+                    parent_delegation_id=first.delegation_id,
+                ),
+            )
+            result = await db_session.execute(
+                select(Delegation).where(Delegation.id == second.delegation_id)
+            )
+            nested = result.scalar_one_or_none()
+            assert nested is not None
+            assert nested.delegation_depth == 1
+            assert str(nested.parent_delegation_id) == first.delegation_id
         finally:
             await redis_client.aclose()

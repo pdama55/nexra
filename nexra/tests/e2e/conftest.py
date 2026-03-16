@@ -1,10 +1,13 @@
 """Shared fixtures for E2E tests — same setup as integration."""
 
+import os
+
 import pytest_asyncio
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
+from core.config import get_settings
 from models import Base
 
 TEST_DATABASE_URL = "postgresql+asyncpg://nexra:nexra@localhost:5432/nexra_test"
@@ -15,6 +18,8 @@ _tables_created = False
 @pytest_asyncio.fixture
 async def db_session() -> AsyncSession:
     global _tables_created
+    os.environ["SECRET_KEY_ENCRYPTION_KEY"] = "a" * 64
+    get_settings.cache_clear()
     engine = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
 
     if not _tables_created:
@@ -23,6 +28,33 @@ async def db_session() -> AsyncSession:
             await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "pgcrypto"'))
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
+            await conn.execute(
+                text(
+                    """
+                    CREATE OR REPLACE FUNCTION audit_log_immutable() RETURNS TRIGGER AS $$
+                    BEGIN
+                        RAISE EXCEPTION 'audit_log rows are immutable - no UPDATE or DELETE permitted';
+                    END;
+                    $$ LANGUAGE plpgsql;
+                    """
+                )
+            )
+            await conn.execute(
+                text(
+                    """
+                    DROP TRIGGER IF EXISTS enforce_audit_immutability ON audit_log;
+                    """
+                )
+            )
+            await conn.execute(
+                text(
+                    """
+                    CREATE TRIGGER enforce_audit_immutability
+                    BEFORE UPDATE OR DELETE ON audit_log
+                    FOR EACH ROW EXECUTE FUNCTION audit_log_immutable();
+                    """
+                )
+            )
         _tables_created = True
 
     factory = async_sessionmaker(engine, expire_on_commit=False)

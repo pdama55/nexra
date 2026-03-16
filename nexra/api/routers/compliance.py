@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import get_authenticated_org
+from api.schemas.common import DataResponse, MetaResponse
 from core.errors import NexraError, INVALID_REQUEST
 from db.session import get_db
 from models.organization import Organization
@@ -14,7 +15,7 @@ from services.compliance_service import ComplianceService
 router = APIRouter(prefix="/compliance", tags=["compliance"])
 
 
-@router.get("/report/{report_type}")
+@router.get("/report/{report_type}", response_model=DataResponse[dict])
 async def generate_compliance_report(
     request: Request,
     report_type: str,
@@ -24,12 +25,20 @@ async def generate_compliance_report(
     db: AsyncSession = Depends(get_db),
 ):
     """Generate a compliance report (soc2, gdpr, hipaa)."""
+    start = datetime.now()
     if report_type not in ("soc2", "gdpr", "hipaa"):
         raise NexraError(400, INVALID_REQUEST, "report_type must be soc2, gdpr, or hipaa")
 
     service = ComplianceService(db)
     report = await service.generate_report(str(org.id), report_type, date_from, date_to)
-    return {"data": report}
+    latency = round((datetime.now() - start).total_seconds() * 1000, 2)
+    return {
+        "data": report,
+        "meta": MetaResponse(
+            request_id=getattr(request.state, "request_id", None),
+            latency_ms=latency,
+        ).model_dump(),
+    }
 
 
 @router.get("/export/csv")

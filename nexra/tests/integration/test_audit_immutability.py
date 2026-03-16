@@ -111,13 +111,13 @@ class TestAuditLogAppend:
         service = AuditService(db_session)
 
         await service.append(
-            org_id=str(org.id), event_type="test_event",
+            org_id=str(org.id), event_type="delegation_completed",
             actor_agent_id="a1", target_agent_id="a2",
             details={"key": "value"}, cost_usd=0.25,
         )
 
         csv_data = await service.export_csv(str(org.id))
-        assert "test_event" in csv_data
+        assert "delegation_completed" in csv_data
         assert "a1" in csv_data
         assert csv_data.startswith("id,")
 
@@ -136,7 +136,7 @@ class TestAuditLogImmutability:
         service = AuditService(db_session)
 
         entry = await service.append(
-            org_id=str(org.id), event_type="immutable_test",
+            org_id=str(org.id), event_type="delegation_initiated",
             actor_agent_id="a1", target_agent_id="a2", details={"original": True},
         )
 
@@ -159,7 +159,7 @@ class TestAuditLogImmutability:
         service = AuditService(db_session)
 
         entry = await service.append(
-            org_id=str(org.id), event_type="delete_test",
+            org_id=str(org.id), event_type="delegation_initiated",
             actor_agent_id="a1", target_agent_id="a2", details={},
         )
 

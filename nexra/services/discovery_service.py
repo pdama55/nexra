@@ -58,10 +58,22 @@ class DiscoveryService:
                 WHERE
                     a.status != 'quarantined'
                     AND a.embedding IS NOT NULL
-                    AND (:capability_type IS NULL OR a.capability_type = :capability_type)
-                    AND (:budget_cap IS NULL OR (a.pricing->>'per_call_usd')::float <= :budget_cap)
-                    AND (:max_latency IS NULL OR (a.sla->>'p99_latency_ms')::int <= :max_latency)
-                    AND (a.org_id = CAST(:caller_org_id AS uuid) OR (a.is_public = TRUE AND :include_cross_org = TRUE))
+                    AND (
+                        CAST(:capability_type AS text) IS NULL
+                        OR a.capability_type = CAST(:capability_type AS text)
+                    )
+                    AND (
+                        CAST(:budget_cap AS float) IS NULL
+                        OR (a.pricing->>'per_call_usd')::float <= CAST(:budget_cap AS float)
+                    )
+                    AND (
+                        CAST(:max_latency AS int) IS NULL
+                        OR (a.sla->>'p99_latency_ms')::int <= CAST(:max_latency AS int)
+                    )
+                    AND (
+                        a.org_id = CAST(:caller_org_id AS uuid)
+                        OR (a.is_public = TRUE AND CAST(:include_cross_org AS boolean) = TRUE)
+                    )
                     AND a.agent_id != ALL(CAST(:exclude_agents AS text[]))
             ),
             price_stats AS (

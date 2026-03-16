@@ -8,6 +8,7 @@ from core.config import get_settings
 from core.errors import DELEGATION_NOT_FOUND, NexraError
 from models.delegation import Delegation
 from services.audit_service import AuditService
+from services.budget_service import BudgetService
 
 logger = logging.getLogger("nexra.services.hitl")
 
@@ -49,7 +50,7 @@ class HiTLService:
 
         audit = AuditService(self.db)
         await audit.append(
-            org_id=org_id, event_type="delegation_approved",
+            org_id=org_id, event_type="hil_approved",
             actor_agent_id=approver, target_agent_id=delegation.callee_agent_id,
             details={"approver": approver},
             delegation_id=delegation_id,
@@ -73,11 +74,14 @@ class HiTLService:
         delegation.completed_at = datetime.now(timezone.utc)
         await self.db.commit()
 
+        budget = BudgetService(self.db)
+        await budget.release(org_id, delegation.caller_agent_id, delegation_id)
+
         audit = AuditService(self.db)
         await audit.append(
-            org_id=org_id, event_type="delegation_rejected",
+            org_id=org_id, event_type="delegation_blocked",
             actor_agent_id=rejector, target_agent_id=delegation.callee_agent_id,
-            details={"rejector": rejector, "reason": reason},
+            details={"rejector": rejector, "reason": reason, "trigger": "hil_rejected"},
             delegation_id=delegation_id,
         )
         return delegation
@@ -92,10 +96,22 @@ class HiTLService:
             )
         )
         stale = list(result.scalars().all())
+        budget = BudgetService(self.db)
+        audit = AuditService(self.db)
         for d in stale:
             d.status = "blocked"
             d.completed_at = datetime.now(timezone.utc)
         if stale:
             await self.db.commit()
+            for d in stale:
+                await budget.release(str(d.caller_org_id), d.caller_agent_id, str(d.id))
+                await audit.append(
+                    org_id=str(d.caller_org_id),
+                    event_type="hil_expired",
+                    actor_agent_id=None,
+                    target_agent_id=d.callee_agent_id,
+                    details={"reason": "approval_ttl_expired"},
+                    delegation_id=str(d.id),
+                )
             logger.info(f"Expired {len(stale)} stale approval requests")
         return len(stale)

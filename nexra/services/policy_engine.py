@@ -51,6 +51,15 @@ class PolicyDecision:
     on_violation: str
 
 
+@dataclass
+class CachedPolicy:
+    id: str
+    name: str
+    priority: int
+    rule_yaml: str
+    version: int
+
+
 class PolicyEngine:
     """Evaluates delegation policies for an organization.
 
@@ -225,7 +234,7 @@ class PolicyEngine:
 
     # ─── Policy Loading with Cache ────────────────────────────
 
-    async def _load_policies(self, org_id: str) -> list[Policy]:
+    async def _load_policies(self, org_id: str) -> list[Policy | CachedPolicy]:
         cache_key = f"policies:{org_id}"
 
         cached = await self.redis.get(cache_key)
@@ -257,14 +266,14 @@ class PolicyEngine:
 
         return policies
 
-    def _dict_to_policy(self, d: dict) -> Policy:
-        p = Policy.__new__(Policy)
-        p.id = d["id"]
-        p.name = d["name"]
-        p.priority = d["priority"]
-        p.rule_yaml = d["rule_yaml"]
-        p.version = d["version"]
-        return p
+    def _dict_to_policy(self, d: dict) -> CachedPolicy:
+        return CachedPolicy(
+            id=d["id"],
+            name=d["name"],
+            priority=d["priority"],
+            rule_yaml=d["rule_yaml"],
+            version=d["version"],
+        )
 
     async def invalidate_cache(self, org_id: str) -> None:
         await self.redis.delete(f"policies:{org_id}")

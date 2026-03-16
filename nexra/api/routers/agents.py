@@ -1,5 +1,6 @@
 import time
 import uuid as uuid_mod
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request
 from openai import AsyncOpenAI
@@ -65,7 +66,7 @@ async def register_agent(
     )
 
 
-@router.get("/registry")
+@router.get("/registry", response_model=DataResponse[dict[str, Any]])
 async def list_agents(
     request: Request,
     capability_type: str | None = Query(None),
@@ -160,7 +161,7 @@ async def get_agent(
     )
 
 
-@router.get("/{agent_ref}/trust")
+@router.get("/{agent_ref}/trust", response_model=DataResponse[dict[str, Any]])
 async def get_agent_trust(
     request: Request,
     agent_ref: str,
@@ -168,6 +169,7 @@ async def get_agent_trust(
     db: AsyncSession = Depends(get_db),
 ):
     """Get trust score and recent score events for an agent."""
+    start = time.perf_counter()
     service = AgentService(db, _get_openai_client())
     agent = await service.get_by_agent_id(str(org.id), agent_ref)
     if not agent:
@@ -184,6 +186,7 @@ async def get_agent_trust(
     )
     events = events_result.scalars().all()
 
+    latency = round((time.perf_counter() - start) * 1000, 2)
     return {
         "data": {
             "agent_id": agent.agent_id,
@@ -200,6 +203,10 @@ async def get_agent_trust(
                 for e in events
             ],
         },
+        "meta": MetaResponse(
+            request_id=getattr(request.state, "request_id", None),
+            latency_ms=latency,
+        ).model_dump(),
     }
 
 
@@ -211,9 +218,17 @@ async def quarantine_agent(
     db: AsyncSession = Depends(get_db),
 ):
     """Manually quarantine an agent."""
+    start = time.perf_counter()
     service = AgentService(db, _get_openai_client())
     agent = await service.update_status(str(org.id), agent_ref, "quarantined")
-    return {"data": {"agent_id": agent.agent_id, "status": agent.status}}
+    latency = round((time.perf_counter() - start) * 1000, 2)
+    return {
+        "data": {"agent_id": agent.agent_id, "status": agent.status},
+        "meta": MetaResponse(
+            request_id=getattr(request.state, "request_id", None),
+            latency_ms=latency,
+        ).model_dump(),
+    }
 
 
 @router.post("/{agent_ref}/activate")
@@ -224,6 +239,14 @@ async def activate_agent(
     db: AsyncSession = Depends(get_db),
 ):
     """Manually activate an agent."""
+    start = time.perf_counter()
     service = AgentService(db, _get_openai_client())
     agent = await service.update_status(str(org.id), agent_ref, "active")
-    return {"data": {"agent_id": agent.agent_id, "status": agent.status}}
+    latency = round((time.perf_counter() - start) * 1000, 2)
+    return {
+        "data": {"agent_id": agent.agent_id, "status": agent.status},
+        "meta": MetaResponse(
+            request_id=getattr(request.state, "request_id", None),
+            latency_ms=latency,
+        ).model_dump(),
+    }

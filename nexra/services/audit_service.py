@@ -66,7 +66,11 @@ class AuditService:
                 )
             )
         if event_type:
-            q = q.where(AuditLog.event_type == event_type)
+            if "," in event_type:
+                types = [t.strip() for t in event_type.split(",") if t.strip()]
+                q = q.where(AuditLog.event_type.in_(types))
+            else:
+                q = q.where(AuditLog.event_type == event_type)
         if date_from:
             q = q.where(AuditLog.created_at >= date_from)
         if date_to:
@@ -87,6 +91,28 @@ class AuditService:
             entries = entries[:limit]
 
         return entries, next_cursor
+
+    async def query_since(
+        self,
+        org_id: str,
+        date_from: datetime,
+        event_types: list[str] | None = None,
+        limit: int = 500,
+    ) -> list[AuditLog]:
+        q = (
+            select(AuditLog)
+            .where(
+                AuditLog.org_id == org_id,
+                AuditLog.created_at > date_from,
+            )
+            .order_by(AuditLog.created_at.asc())
+            .limit(limit)
+        )
+        if event_types:
+            q = q.where(AuditLog.event_type.in_(event_types))
+
+        result = await self.db.execute(q)
+        return list(result.scalars().all())
 
     async def export_csv(
         self,

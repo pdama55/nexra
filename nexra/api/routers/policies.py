@@ -1,4 +1,5 @@
 import time
+from typing import Any
 
 import redis.asyncio as aioredis
 import yaml
@@ -12,6 +13,7 @@ from api.schemas.policies import (
     PolicyCreateRequest,
     PolicyListResponse,
     PolicyResponse,
+    PolicyVersionsResponse,
     PolicyUpdateRequest,
 )
 from core.errors import POLICY_NOT_FOUND, NexraError
@@ -81,7 +83,7 @@ async def create_policy(
     )
 
 
-@router.get("")
+@router.get("", response_model=DataResponse[dict[str, Any]])
 async def list_policies(
     request: Request,
     org: Organization = Depends(get_authenticated_org),
@@ -108,7 +110,7 @@ async def list_policies(
     }
 
 
-@router.get("/{policy_id}")
+@router.get("/{policy_id}", response_model=DataResponse[dict[str, Any]])
 async def get_policy(
     request: Request,
     policy_id: str,
@@ -143,6 +145,43 @@ async def get_policy(
             latency_ms=latency,
         ).model_dump(),
     }
+
+
+@router.get("/{policy_id}/versions", response_model=DataResponse[PolicyVersionsResponse])
+async def get_policy_versions(
+    request: Request,
+    policy_id: str,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get immutable version history for a policy family."""
+    start = time.perf_counter()
+
+    result = await db.execute(
+        select(Policy).where(Policy.id == policy_id, Policy.org_id == org.id)
+    )
+    policy = result.scalar_one_or_none()
+    if not policy:
+        raise NexraError(404, POLICY_NOT_FOUND, f"Policy '{policy_id}' not found")
+
+    versions_result = await db.execute(
+        select(Policy)
+        .where(Policy.org_id == org.id, Policy.name == policy.name)
+        .order_by(Policy.version.desc())
+    )
+    versions = [_policy_to_response(p) for p in versions_result.scalars().all()]
+
+    latency = round((time.perf_counter() - start) * 1000, 2)
+    return DataResponse(
+        data=PolicyVersionsResponse(
+            policy_id=str(policy.id),
+            versions=versions,
+        ),
+        meta=MetaResponse(
+            request_id=getattr(request.state, "request_id", None),
+            latency_ms=latency,
+        ),
+    )
 
 
 @router.put("/{policy_id}")
@@ -213,6 +252,7 @@ async def disable_policy(
     redis_client: aioredis.Redis = Depends(get_redis),
 ):
     """Disable a policy (soft delete). Preserves history."""
+    start = time.perf_counter()
     result = await db.execute(
         select(Policy).where(Policy.id == policy_id, Policy.org_id == org.id)
     )
@@ -226,4 +266,11 @@ async def disable_policy(
     engine = PolicyEngine(redis_client, db)
     await engine.invalidate_cache(str(org.id))
 
-    return {"data": {"id": str(policy.id), "enabled": False}}
+    latency = round((time.perf_counter() - start) * 1000, 2)
+    return {
+        "data": {"id": str(policy.id), "enabled": False},
+        "meta": MetaResponse(
+            request_id=getattr(request.state, "request_id", None),
+            latency_ms=latency,
+        ).model_dump(),
+    }

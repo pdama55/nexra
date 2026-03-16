@@ -28,9 +28,13 @@ celery_app.conf.update(
             "task": "workers.anomaly_worker.run_anomaly_detection",
             "schedule": 3600.0,
         },
-        "hitl-expiry-hourly": {
+        "hitl-expiry-check": {
             "task": "workers.hitl_worker.expire_stale_approvals",
-            "schedule": 3600.0,
+            "schedule": 300.0,
+        },
+        "siem-export-60s": {
+            "task": "workers.siem_worker.export_all_siem_events",
+            "schedule": 60.0,
         },
     },
 )

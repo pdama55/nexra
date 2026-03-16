@@ -1,12 +1,13 @@
 import time
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import get_authenticated_org
-from api.schemas.common import MetaResponse
+from api.schemas.common import DataResponse, MetaResponse
 from db.session import get_db
 from models.organization import Organization
 from services.audit_service import AuditService
@@ -14,7 +15,7 @@ from services.audit_service import AuditService
 router = APIRouter(prefix="/audit", tags=["audit"])
 
 
-@router.get("/log")
+@router.get("/log", response_model=DataResponse[dict[str, Any]])
 async def query_audit_log(
     request: Request,
     agent_id: str | None = Query(None),
