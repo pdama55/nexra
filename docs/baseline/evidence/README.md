@@ -19,6 +19,10 @@ Branch: `stabilization/prd-tdd-convergence`
 - `dashboard_build.log`
 - `sdk_build.log`
 
+## Operational Docs
+
+- `POST_RELEASE_VERIFICATION_RUNBOOK.md`
+
 ## Result Summary
 
 - Convergence validation script: passed

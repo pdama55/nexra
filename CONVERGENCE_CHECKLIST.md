@@ -43,6 +43,7 @@ This checklist is the release-gate tracker for PRD/TDD convergence.
 - [x] Postgres/Redis services wired for integration/e2e in CI
 - [ ] Branch protection configured in repository settings (blocked by GitHub plan limitation: private repo requires Pro/public for protection rules)
 - [x] Release workflow with deploy smoke checks
+- [x] Post-release verification runbook documented (`docs/baseline/evidence/POST_RELEASE_VERIFICATION_RUNBOOK.md`)
 
 ## Phase 6 — P1/P2 Validation
 - [x] Marketplace/compliance flows proven by automated tests
