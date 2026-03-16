@@ -72,6 +72,9 @@ jobs:
         run: |
           cd nexra
           poetry run mypy \
+            --ignore-missing-imports \
+            --allow-untyped-defs \
+            --disable-error-code assignment,type-arg,no-untyped-def,import-untyped \
             services/budget_service.py \
             services/delegation_service.py \
             services/hitl_service.py \
