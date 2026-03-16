@@ -17,7 +17,7 @@ export function DelegationDetail() {
 
   const { data: timeline } = useQuery<AuditEntry[]>({
     queryKey: ['delegation-timeline', id],
-    queryFn: () => apiGet<{ items: AuditEntry[] }>('/audit/log', { delegation_id: id }).then(r => r.items),
+    queryFn: () => apiGet<{ entries: AuditEntry[] }>('/audit/log', { delegation_id: id }).then(r => r.entries),
     enabled: !!id,
   });
 

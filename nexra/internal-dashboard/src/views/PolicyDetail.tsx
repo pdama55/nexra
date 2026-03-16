@@ -5,17 +5,55 @@ import { StatusPill } from '../components/common/StatusPill';
 import { EmptyState } from '../components/common/EmptyState';
 import type { Policy } from '../types';
 import { useState } from 'react';
+import { formatAbsoluteTime } from '../utils/formatters';
+
+interface PolicyDetailPayload {
+  current: Policy & {
+    allow?: Record<string, unknown>;
+    conditions?: Array<Record<string, unknown>>;
+    hil_threshold_usd?: number | null;
+    on_violation?: string;
+  };
+}
+
+interface PolicyEvalEvent {
+  id: string;
+  created_at: string;
+  actor_agent_id: string | null;
+  target_agent_id: string | null;
+  details: Record<string, unknown>;
+}
 
 export function PolicyDetail() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState(0);
 
-  const { data: policy } = useQuery<Policy>({
+  const { data: payload } = useQuery<PolicyDetailPayload>({
     queryKey: ['policy', id],
     queryFn: () => apiGet(`/policies/${id}`),
     enabled: !!id,
   });
+  const { data: versions } = useQuery<Policy[]>({
+    queryKey: ['policy-versions', id],
+    queryFn: () =>
+      apiGet<{ versions: Policy[] }>(`/policies/${id}/versions`).then((r) => r.versions),
+    enabled: !!id && activeTab === 1,
+  });
+  const { data: evaluations } = useQuery<PolicyEvalEvent[]>({
+    queryKey: ['policy-evaluations', id],
+    queryFn: () =>
+      apiGet<{ entries: PolicyEvalEvent[] }>('/audit/log', {
+        event_type: 'policy_evaluated',
+        limit: 100,
+      }).then((r) =>
+        r.entries.filter(
+          (e) => String(e.details?.policy_id ?? '') === String(id ?? ''),
+        ),
+      ),
+    enabled: !!id && activeTab === 2,
+  });
 
+  const policy = payload?.current;
   if (!policy) {
     return <EmptyState icon="⛊" heading="Policy not found" message={`No policy found with ID: ${id}`} />;
   }
@@ -58,17 +96,77 @@ export function PolicyDetail() {
             lineHeight: 1.6,
             color: 'var(--text-primary)',
           }}>
-            {policy.rule_yaml}
+            {JSON.stringify(
+              {
+                allow: policy.allow ?? {},
+                conditions: policy.conditions ?? [],
+                hil_threshold_usd: policy.hil_threshold_usd ?? null,
+                on_violation: policy.on_violation ?? 'block_and_alert',
+              },
+              null,
+              2,
+            )}
           </pre>
         </div>
       )}
 
       {activeTab === 1 && (
-        <EmptyState icon="⊞" heading="Version History" message="Version history will show all previous versions with diffs." />
+        versions && versions.length > 0 ? (
+          <div className="card" style={{ padding: 0, overflow: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Version', 'Priority', 'Enabled', 'Created'].map((h) => (
+                    <th key={h} className="label" style={{ padding: '10px 12px', textAlign: 'left' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {versions.map((v) => (
+                  <tr key={v.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td className="mono" style={{ padding: '8px 12px' }}>v{v.version}</td>
+                    <td className="mono" style={{ padding: '8px 12px' }}>{v.priority}</td>
+                    <td style={{ padding: '8px 12px' }}>
+                      <StatusPill status={v.enabled ? 'active' : 'quarantined'} />
+                    </td>
+                    <td style={{ padding: '8px 12px' }}>{formatAbsoluteTime(v.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState icon="⊞" heading="No version history" message="No prior versions found for this policy." />
+        )
       )}
 
       {activeTab === 2 && (
-        <EmptyState icon="⊞" heading="Evaluation History" message="Shows every policy evaluation in the selected time window." />
+        evaluations && evaluations.length > 0 ? (
+          <div className="card" style={{ padding: 0, overflow: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Time', 'Actor', 'Target', 'Decision', 'Reason'].map((h) => (
+                    <th key={h} className="label" style={{ padding: '10px 12px', textAlign: 'left' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {evaluations.map((e) => (
+                  <tr key={e.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '8px 12px' }}>{formatAbsoluteTime(e.created_at)}</td>
+                    <td className="mono" style={{ padding: '8px 12px' }}>{e.actor_agent_id ?? 'system'}</td>
+                    <td className="mono" style={{ padding: '8px 12px' }}>{e.target_agent_id ?? '—'}</td>
+                    <td style={{ padding: '8px 12px' }}>{String(e.details?.decision ?? '—')}</td>
+                    <td style={{ padding: '8px 12px' }}>{String(e.details?.reason ?? '—')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState icon="⊞" heading="No evaluation history" message="No policy evaluation events found for this policy." />
+        )
       )}
     </div>
   );

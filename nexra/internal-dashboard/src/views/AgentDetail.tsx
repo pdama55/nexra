@@ -4,7 +4,7 @@ import { apiGet } from '../api/client';
 import { StatusPill } from '../components/common/StatusPill';
 import { EmptyState } from '../components/common/EmptyState';
 import { formatUsd, formatRelativeTime } from '../utils/formatters';
-import type { TimeRange, Agent, TrustBreakdown } from '../types';
+import type { TimeRange, Agent, AuditEntry, Delegation, TrustBreakdown } from '../types';
 import { useState } from 'react';
 
 interface Props {
@@ -23,8 +23,35 @@ export function AgentDetail({ timeRange: _timeRange }: Props) {
 
   const { data: trustData } = useQuery<TrustBreakdown>({
     queryKey: ['agent-trust', agentId],
-    queryFn: () => apiGet(`/agents/${agentId}/trust`),
+    queryFn: () => apiGet<{
+      trust_score: number;
+      delegation_count: number;
+      recent_events: Array<{ components: Record<string, number>; created_at: string }>;
+    }>(`/agents/${agentId}/trust`).then((r) => {
+      const latest = r.recent_events?.[0]?.components ?? {};
+      return {
+        trust_score: r.trust_score,
+        success_rate: Number(latest.success_rate ?? 0),
+        sla_compliance: Number(latest.latency_score ?? 0),
+        cost_accuracy: Number(latest.budget_adherence ?? 0),
+        policy_violations_inverse: Number(latest.recency ?? 0),
+        delegation_count: r.delegation_count,
+        last_active: r.recent_events?.[0]?.created_at ?? null,
+      };
+    }),
     enabled: !!agentId && activeTab === 1,
+  });
+  const { data: agentDelegations } = useQuery<Delegation[]>({
+    queryKey: ['agent-delegations', agentId],
+    queryFn: () => apiGet<{ items: Delegation[] }>('/delegations', { limit: 100 }).then((r) =>
+      r.items.filter((item) => item.caller_agent_id === agentId || item.callee_agent_id === agentId),
+    ),
+    enabled: !!agentId && activeTab === 2,
+  });
+  const { data: agentAudit } = useQuery<AuditEntry[]>({
+    queryKey: ['agent-audit', agentId],
+    queryFn: () => apiGet<{ entries: AuditEntry[] }>('/audit/log', { agent_id: agentId, limit: 100 }).then((r) => r.entries),
+    enabled: !!agentId && activeTab === 3,
   });
 
   if (!agent) {
@@ -167,11 +194,65 @@ export function AgentDetail({ timeRange: _timeRange }: Props) {
       )}
 
       {activeTab === 2 && (
-        <EmptyState icon="⇄" heading="Delegation History" message={`Delegation history for ${agentId} will load from the API.`} />
+        agentDelegations && agentDelegations.length > 0 ? (
+          <div className="card" style={{ padding: 0, overflow: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Created', 'Role', 'Counterparty', 'Status', 'Est. Cost', 'Actual Cost'].map((h) => (
+                    <th key={h} className="label" style={{ padding: '10px 12px', textAlign: 'left' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {agentDelegations.map((d) => {
+                  const isCaller = d.caller_agent_id === agentId;
+                  const counterparty = isCaller ? d.callee_agent_id : d.caller_agent_id;
+                  return (
+                    <tr key={d.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-secondary)' }}>{formatRelativeTime(d.created_at)}</td>
+                      <td style={{ padding: '8px 12px' }}>{isCaller ? 'caller' : 'callee'}</td>
+                      <td className="mono" style={{ padding: '8px 12px', fontSize: '12px' }}>{counterparty}</td>
+                      <td style={{ padding: '8px 12px' }}><StatusPill status={d.status} /></td>
+                      <td className="mono" style={{ padding: '8px 12px', fontSize: '12px' }}>{formatUsd(d.estimated_cost_usd)}</td>
+                      <td className="mono" style={{ padding: '8px 12px', fontSize: '12px' }}>{formatUsd(d.actual_cost_usd)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState icon="⇄" heading="No delegation history" message={`No delegations found for ${agentId}.`} />
+        )
       )}
 
       {activeTab === 3 && (
-        <EmptyState icon="⊞" heading="Audit History" message={`Audit history for ${agentId} will load from the API.`} />
+        agentAudit && agentAudit.length > 0 ? (
+          <div className="card" style={{ padding: 0, overflow: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Time', 'Event', 'Target', 'Cost'].map((h) => (
+                    <th key={h} className="label" style={{ padding: '10px 12px', textAlign: 'left' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {agentAudit.map((entry) => (
+                  <tr key={entry.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-secondary)' }}>{formatRelativeTime(entry.created_at)}</td>
+                    <td style={{ padding: '8px 12px' }}>{entry.event_type.replace(/_/g, ' ')}</td>
+                    <td className="mono" style={{ padding: '8px 12px', fontSize: '12px' }}>{entry.target_agent_id ?? '—'}</td>
+                    <td className="mono" style={{ padding: '8px 12px', fontSize: '12px' }}>{formatUsd(entry.cost_usd)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState icon="⊞" heading="No audit history" message={`No audit entries found for ${agentId}.`} />
+        )
       )}
     </div>
   );

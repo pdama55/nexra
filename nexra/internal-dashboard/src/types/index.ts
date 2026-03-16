@@ -128,7 +128,8 @@ export type AuditEventType =
   | 'hil_approved'
   | 'hil_expired'
   | 'anomaly_detected'
-  | 'circuit_breaker_tripped';
+  | 'circuit_breaker_tripped'
+  | 'marketplace_payout';
 
 // ── Agent Budget ──
 export interface AgentBudget {

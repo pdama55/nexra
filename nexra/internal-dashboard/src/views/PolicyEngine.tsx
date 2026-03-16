@@ -9,7 +9,7 @@ import type { Policy } from '../types';
 export function PolicyEngine() {
   const { data: policies, isLoading } = useQuery<Policy[]>({
     queryKey: ['policies'],
-    queryFn: () => apiGet<{ items: Policy[] }>('/policies').then(r => Array.isArray(r) ? r : r.items ?? []),
+    queryFn: () => apiGet<{ policies: Policy[] }>('/policies').then(r => r.policies),
   });
 
   return (

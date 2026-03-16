@@ -31,7 +31,7 @@ export function Overview({ timeRange }: Props) {
 
   const { data: agents } = useQuery<Agent[]>({
     queryKey: ['agents-overview'],
-    queryFn: () => apiGet<{ items: Agent[] }>('/agents/registry').then(r => r.items),
+    queryFn: () => apiGet<{ agents: Agent[] }>('/agents/registry').then(r => r.agents),
     refetchInterval: 30_000,
   });
 
@@ -43,10 +43,10 @@ export function Overview({ timeRange }: Props) {
 
   const { data: alerts } = useQuery<AuditEntry[]>({
     queryKey: ['alerts'],
-    queryFn: () => apiGet<{ items: AuditEntry[] }>('/audit/log', {
+    queryFn: () => apiGet<{ entries: AuditEntry[] }>('/audit/log', {
       event_type: 'anomaly_detected,circuit_breaker_tripped',
       limit: 20,
-    }).then(r => r.items),
+    }).then(r => r.entries),
     refetchInterval: 30_000,
   });
 

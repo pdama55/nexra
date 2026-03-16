@@ -8,7 +8,7 @@ import type { Agent } from '../types';
 export function TrustScores() {
   const { data: agents, isLoading } = useQuery<Agent[]>({
     queryKey: ['agents-trust'],
-    queryFn: () => apiGet<{ items: Agent[] }>('/agents/registry').then(r => r.items),
+    queryFn: () => apiGet<{ agents: Agent[] }>('/agents/registry').then(r => r.agents),
     refetchInterval: 300_000,
   });
 

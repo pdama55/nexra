@@ -6,13 +6,13 @@ import { EmptyState } from '../components/common/EmptyState';
 import { formatAbsoluteTime, formatUsd, truncateId } from '../utils/formatters';
 import { getTimeRangeParams } from '../hooks/useTimeRange';
 import type { TimeRange, AuditEntry, PaginatedResponse, AuditEventType } from '../types';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
 const EVENT_TYPES: AuditEventType[] = [
   'policy_evaluated', 'delegation_initiated', 'delegation_completed', 'delegation_failed',
   'delegation_blocked', 'delegation_timeout', 'agent_quarantined', 'agent_activated',
   'budget_exceeded', 'hil_triggered', 'hil_approved', 'hil_expired',
-  'anomaly_detected', 'circuit_breaker_tripped',
+  'anomaly_detected', 'circuit_breaker_tripped', 'marketplace_payout',
 ];
 
 interface Props {
@@ -26,13 +26,55 @@ export function AuditLog({ timeRange }: Props) {
 
   const { data, isLoading } = useQuery<PaginatedResponse<AuditEntry>>({
     queryKey: ['audit', params.window, eventFilter],
-    queryFn: () => apiGet('/audit/log', {
+    queryFn: () => apiGet<{ entries: AuditEntry[]; next_cursor: string | null }>('/audit/log', {
       ...(eventFilter !== 'all' ? { event_type: eventFilter } : {}),
       limit: 50,
-    }),
+    }).then(r => ({
+      items: r.entries,
+      cursor: r.next_cursor,
+      has_more: Boolean(r.next_cursor),
+    })),
   });
 
   const entries = data?.items ?? [];
+
+  async function exportAudit(format: 'csv' | 'json'): Promise<void> {
+    const query = new URLSearchParams({
+      ...(eventFilter !== 'all' ? { event_type: eventFilter } : {}),
+      limit: '5000',
+      format,
+    });
+    const resp = await fetch(`/v1/audit/log?${query.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('nexra_api_key') ?? ''}`,
+      },
+    });
+    if (!resp.ok) return;
+
+    if (format === 'csv') {
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'nexra-audit-log.csv';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    const payload = await resp.json();
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'nexra-audit-log.json';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
 
   function getEventColor(type: string): string {
     if (type.includes('blocked') || type.includes('failed') || type.includes('timeout')) return '#9A4A4A';
@@ -46,8 +88,8 @@ export function AuditLog({ timeRange }: Props) {
       <div className="page-header">
         <h1 className="page-title">Audit Log</h1>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-secondary btn-sm">Export CSV</button>
-          <button className="btn btn-secondary btn-sm">Export JSON</button>
+          <button className="btn btn-secondary btn-sm" onClick={() => void exportAudit('csv')}>Export CSV</button>
+          <button className="btn btn-secondary btn-sm" onClick={() => void exportAudit('json')}>Export JSON</button>
         </div>
       </div>
 
@@ -74,8 +116,8 @@ export function AuditLog({ timeRange }: Props) {
             </thead>
             <tbody>
               {entries.map(e => (
-                <>
-                  <tr key={e.id} style={{ borderBottom: expanded === e.id ? 'none' : '1px solid var(--border)', height: '40px', cursor: 'pointer' }}
+                <Fragment key={e.id}>
+                  <tr style={{ borderBottom: expanded === e.id ? 'none' : '1px solid var(--border)', height: '40px', cursor: 'pointer' }}
                     onClick={() => setExpanded(expanded === e.id ? null : e.id)}
                     onMouseEnter={ev => (ev.currentTarget.style.background = 'var(--bg-tertiary)')}
                     onMouseLeave={ev => (ev.currentTarget.style.background = '')}>
@@ -106,7 +148,7 @@ export function AuditLog({ timeRange }: Props) {
                     </td>
                   </tr>
                   {expanded === e.id && (
-                    <tr key={`${e.id}-detail`} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
                       <td colSpan={7} style={{ padding: '0 12px 12px' }}>
                         <pre style={{
                           background: 'var(--code-bg)',
@@ -122,7 +164,7 @@ export function AuditLog({ timeRange }: Props) {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>

@@ -10,6 +10,14 @@ interface ApiErrorBody {
   details: Record<string, unknown> | null;
 }
 
+interface ApiEnvelope<T> {
+  data: T;
+  meta?: {
+    request_id?: string | null;
+    latency_ms?: number | null;
+  };
+}
+
 export class NexraApiError extends Error {
   status: number;
   code: string;
@@ -60,7 +68,11 @@ export async function apiGet<T>(path: string, params?: Record<string, string | n
     );
   }
 
-  return res.json();
+  const body = (await res.json()) as ApiEnvelope<T>;
+  if (!body || typeof body !== 'object' || !('data' in body)) {
+    throw new NexraApiError(res.status, 'INVALID_ENVELOPE', { path });
+  }
+  return body.data;
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
@@ -85,7 +97,11 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
     );
   }
 
-  return res.json();
+  const resBody = (await res.json()) as ApiEnvelope<T>;
+  if (!resBody || typeof resBody !== 'object' || !('data' in resBody)) {
+    throw new NexraApiError(res.status, 'INVALID_ENVELOPE', { path });
+  }
+  return resBody.data;
 }
 
 export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
@@ -110,7 +126,11 @@ export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
     );
   }
 
-  return res.json();
+  const resBody = (await res.json()) as ApiEnvelope<T>;
+  if (!resBody || typeof resBody !== 'object' || !('data' in resBody)) {
+    throw new NexraApiError(res.status, 'INVALID_ENVELOPE', { path });
+  }
+  return resBody.data;
 }
 
 /**
