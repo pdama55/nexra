@@ -13,10 +13,10 @@
 <meta name="twitter:title" content="Nexra - Agents Hiring Agents, Governed">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:ital,wght@0,300;0,400;1,300&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:ital,wght@0,300;0,400;1,300&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0a0a08;
+  --bg: #070707;
   --fg: #e8e6de;
   --muted: #9a9a94;
   --label: #6b6b67;
@@ -59,9 +59,10 @@ body::after {
   z-index: 9999;
   pointer-events: none;
   opacity: 0.03;
+  mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
-  background-size: 256px 256px;
+  background-size: 16rem 16rem;
 }
 
 .cursor-dot {
@@ -138,37 +139,39 @@ body::after {
   left: 0;
   right: 0;
   z-index: 1000;
-  height: 72px;
+  min-height: 5rem;
+  height: 5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 48px;
-  border-bottom: 1px solid transparent;
-  background: transparent;
+  padding: 0 2.5rem;
+  border-bottom: 0.0625rem solid rgba(255, 255, 255, 0.09);
+  background: rgba(10, 10, 8, 0.9);
   transition: background 0.4s var(--ease), border-color 0.4s var(--ease);
 }
 .nav.scrolled {
   background: rgba(10, 10, 8, 0.95);
-  border-bottom-color: var(--border);
+  border-bottom-color: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(8px);
 }
 .nav-wordmark {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.42rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.96);
 }
 .nav-links {
   list-style: none;
   display: flex;
-  gap: 30px;
+  gap: 1.75rem;
 }
 .nav-links a {
-  font-size: 12px;
-  letter-spacing: 1px;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.7);
   position: relative;
 }
 .nav-links a::after {
@@ -186,15 +189,17 @@ body::after {
 .nav-links a:hover { color: var(--fg); }
 .nav-links a:hover::after { transform: scaleX(1); }
 .nav-cta {
-  font-size: 12px;
-  letter-spacing: 1px;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--bg);
-  background: var(--fg);
-  padding: 10px 24px;
+  background: #e6e6e6;
+  border: 0.0625rem solid #e6e6e6;
+  border-radius: 0.4rem;
+  padding: 0.75em 1.2em;
   transition: opacity 0.3s var(--ease);
 }
-.nav-cta:hover { opacity: 0.85; }
+.nav-cta:hover { opacity: 0.92; }
 
 .hero {
   min-height: 100vh;
@@ -432,7 +437,7 @@ body::after {
   cursor: none;
   transition: border-color 0.25s var(--ease), background 0.25s var(--ease);
 }
-.session-step + .session-step { margin-top: 8px; }
+.session-step + .session-step { margin-top: 0.5rem; }
 .session-step-id {
   color: var(--label);
   font-size: 11px;
@@ -1093,7 +1098,7 @@ p { color: var(--text-primary); }
   background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.2));
 }
 
-.how-session { padding-top: 90px; }
+.how-session { padding-top: 5.625rem; }
 
 .session-shell {
   margin-top: 20px;
@@ -1626,8 +1631,8 @@ p { color: var(--text-primary); }
 }
 
 .footer-cta {
-  padding-top: 120px;
-  padding-bottom: 120px;
+  padding-top: 6rem;
+  padding-bottom: 6rem;
 }
 
 .footer-headline {
@@ -1664,38 +1669,1235 @@ p { color: var(--text-primary); }
   color: var(--fg);
 }
 
+/* Homepage rebuild overrides */
+body::after {
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+}
+
+.section {
+  position: relative;
+  background-color: rgb(6, 6, 6);
+  padding-top: 7rem;
+  padding-bottom: 7rem;
+  isolation: isolate;
+}
+
+.section:nth-of-type(even) {
+  background-color: rgb(14, 14, 14);
+}
+
+.section:nth-of-type(odd) {
+  background-color: rgb(6, 6, 6);
+}
+
+.section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.section::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0.0625rem;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.045) 14%,
+    rgba(255, 255, 255, 0.065) 50%,
+    rgba(255, 255, 255, 0.045) 86%,
+    rgba(255, 255, 255, 0)
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.section:first-of-type::after {
+  opacity: 0;
+}
+
+.section > * {
+  position: relative;
+  z-index: 1;
+}
+
+.section-hero,
+.section--deep {
+  padding-top: 9rem;
+  padding-bottom: 8rem;
+}
+
+.section-hero::before,
+.section--deep::before {
+  background:
+    radial-gradient(circle at 62% 40%, rgba(255, 255, 255, 0.028), transparent 58%),
+    radial-gradient(circle at center, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.6));
+}
+
+.section-elevated::before,
+.section--lifted::before {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.05), transparent 65%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0));
+}
+
+.section-neutral::before,
+.section--neutral::before {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.02), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.008), rgba(255, 255, 255, 0));
+}
+
+.section--lifted-alt::before {
+  background:
+    radial-gradient(circle at 66% 24%, rgba(255, 255, 255, 0.042), transparent 64%),
+    radial-gradient(circle at 24% 58%, rgba(255, 255, 255, 0.018), transparent 62%);
+}
+
+.hero-watermark { display: none; }
+
+.hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 100vh;
+  padding-top: 9rem;
+  padding-bottom: 8rem;
+  background: transparent;
+}
+
+.hero .container {
+  max-width: 78rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.hero-inner {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  align-items: center;
+  gap: 4rem;
+}
+
+.hero-left {
+  max-width: 36rem;
+}
+
+.hero-eyebrow {
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.hero-headline {
+  font-size: clamp(2.6rem, 4.5vw, 3.75rem);
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.4rem;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.hero-headline .line {
+  display: block;
+  text-transform: uppercase;
+  white-space: nowrap;
+  word-break: normal;
+  overflow: visible;
+}
+
+.hero-subhead {
+  max-width: 36rem;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.hero-actions {
+  margin-top: 1.8rem;
+  display: flex;
+  gap: 1.2rem;
+}
+
+.hero-waitlist {
+  margin-top: 1.2rem;
+  max-width: 28rem;
+}
+
+.hero-waitlist-form {
+  display: flex;
+  width: 100%;
+  max-width: 28rem;
+}
+
+.hero-waitlist-input {
+  flex: 0 0 70%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0.85em 1.1em;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.15);
+  border-right: 0;
+  border-radius: 0.35rem 0 0 0.35rem;
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+}
+
+.hero-waitlist-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.hero-waitlist-btn {
+  min-height: 3rem;
+  padding: 0.85em 1.2em;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.15);
+  border-left: 0.0625rem solid rgba(255, 255, 255, 0.15);
+  border-radius: 0 0.35rem 0.35rem 0;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.hero-waitlist-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.85em 1.4em;
+  border-radius: 0.4rem;
+  font-size: 0.97rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: all 0.16s ease;
+}
+
+.hero-btn-primary {
+  background: #e6e6e6;
+  color: #0a0a0a;
+  border: 0.0625rem solid #e6e6e6;
+}
+
+.hero-btn-primary:hover {
+  background: #f1f1f1;
+  transform: translateY(-0.05rem);
+}
+
+.hero-btn-secondary {
+  border: 0.0625rem solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+.hero-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.hero-right {
+  max-width: 34rem;
+  width: 100%;
+}
+
+.hero-network-panel {
+  width: 100%;
+  padding: 1.5rem;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.9rem;
+  background: #0f0f0f;
+  box-shadow: 0 0 0 0.0625rem rgba(255, 255, 255, 0.04), 0 2.5rem 4rem rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+  position: relative;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.hero-live-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.hero-live-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.hero-live-dot {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+}
+
+.hero-live-dot-green {
+  background: #3cff7a;
+  animation: hero-dot-pulse 2s ease-in-out infinite;
+}
+
+.hero-live-spend {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: #444;
+}
+
+.hero-live-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.86);
+  margin-bottom: 0.35rem;
+}
+
+.hero-live-dot-live {
+  animation: hero-dot-blink 1.6s step-end infinite;
+}
+
+.hero-live-spend-value {
+  color: #e6e6e6;
+  transition: color 0.2s ease;
+}
+
+.hero-live-spend-value.warn {
+  color: #f59e0b;
+}
+
+.hero-live-spend-value.critical {
+  color: #ef4444;
+}
+
+.hero-live-spend-cap {
+  color: #444;
+}
+
+.hero-live-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  align-items: center;
+  gap: 1rem;
+  min-height: 2rem;
+  border-bottom: 0.0625rem solid #161616;
+}
+
+.hero-live-columns span {
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #333;
+}
+
+.hero-live-log {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 14rem;
+}
+
+.hero-live-row {
+  min-height: 2.2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 0.0625rem solid rgba(255, 255, 255, 0.04);
+  opacity: 0;
+  transform: translateY(-0.75rem);
+  transition: opacity 0.24s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.24s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.hero-live-row.alt {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.hero-live-row.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hero-live-row.exit {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.hero-live-row.blocked {
+  border-left: 0.125rem solid #7f1d1d;
+}
+
+.hero-live-cell-time {
+  color: #2a2a2a;
+  font-size: 0.58rem;
+}
+
+.hero-live-cell-agent,
+.hero-live-cell-to {
+  color: #d1d5db;
+  font-size: 0.64rem;
+}
+
+.hero-live-arrow {
+  color: #2a2a2a;
+  margin-right: 0.4rem;
+}
+
+.hero-live-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.hero-live-result-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2em 0.55em;
+  border-radius: 0.35rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.hero-live-result-badge.approved {
+  background: rgba(60, 255, 120, 0.12);
+  color: #3cff7a;
+}
+
+.hero-live-result-badge.blocked {
+  background: rgba(255, 70, 70, 0.14);
+  color: #ff5757;
+}
+
+.hero-live-action {
+  color: #374151;
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@keyframes hero-dot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes hero-dot-blink {
+  0%, 45% { opacity: 1; }
+  46%, 100% { opacity: 0.28; }
+}
+
+@keyframes hero-badge-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.hero-live-result-badge.pulse {
+  animation: hero-badge-pulse 0.36s ease;
+}
+
+.stack {
+  position: relative;
+  padding-top: 8.75rem;
+  padding-bottom: 8.75rem;
+  overflow: hidden;
+}
+
+.stack::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.stack .container {
+  position: relative;
+  z-index: 1;
+}
+
+.stack .section-label {
+  text-align: center;
+  margin-bottom: 0.9rem;
+}
+
+.stack .section-title {
+  text-align: center;
+  margin: 0 auto;
+  max-width: 56.25rem;
+  font-size: clamp(2.15rem, 4.2vw, 3.45rem);
+  letter-spacing: 0.02em;
+  line-height: 0.98;
+}
+
+.stack-insight-sub {
+  margin-top: 1.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  font-size: 0.96rem;
+  line-height: 1.55;
+  letter-spacing: 0.015em;
+}
+
+.stack-compare-grid {
+  margin-top: 4rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3.5rem;
+  position: relative;
+}
+
+.stack-compare-grid::before {
+  content: '';
+  position: absolute;
+  left: 25%;
+  right: 25%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.stack-compare-card {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.875rem;
+  background:
+    linear-gradient(150deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02) 42%, rgba(255, 255, 255, 0.018)),
+    #0d0d0d;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  padding: 2.7rem 2.65rem;
+  transition: transform 0.22s var(--ease), border-color 0.22s var(--ease), box-shadow 0.22s var(--ease), background 0.22s var(--ease);
+}
+
+.stack-compare-card:hover {
+  transform: translateY(-0.28rem);
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 12px 30px rgba(0, 0, 0, 0.32);
+}
+
+.stack-compare-title {
+  margin: 0 0 1.35rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 2.6vw, 2rem);
+  letter-spacing: 0.04em;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.stack-compare-list {
+  list-style: none;
+  display: grid;
+  gap: 0.78rem;
+}
+
+.stack-compare-list li {
+  position: relative;
+  padding-left: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stack-compare-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.56rem;
+  width: 0.34rem;
+  height: 0.34rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.stack-closing {
+  margin-top: 4.5rem;
+  text-align: center;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.stack-closing-line-1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 3.1vw, 2.8rem);
+  letter-spacing: 0.02em;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.stack-closing-line-2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.25vw, 2.05rem);
+  letter-spacing: 0.03em;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.problem-dual {
+  padding: 7.5rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.problem-dual-grid {
+  margin-top: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.problem-dual-col {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1.6rem;
+}
+
+.problem-dual-col h3 {
+  margin-top: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.problem-dual-col ul {
+  margin-left: 1.15rem;
+}
+
+.problem-dual-col li {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.problem-dual-close {
+  margin-top: 2.5rem;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.6vw, 3rem);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.session-step:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.how-session {
+  padding-top: 5.625rem;
+}
+
+.session-shell {
+  margin-top: 1.25rem;
+  background: #0a0a0a;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.09);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.session-progress {
+  height: 0.125rem;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.session-progress-bar {
+  display: block;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.65);
+  transition: width 0.4s ease;
+}
+
+.session-grid {
+  grid-template-columns: 32% 68%;
+  min-height: 38.75rem;
+  align-items: stretch;
+}
+
+.session-steps {
+  padding: 0;
+  border-right: 0.0625rem solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+}
+
+.session-step {
+  width: 100%;
+  padding: 1.125rem 1.375rem;
+  border: 0;
+  border-bottom: 0.0625rem solid rgba(255, 255, 255, 0.06);
+  border-left: 0.125rem solid transparent;
+  background: transparent;
+  opacity: 0.35;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease, border-color 0.15s ease, padding 0.15s ease;
+}
+
+.session-step:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.session-step:last-child {
+  border-bottom: 0;
+}
+
+.session-step.active {
+  background: rgba(255, 255, 255, 0.04);
+  border-left-color: rgba(255, 255, 255, 0.8);
+  opacity: 1;
+  padding-left: 1.25rem;
+}
+
+.session-step-id {
+  display: block;
+  margin-bottom: 0.3125rem;
+  font-family: var(--font-body);
+  font-size: 0.62em;
+  letter-spacing: 0.13em;
+  opacity: 0.45;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.session-step-title {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-family: var(--font-body);
+  font-size: 1.05em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.session-step-desc {
+  font-family: var(--font-body);
+  font-size: 0.76em;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.session-panel-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0d0d0d;
+}
+
+.terminal-header {
+  height: 2.375rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 0.0625rem solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  gap: 0.375rem;
+}
+
+.terminal-dot {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.terminal-step-label {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: 0.65em;
+  letter-spacing: 0.11em;
+  opacity: 0.38;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  transition: opacity 0.15s ease;
+}
+
+.session-panel {
+  position: relative;
+  flex: 1;
+  padding: 1.75rem 2rem 3.5rem;
+  font-family: var(--font-body);
+  font-size: 0.81em;
+  line-height: 1.88;
+  color: rgba(255, 255, 255, 0.78);
+  overflow-y: auto;
+  white-space: normal;
+  transition: opacity 0.15s ease;
+}
+
+.terminal-divider {
+  border-top: 0.0625rem solid rgba(255, 255, 255, 0.07);
+  margin: 0.8125rem 0;
+}
+
+.term-line {
+  white-space: pre-wrap;
+}
+
+.term-line + .term-line {
+  margin-top: 0.0625rem;
+}
+
+.term-key {
+  display: inline-block;
+  min-width: 14ch;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.term-success {
+  color: rgba(120, 220, 140, 0.85);
+}
+
+.term-strong {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+.term-heavy {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+}
+
+.term-muted {
+  opacity: 0.45;
+}
+
+.session-chip {
+  position: absolute;
+  bottom: 1.125rem;
+  left: 1.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.0625rem solid rgba(255, 255, 255, 0.11);
+  border-radius: 0.125rem;
+  font-size: 0.67em;
+  letter-spacing: 0.09em;
+  padding: 0.1875rem 0.625rem;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-body);
+  transition: opacity 0.15s ease;
+}
+
+.session-note {
+  margin-top: 1.75rem;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.79em;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.why-now {
+  padding-top: 7rem;
+  padding-bottom: 7rem;
+  border-top: none;
+  background: transparent;
+}
+
+.why-now .container {
+  max-width: 78rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.why-now .section-title {
+  max-width: 28rem;
+  font-size: clamp(2.5rem, 4.5vw, 3.6rem);
+  line-height: 0.95;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 2rem;
+}
+
+.why-now .section-title .why-headline-block {
+  display: block;
+}
+
+.why-now .section-title .why-headline-block + .why-headline-block {
+  margin-top: 1.6rem;
+}
+
+.why-now .section-label {
+  opacity: 0.64;
+}
+
+.why-now-grid {
+  display: grid;
+  grid-template-columns: 1.03fr 0.97fr;
+  gap: 6rem;
+  margin-top: 0.875rem;
+}
+
+.why-now-copy {
+  max-width: 30rem;
+}
+
+.why-now-copy p {
+  font-size: 1rem;
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+  margin-bottom: 0.95rem;
+}
+
+.why-now-copy p:last-child {
+  margin-bottom: 0;
+}
+
+.why-now-diagram {
+  position: relative;
+  background: transparent;
+  justify-self: start;
+  margin-left: -5rem;
+}
+
+.why-now::before {
+  background:
+    radial-gradient(circle at 64% 44%, rgba(255, 255, 255, 0.048), transparent 62%),
+    radial-gradient(circle at 76% 56%, rgba(255, 255, 255, 0.012), transparent 58%);
+}
+
+.why-now-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4rem;
+  width: 100%;
+  max-width: 24rem;
+  margin: 0 auto;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.stack-layer {
+  width: 100%;
+  min-height: 5.4rem;
+  border-radius: 0.375rem;
+  padding: 1.2rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.layer-main {
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.layer-sub {
+  margin-top: 0.45rem;
+  min-height: 1rem;
+  font-size: 0.66rem;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.stack-layer-top {
+  background: rgba(255, 255, 255, 0.02);
+  border: 0.0625rem solid rgba(255, 255, 255, 0.18);
+}
+
+.stack-layer-top .layer-main {
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.stack-layer-top .layer-sub {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.stack-layer-core {
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.0625rem solid rgba(255, 255, 255, 0.38);
+  box-shadow: 0 0 1.2rem rgba(255, 255, 255, 0.06);
+}
+
+.stack-layer-core .layer-main {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.stack-layer-core .layer-sub {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.stack-layer-bottom {
+  background: rgba(255, 255, 255, 0.018);
+  border: 0.0625rem solid rgba(255, 255, 255, 0.18);
+}
+
+.stack-layer-bottom .layer-main {
+  color: rgba(255, 255, 255, 0.64);
+}
+
+.stack-layer-bottom .layer-sub {
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.stack-connector {
+  width: 0.1rem;
+  height: 1.4rem;
+  background: rgba(255, 255, 255, 0.22);
+  position: relative;
+  transform-origin: top center;
+}
+
+.stakeholder-tabs {
+  padding: 7.5rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.stakeholder-tab-list {
+  margin-top: 1.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.stakeholder-tab {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.68);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.45rem 0.75rem;
+}
+
+.stakeholder-tab.active {
+  border-color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.stakeholder-panel {
+  margin-top: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #0d0d0d;
+  padding: 1.2rem;
+}
+
+.stakeholder-panel p {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.stakeholder-panel ul {
+  margin-top: 0.9rem;
+  margin-left: 1.1rem;
+}
+
+.stakeholder-panel li {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.use-cases {
+  padding: 6rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.use-case-grid {
+  margin-top: 1.8rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.use-case-card {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.use-case-card h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.mini-flow {
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 0.7rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mini-flow i {
+  width: 0.9rem;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.mini-flow-warning {
+  margin-top: 0.55rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 210, 120, 0.92);
+}
+
+.state {
+  margin-left: auto;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.state.allow {
+  color: rgba(170, 255, 189, 0.95);
+  border-color: rgba(130, 255, 156, 0.6);
+}
+
+.state.block {
+  color: rgba(255, 152, 152, 0.95);
+  border-color: rgba(255, 117, 117, 0.6);
+}
+
+.state.hitl {
+  color: rgba(255, 228, 163, 0.95);
+  border-color: rgba(255, 228, 163, 0.5);
+}
+
+.footer-cta .footer-headline {
+  font-size: clamp(2.3rem, 5vw, 4.2rem);
+  line-height: 1;
+}
+
+.footer-watermark {
+  display: none;
+}
+
+.footer-cta .footer-sub {
+  margin-top: 0.9rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.footer-actions {
+  margin-top: 1.4rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.footer-cta.section.section-hero.section--deep {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+.section,
+.section-hero,
+.section-elevated,
+.section-neutral,
+.section--deep,
+.section--lifted,
+.section--neutral,
+.section--lifted-alt {
+  border-top: none;
+}
+
 @media (max-width: 1100px) {
   .session-grid { grid-template-columns: 1fr; min-height: auto; }
-  .session-steps { border-right: none; border-bottom: 1px solid var(--border); }
-  .session-panel { min-height: 520px; }
+  .session-steps { border-right: none; border-bottom: 0.0625rem solid var(--border); }
+  .session-panel { min-height: 32.5rem; }
   .integration-row.top { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .integration-row.bottom { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 @media (max-width: 900px) {
-  .container { padding: 0 24px; }
-  .nav { padding: 0 24px; }
+  .container { padding: 0 1.5rem; }
+  .nav { padding: 0 1.5rem; }
   .nav-links { display: none; }
-  .hero { padding: 80px 0; }
-  .hero-inner { grid-template-columns: 1fr; gap: 44px; }
-  .hero-headline { font-size: clamp(34px, 9vw, 58px); }
+  .section {
+    padding-top: 7rem;
+    padding-bottom: 7rem;
+  }
+  .section-hero {
+    padding-top: 7.5rem;
+    padding-bottom: 7rem;
+  }
+  .section--deep {
+    padding-top: 7.5rem;
+    padding-bottom: 7rem;
+  }
+  .hero { padding-top: 7.5rem; padding-bottom: 7rem; }
+  .hero-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .hero-headline { font-size: clamp(2.1rem, 9vw, 3.2rem); }
+  .hero-right { max-width: none; }
+  .hero-network-panel { margin-top: 3rem; }
+  .hero-actions { flex-direction: column; gap: 1rem; align-items: flex-start; }
+  .hero-btn { width: 100%; justify-content: center; }
+  .hero-waitlist { width: 100%; max-width: none; }
+  .hero-waitlist-form { max-width: none; flex-direction: column; }
+  .hero-waitlist-input { border-right: 0.0625rem solid rgba(255, 255, 255, 0.15); border-radius: 0.35rem; }
+  .hero-waitlist-btn { margin-top: 0.6rem; width: 100%; border-left: 0.0625rem solid rgba(255, 255, 255, 0.15); border-radius: 0.35rem; }
   .stack-grid,
   .problem-grid,
+  .problem-dual-grid,
+  .stack-problem-inline,
+  .stack-compare-grid,
+  .why-now-grid,
   .icp-grid,
   .surface-grid,
+  .use-case-grid,
   .roi-grid,
   .bottom-inner { grid-template-columns: 1fr; }
+  .stack { padding-top: 7rem; padding-bottom: 7rem; }
+  .why-now { padding-top: 7rem; padding-bottom: 7rem; }
+  .why-now-diagram { margin-top: 3rem; margin-left: 0; }
+  .stack-compare-grid { gap: 1.5rem; margin-top: 2.75rem; }
+  .stack-compare-grid::before { display: none; }
+  .stack-compare-card { padding: 2rem 1.6rem; }
+  .stack-closing { margin-top: 3.5rem; }
   .problem-card { grid-column: span 1; }
   .surface-card.span-2 { grid-column: span 1; }
   .why-row { grid-template-columns: 1fr; gap: 10px; }
   .session-panel {
     font-size: 0.78em;
-    padding: 48px 18px 54px;
+    padding: 3rem 1.125rem 3.375rem;
   }
   .session-chip {
     right: auto;
-    left: 24px;
-    bottom: 22px;
+    left: 1.5rem;
+    bottom: 1.375rem;
   }
   .code-block,
   .code-output,
@@ -1715,6 +2917,10 @@ p { color: var(--text-primary); }
     gap: 14px;
     text-align: center;
   }
+  .footer-actions {
+    flex-direction: column;
+    align-items: center;
+  }
 }
 </style>
 </head>
@@ -1731,28 +2937,44 @@ p { color: var(--text-primary); }
   <a href="#footer-cta" class="nav-cta" data-scroll>Join waitlist</a>
 </nav>
 
-<section class="hero" id="hero">
-  <div class="hero-watermark" id="hero-watermark">NEXRA</div>
+<section class="section section-hero section--deep hero" id="hero">
   <div class="container">
     <div class="hero-inner">
       <div class="hero-left">
+        <span class="hero-eyebrow" id="hero-eyebrow">Every delegation governed.</span>
         <h1 class="hero-headline" id="hero-headline">
-          <span class="line" data-line>The infrastructure</span>
-          <span class="line" data-line>that lets AI agents</span>
-          <span class="line" data-line>hire other AI agents.</span>
+          <span class="line" data-line>The control plane</span>
+          <span class="line" data-line>for AI agent networks</span>
         </h1>
+        <p class="hero-subhead">Runtime discovery and delegation for multi-agent systems.<br>Policy enforcement, spend caps, scoped tokens, circuit breakers, and immutable audit trails built in.</p>
+        <div class="hero-actions">
+          <a href="#footer-cta" class="hero-btn hero-btn-primary" data-scroll>Request demo</a>
+          <a href="/docs" class="hero-btn hero-btn-secondary">Read the docs</a>
+        </div>
+        <div class="hero-waitlist">
+          <form class="hero-waitlist-form" onsubmit="return handleWaitlist(event, this)">
+            <input type="email" class="hero-waitlist-input waitlist-input" placeholder="you@company.com" required>
+            <button type="submit" class="hero-waitlist-btn waitlist-btn">Join waitlist</button>
+          </form>
+        </div>
       </div>
       <div class="hero-right" id="hero-right">
-        <div class="hero-body">
-          <p>Agents publish capabilities to Nexra's registry. Other agents discover and hire them at runtime. Nexra enforces policies, budgets, and an immutable audit trail on every interaction.</p>
-          <p>Works with LangGraph, CrewAI, Bedrock, A2A, and anything that handles a signed HTTPS webhook. No migration. No lock-in. Add to your existing stack in under an hour.</p>
+        <div class="hero-network-panel" id="hero-live-panel" aria-label="Live control plane dashboard">
+          <div class="hero-live-header">
+            <div class="hero-live-title">Nexra Control Plane</div>
+            <div>
+              <div class="hero-live-live"><span class="hero-live-dot hero-live-dot-green hero-live-dot-live"></span>Live</div>
+              <div class="hero-live-spend">spend: <span class="hero-live-spend-value" id="hero-live-spend">$3.41</span> <span class="hero-live-spend-cap">/ $50.00</span></div>
+            </div>
+          </div>
+          <div class="hero-live-columns">
+            <span>Time</span>
+            <span>From</span>
+            <span>To</span>
+            <span>Result</span>
+          </div>
+          <div class="hero-live-log" id="hero-live-log" aria-live="polite"></div>
         </div>
-        <form class="waitlist-form" id="waitlist-hero" onsubmit="return handleWaitlist(event, this)">
-          <input type="email" class="waitlist-input" placeholder="you@company.com" required>
-          <button type="submit" class="waitlist-btn">Join waitlist</button>
-        </form>
-        <span class="hero-footnote">Invite-only. Q2 2026.</span>
-        <span class="hero-proof">Used by teams running multi-agent systems on LangGraph, CrewAI, and Bedrock.</span>
       </div>
     </div>
   </div>
@@ -1760,7 +2982,6 @@ p { color: var(--text-primary); }
 
 <div class="ticker">
   <div class="ticker-track" id="ticker-track">
-    <span class="ticker-item">Agent hiring</span>
     <span class="ticker-item">Capability registry</span>
     <span class="ticker-item">Runtime discovery</span>
     <span class="ticker-item">Semantic matching</span>
@@ -1776,8 +2997,6 @@ p { color: var(--text-primary); }
     <span class="ticker-item">CrewAI compatible</span>
     <span class="ticker-item">A2A native</span>
     <span class="ticker-item">Bedrock compatible</span>
-
-    <span class="ticker-item">Agent hiring</span>
     <span class="ticker-item">Capability registry</span>
     <span class="ticker-item">Runtime discovery</span>
     <span class="ticker-item">Semantic matching</span>
@@ -1796,35 +3015,44 @@ p { color: var(--text-primary); }
   </div>
 </div>
 
-<section class="stack" id="stack">
+<section class="section section-elevated section--lifted stack" id="stack">
   <div class="container">
-    <span class="section-label reveal">Where Nexra sits</span>
-    <h2 class="section-title reveal">Protocols let agents talk.<br>Nexra makes it safe.</h2>
-    <div class="stack-grid">
-      <div class="stack-copy reveal">
-        <p>A2A and MCP have solved the communication layer. Agents can discover one another and pass tasks across frameworks.</p>
-        <p>But protocols provide no governance: no authorization model, no spend controls, and no record of what your agents did, why they did it, or how much it cost.</p>
-        <p>Nexra is the control plane between the protocol and production.</p>
-      </div>
-      <div class="reveal">
-        <div class="stack-diagram" aria-label="Nexra architecture stack">
-          <div class="diagram-layer">Your Agent Network<br>LangGraph · CrewAI · Bedrock · A2A</div>
-          <div class="diagram-arrow">|</div>
-          <div class="diagram-layer nexra">NEXRA<br>Coordination layer<br>Governance layer</div>
-          <div class="diagram-arrow">|</div>
-          <div class="diagram-layer">A2A / MCP Protocol Layer</div>
-        </div>
-        <div class="stack-chips">
-          <span class="chip">No framework migration</span>
-          <span class="chip">Works with signed HTTPS webhooks</span>
-          <span class="chip">Ships in &lt; 1 hour</span>
-        </div>
-      </div>
+    <span class="section-label reveal">The problem</span>
+    <h2 class="section-title reveal">Multi-agent systems break in two places</h2>
+    <p class="stack-insight-sub reveal">
+      A2A and MCP solved communication.<br>
+      They did not solve coordination or governance.
+    </p>
+
+    <div class="stack-compare-grid">
+      <article class="stack-compare-card reveal">
+        <h3 class="stack-compare-title">Coordination Wall</h3>
+        <ul class="stack-compare-list">
+          <li>Hardcoded discovery</li>
+          <li>N² integrations at agent scale</li>
+          <li>Engineers writing orchestration glue</li>
+          <li>20–40% engineering time lost</li>
+        </ul>
+      </article>
+      <article class="stack-compare-card reveal">
+        <h3 class="stack-compare-title">Governance Vacuum</h3>
+        <ul class="stack-compare-list">
+          <li>No cross-agent authorization model</li>
+          <li>No spend controls for actions</li>
+          <li>No audit trail for decisions</li>
+          <li>No circuit breakers for runaways</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="stack-closing reveal">
+      <span class="stack-closing-line-1">Nexra solves both.</span>
+      <span class="stack-closing-line-2">One control plane. No migration.</span>
     </div>
   </div>
 </section>
 
-<section class="how-session" id="how">
+<section class="section section-neutral section--neutral how-session" id="how">
   <div class="container">
     <span class="section-label reveal">How it works</span>
     <h2 class="section-title reveal">Watch agents hire each other - governed end to end.</h2>
@@ -1883,7 +3111,47 @@ p { color: var(--text-primary); }
   </div>
 </section>
 
-<section class="code-section" id="quickstart">
+<section class="section section-elevated section--lifted-alt why-now" id="why-now">
+  <div class="container">
+    <span class="section-label reveal">Why now</span>
+    <h2 class="section-title reveal">
+      <span class="why-headline-block">THE PROTOCOL LAYER<br>IS STANDARDIZED.</span>
+      <span class="why-headline-block">THE GOVERNANCE LAYER<br>STILL DOESN'T EXIST.</span>
+    </h2>
+    <div class="why-now-grid">
+      <div class="why-now-copy reveal">
+        <p>A2A and MCP solved agent communication.</p>
+        <p>Agents can now discover each other and pass tasks across frameworks.</p>
+        <p>But open protocols don't provide authorization, cost controls, or auditability.</p>
+        <p>They were never designed to.</p>
+        <p>That leaves a missing layer above the protocol stack.</p>
+        <p>Nexra is that layer.</p>
+      </div>
+      <div class="why-now-diagram">
+        <div class="why-now-stack" id="why-now-stack" aria-label="Why now stack">
+          <div class="stack-layer stack-layer-top" id="why-layer-agents">
+            <div class="layer-main">Your agent network</div>
+            <div class="layer-sub">LangGraph · CrewAI · Bedrock · custom</div>
+          </div>
+          <div class="stack-connector stack-connector-top" id="why-connector-top">
+          </div>
+          <div class="stack-layer stack-layer-core" id="why-layer-nexra">
+            <div class="layer-main">Nexra control plane</div>
+            <div class="layer-sub">Registry · Policy · Spend Caps · Audit</div>
+          </div>
+          <div class="stack-connector stack-connector-bottom" id="why-connector-bottom">
+          </div>
+          <div class="stack-layer stack-layer-bottom" id="why-layer-protocol">
+            <div class="layer-main">Protocol layer</div>
+            <div class="layer-sub">A2A · MCP · Webhooks</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-neutral section--neutral code-section" id="quickstart">
   <div class="container">
     <span class="code-eyebrow reveal">Three lines to connect your first agent</span>
     <p class="code-intro reveal">Any agent that can receive a signed HTTPS webhook is compatible. No SDK required on the callee side.</p>
@@ -1929,7 +3197,7 @@ p { color: var(--text-primary); }
   </div>
 </section>
 
-<section class="icp" id="icp">
+<section class="section section-elevated section--lifted icp" id="icp">
   <div class="container">
     <span class="section-label reveal">The ICP</span>
     <h2 class="section-title reveal">Built for teams running agents in production.</h2>
@@ -1955,7 +3223,7 @@ p { color: var(--text-primary); }
   </div>
 </section>
 
-<section class="surfaces" id="surfaces">
+<section class="section section-hero section--deep surfaces" id="surfaces">
   <div class="container">
     <span class="section-label reveal">Product surfaces</span>
     <h2 class="section-title reveal">Every surface your agent network needs.</h2>
@@ -2041,7 +3309,21 @@ budget:      $0.08
   </div>
 </section>
 
-<section class="why" id="why">
+<section class="section section-neutral section--neutral stakeholder-tabs" id="stakeholders">
+  <div class="container">
+    <span class="section-label reveal">Stakeholders</span>
+    <h2 class="section-title reveal">Built for every team in the room.</h2>
+    <div class="stakeholder-tab-list reveal" role="tablist" aria-label="Stakeholder views">
+      <button class="stakeholder-tab active" data-stakeholder="engineering" role="tab" aria-selected="true">Engineering</button>
+      <button class="stakeholder-tab" data-stakeholder="security" role="tab" aria-selected="false">Security</button>
+      <button class="stakeholder-tab" data-stakeholder="finance" role="tab" aria-selected="false">Finance</button>
+      <button class="stakeholder-tab" data-stakeholder="compliance" role="tab" aria-selected="false">Compliance</button>
+    </div>
+    <div class="stakeholder-panel reveal" id="stakeholder-panel"></div>
+  </div>
+</section>
+
+<section class="section section-elevated section--lifted-alt why" id="why">
   <div class="container">
     <span class="section-label reveal">Why Nexra wins</span>
 
@@ -2071,7 +3353,7 @@ budget:      $0.08
   </div>
 </section>
 
-<section class="roi" id="roi">
+<section class="section section-elevated section--lifted roi" id="roi">
   <div class="container">
     <span class="section-label reveal">The cost of not having Nexra</span>
     <h2 class="section-title reveal">Uncontrolled agents are a liability.</h2>
@@ -2098,17 +3380,15 @@ budget:      $0.08
   </div>
 </section>
 
-<section class="footer-cta" id="footer-cta">
+<section class="section section-hero section--deep footer-cta" id="footer-cta">
   <div class="footer-watermark">NETWORK</div>
   <div class="container">
-    <h2 class="footer-headline reveal">Ready to let your agents hire each other?<span class="footer-sub">Join the network.</span></h2>
-    <div class="footer-form reveal">
-      <form class="waitlist-form" id="waitlist-footer" onsubmit="return handleWaitlist(event, this)">
-        <input type="email" class="waitlist-input" placeholder="you@company.com" required>
-        <button type="submit" class="waitlist-btn">Join waitlist</button>
-      </form>
+    <h2 class="footer-headline reveal">See a governed delegation end to end.</h2>
+    <p class="footer-sub reveal">Request early access or book a 20-minute architecture walkthrough.</p>
+    <div class="footer-actions reveal">
+      <a href="mailto:parth@usenexra.com?subject=Request%20demo" class="hero-btn hero-btn-primary">Request demo</a>
+      <a href="mailto:parth@usenexra.com?subject=Join%20waitlist" class="hero-btn hero-btn-secondary">Join waitlist</a>
     </div>
-    <p class="footer-footnote reveal">No credit card. Invite-only access begins Q2 2026.</p>
   </div>
 </section>
 
@@ -2126,6 +3406,7 @@ budget:      $0.08
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script>
 (function() {
   var cursor = document.getElementById('cursor');
@@ -2171,7 +3452,10 @@ document.addEventListener('DOMContentLoaded', function() {
     heroRight.style.transform = 'translateY(0)';
   }, 760);
 
+  initHeroNetwork();
   initDelegationSession();
+  initWhyNowStack();
+  initStakeholderTabs();
 });
 
 function animateHeadline() {
@@ -2210,6 +3494,7 @@ function animateHeadline() {
 
 (function() {
   var wm = document.getElementById('hero-watermark');
+  if (!wm) return;
   window.addEventListener('scroll', function() {
     wm.style.transform = 'translate(-50%, calc(-50% - ' + (window.scrollY * 0.3) + 'px))';
   }, { passive: true });
@@ -2294,6 +3579,53 @@ function animateHeadline() {
     });
   });
 })();
+
+function initWhyNowStack() {
+  var stack = document.getElementById('why-now-stack');
+  var protocolLayer = document.getElementById('why-layer-protocol');
+  var nexraLayer = document.getElementById('why-layer-nexra');
+  var agentLayer = document.getElementById('why-layer-agents');
+  var topConnector = document.getElementById('why-connector-top');
+  var bottomConnector = document.getElementById('why-connector-bottom');
+
+  if (!stack || !protocolLayer || !nexraLayer || !agentLayer || !topConnector || !bottomConnector) return;
+
+  if (typeof window.gsap === 'undefined') {
+    return;
+  }
+
+  gsap.set([protocolLayer, nexraLayer, agentLayer, topConnector, bottomConnector], { opacity: 0 });
+  gsap.set(protocolLayer, { y: 0.45 });
+  gsap.set(nexraLayer, { y: -0.35 });
+  gsap.set(agentLayer, { y: -0.45 });
+
+  var tl = gsap.timeline({ paused: true });
+  tl.to(protocolLayer, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, 0);
+  tl.to(bottomConnector, { opacity: 1, duration: 0.3, ease: 'power2.out' }, 0.08);
+  tl.to(nexraLayer, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, 0.32);
+  tl.to(nexraLayer, {
+    keyframes: [
+      { boxShadow: '0 0 1.5rem rgba(255, 255, 255, 0.08)', duration: 0.14 },
+      { boxShadow: '0 0 1.15rem rgba(255, 255, 255, 0.06)', duration: 0.14 }
+    ],
+    ease: 'none'
+  }, 0.36);
+  tl.to(topConnector, { opacity: 1, duration: 0.3, ease: 'power2.out' }, 0.62);
+  tl.to(agentLayer, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, 0.8);
+
+  var hasPlayed = false;
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (!hasPlayed && entry.isIntersecting) {
+        hasPlayed = true;
+        tl.play(0);
+        observer.unobserve(stack);
+      }
+    });
+  }, { threshold: 0.4 });
+
+  observer.observe(stack);
+}
 
 function initDelegationSession() {
   var stepButtons = document.querySelectorAll('.session-step');
@@ -2472,6 +3804,223 @@ function initDelegationSession() {
   }, { threshold: 0.35 });
 
   startWhenVisible.observe(sessionShell);
+}
+
+function initHeroNetwork() {
+  var panel = document.getElementById('hero-live-panel');
+  var logEl = document.getElementById('hero-live-log');
+  var spendEl = document.getElementById('hero-live-spend');
+  if (!panel || !logEl || !spendEl) return;
+
+  var maxRows = 7;
+  var spendCap = 50;
+  var spendCurrent = 3.41;
+  var spendTarget = 3.41;
+  var spendInterval = null;
+  var eventTimer = null;
+  var pairIndex = 0;
+
+  var agentPairs = [
+    ['notifier', 'scheduler'],
+    ['fulfillment', 'payments'],
+    ['scheduler', 'billing'],
+    ['fulfillment', 'billing'],
+    ['scheduler', 'inventory'],
+    ['payments', 'notifier']
+  ];
+
+  var actionLabels = ['JWT_ISSUE', 'CAP_CHECK', 'POLICY_EVAL', 'SPEND_GATE', 'ROUTE', 'CAPABILITY'];
+  var actionIndex = 0;
+
+  function pad2(value) {
+    return String(value).padStart(2, '0');
+  }
+
+  function pad3(value) {
+    return String(value).padStart(3, '0');
+  }
+
+  function formatTimestamp(ts) {
+    var d = new Date(ts);
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()) + '.' + pad3(d.getMilliseconds());
+  }
+
+  function updateSpendDisplay(value) {
+    var safeValue = Math.max(0, Math.min(spendCap, value));
+    spendEl.textContent = '$' + safeValue.toFixed(2);
+    spendEl.classList.remove('warn', 'critical');
+    if (safeValue > 48) spendEl.classList.add('critical');
+    else if (safeValue > 40) spendEl.classList.add('warn');
+  }
+
+  function smoothSpendTo(nextValue) {
+    if (spendInterval) clearInterval(spendInterval);
+    var target = Math.max(0, Math.min(spendCap, nextValue));
+    spendInterval = setInterval(function() {
+      var delta = target - spendCurrent;
+      if (Math.abs(delta) < 0.005) {
+        spendCurrent = target;
+        updateSpendDisplay(spendCurrent);
+        clearInterval(spendInterval);
+        spendInterval = null;
+        return;
+      }
+      spendCurrent += delta * 0.22;
+      updateSpendDisplay(spendCurrent);
+    }, 0.05 * 1000);
+  }
+
+  function applyRowParity() {
+    Array.prototype.forEach.call(logEl.children, function(row, index) {
+      row.classList.toggle('alt', index % 2 === 1);
+    });
+  }
+
+  function trimRows() {
+    if (logEl.children.length <= maxRows) return;
+    var oldest = logEl.lastElementChild;
+    if (!oldest) return;
+    oldest.classList.add('exit');
+    setTimeout(function() {
+      if (oldest.parentElement === logEl) {
+        logEl.removeChild(oldest);
+        applyRowParity();
+      }
+    }, 300);
+  }
+
+  function nextPair() {
+    var pair = agentPairs[pairIndex % agentPairs.length];
+    pairIndex += 1;
+    return pair;
+  }
+
+  function createRow(data) {
+    var row = document.createElement('div');
+    row.className = 'hero-live-row' + (data.resultClass === 'blocked' ? ' blocked' : '');
+    row.innerHTML = ''
+      + '<span class="hero-live-cell-time">' + data.time + '</span>'
+      + '<span class="hero-live-cell-agent">' + data.from + '</span>'
+      + '<span class="hero-live-cell-to"><span class="hero-live-arrow">→</span>' + data.to + '</span>'
+      + '<span class="hero-live-result"><span class="hero-live-result-badge ' + data.resultClass + '">' + data.resultLabel + '</span><span class="hero-live-action">' + data.action + '</span></span>';
+
+    logEl.insertBefore(row, logEl.firstChild);
+
+    requestAnimationFrame(function() {
+      row.classList.add('show');
+      var badge = row.querySelector('.hero-live-result-badge');
+      if (badge) {
+        badge.classList.add('pulse');
+        setTimeout(function() {
+          badge.classList.remove('pulse');
+        }, 0.36 * 1000);
+      }
+    });
+
+    applyRowParity();
+    trimRows();
+    return row;
+  }
+
+  function seedRows() {
+    var backfill = 5;
+    var now = Date.now();
+    for (var i = backfill; i >= 1; i -= 1) {
+      var pair = nextPair();
+      var approved = Math.random() < 0.82;
+      createRow({
+        time: formatTimestamp(now - i * 1600),
+        from: pair[0],
+        to: pair[1],
+        action: actionLabels[actionIndex % actionLabels.length],
+        resultClass: approved ? 'approved' : 'blocked',
+        resultLabel: approved ? 'approved' : 'blocked'
+      });
+      actionIndex += 1;
+    }
+  }
+
+  function emitEvent(forceBlocked) {
+    var pair = nextPair();
+    var approved = forceBlocked ? false : Math.random() < 0.82;
+    var action = actionLabels[actionIndex % actionLabels.length];
+    actionIndex += 1;
+    createRow({
+      time: formatTimestamp(Date.now()),
+      from: pair[0],
+      to: pair[1],
+      action: action,
+      resultClass: approved ? 'approved' : 'blocked',
+      resultLabel: approved ? 'approved' : 'blocked'
+    });
+
+    if (approved) {
+      var increment = 0.01 + Math.random() * 0.06;
+      spendTarget = Math.min(spendCap, spendTarget + increment);
+      smoothSpendTo(spendTarget);
+    }
+  }
+
+  function scheduleNextEvent() {
+    if (eventTimer) clearTimeout(eventTimer);
+    eventTimer = setTimeout(function() {
+      emitEvent(false);
+      scheduleNextEvent();
+    }, (2 + Math.random()) * 1000);
+  }
+
+  panel.addEventListener('click', function() {
+    emitEvent(true);
+    scheduleNextEvent();
+  });
+
+  updateSpendDisplay(spendCurrent);
+  seedRows();
+  scheduleNextEvent();
+}
+
+function initStakeholderTabs() {
+  var tabs = document.querySelectorAll('.stakeholder-tab');
+  var panel = document.getElementById('stakeholder-panel');
+  if (!tabs.length || !panel) return;
+
+  var content = {
+    engineering: {
+      body: 'Three lines to register an agent. One call to discover and delegate. The registry handles capability matching via pgvector semantic search. Scoped JWTs and HMAC-signed webhooks handle trust. No runtime lock-in — Nexra never touches execution.',
+      bullets: ['Python and TypeScript SDK', 'Works with any signed HTTPS webhook', 'Ships in under an hour, no migration']
+    },
+    security: {
+      body: 'Every cross-agent call is authorized before it fires. Scoped delegation JWTs. HMAC-SHA256 signed webhooks. Minimum trust score enforcement. Circuit breakers halt runaway agents. Full audit trail for incident review.',
+      bullets: ['Scoped context — agents only see what policy permits', 'Tamper-evident, append-only audit log', 'SIEM export ready']
+    },
+    finance: {
+      body: 'Spend caps enforced before the webhook fires. Real-time budget tracking per agent. Circuit breakers trigger automatically at threshold. Usage metered to Stripe. No surprise AI bills.',
+      bullets: ['Per-agent spend visibility', 'Hard caps — not soft warnings', 'Stripe metering, export-ready for accounting']
+    },
+    compliance: {
+      body: 'Immutable audit trail on every delegation. YAML-defined policies version-controlled and evaluated on each call. Human-in-the-loop gates before sensitive actions. Export-ready for SOC 2, GDPR, HIPAA.',
+      bullets: ['Policy versioning with full history', 'HiTL gate with full context before approval', 'Regulator-ready export format']
+    }
+  };
+
+  function setTab(key) {
+    tabs.forEach(function(tab) {
+      var active = tab.getAttribute('data-stakeholder') === key;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+
+    var data = content[key];
+    panel.innerHTML = '<p>' + data.body + '</p><ul><li>' + data.bullets.join('</li><li>') + '</li></ul>';
+  }
+
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      setTab(tab.getAttribute('data-stakeholder'));
+    });
+  });
+
+  setTab('engineering');
 }
 
 function handleWaitlist(e, form) {
