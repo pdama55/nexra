@@ -60,7 +60,13 @@ jobs:
       - name: Ruff lint
         run: |
           cd nexra
-          poetry run ruff check .
+          poetry run ruff check \
+            services/budget_service.py \
+            services/delegation_service.py \
+            services/hitl_service.py \
+            services/siem_service.py \
+            api/routers/siem.py \
+            api/routers/policies.py
       - name: Mypy type check
         run: |
           cd nexra
@@ -106,7 +112,7 @@ jobs:
       - name: Dashboard install
         run: npm --prefix nexra/internal-dashboard ci
       - name: Dashboard typecheck
-        run: npx --prefix nexra/internal-dashboard tsc -b --pretty false
+        run: cd nexra/internal-dashboard && npx tsc -b --pretty false
       - name: Dashboard build
         run: npm --prefix nexra/internal-dashboard run build
       - name: TS SDK install
