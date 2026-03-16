@@ -3,68 +3,55 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexra — Control Plane for AI Agents</title>
-<meta name="description" content="Governance, policy, and observability that makes multi-agent systems safe to run in production. Works with LangGraph, CrewAI, and anything that handles a webhook.">
-<meta property="og:title" content="Nexra — Control Plane for AI Agents">
-<meta property="og:description" content="Every delegation, governed. Every agent, accounted for. Policy engine, spend metering, and immutable audit trail for AI agent networks.">
+<title>Nexra - Agents Hiring Agents, Governed</title>
+<meta name="description" content="The infrastructure that lets AI agents hire other AI agents. Coordination and governance for production agent networks with policy checks, spend controls, and append-only audit logs.">
+<meta property="og:title" content="Nexra - Agents Hiring Agents, Governed">
+<meta property="og:description" content="Agents discover and hire other agents at runtime. Nexra governs every delegation with policy checks, spend controls, and immutable audit records.">
 <meta property="og:url" content="https://usenexra.com">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Nexra — Control Plane for AI Agents">
+<meta name="twitter:title" content="Nexra - Agents Hiring Agents, Governed">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:ital,wght@0,300;0,400;1,300&amp;display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════
-   NEXRA DESIGN TOKENS
-   ═══════════════════════════════════════════ */
 :root {
-  --bg: #0A0A08;
-  --fg: #E8E6DE;
-  --accent-cta: #E8E6DE;
-  --accent-label: #6B6B67;
-  --accent-code: #C8C4B8;
-  --muted: #9A9A94;
-  --border: #1E1E1A;
-  --code-bg: #0D0D0B;
+  --bg: #0a0a08;
+  --fg: #e8e6de;
+  --muted: #9a9a94;
+  --label: #6b6b67;
+  --border: #1e1e1a;
+  --code-bg: #0d0d0b;
+  --panel-bg: rgba(255, 255, 255, 0.015);
+  --chip-bg: rgba(255, 255, 255, 0.06);
+  --nexra-accent: #d8cf9b;
+  --text-primary: rgba(255, 255, 255, 0.8);
+  --text-secondary: rgba(255, 255, 255, 0.55);
+  --text-meta: rgba(255, 255, 255, 0.38);
+  --text-disabled: rgba(255, 255, 255, 0.25);
   --font-display: 'Bebas Neue', sans-serif;
   --font-body: 'DM Mono', monospace;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ═══════════════════════════════════════════
-   RESET & BASE
-   ═══════════════════════════════════════════ */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-html {
-  scroll-behavior: auto;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: auto; }
 body {
   background: var(--bg);
-  color: var(--fg);
+  color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 14px;
-  font-weight: 300;
   line-height: 1.7;
+  font-weight: 300;
   cursor: none;
   opacity: 0;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-
-::selection {
-  background: var(--fg);
-  color: var(--bg);
-}
-
 a { color: inherit; text-decoration: none; }
+::selection { background: var(--fg); color: var(--bg); }
 
-/* ═══════════════════════════════════════════
-   GRAIN OVERLAY
-   ═══════════════════════════════════════════ */
 body::after {
   content: '';
   position: fixed;
@@ -77,43 +64,74 @@ body::after {
   background-size: 256px 256px;
 }
 
-/* ═══════════════════════════════════════════
-   CUSTOM CURSOR
-   ═══════════════════════════════════════════ */
 .cursor-dot {
   position: fixed;
   width: 8px;
   height: 8px;
-  background: var(--fg);
   border-radius: 50%;
+  background: var(--fg);
+  mix-blend-mode: difference;
   pointer-events: none;
   z-index: 10000;
-  mix-blend-mode: difference;
   transform: translate(-50%, -50%);
   transition: width 0.3s var(--ease), height 0.3s var(--ease);
 }
+.cursor-dot.expanded { width: 40px; height: 40px; }
 
-.cursor-dot.expanded {
-  width: 40px;
-  height: 40px;
-}
-
-/* ═══════════════════════════════════════════
-   LAYOUT
-   ═══════════════════════════════════════════ */
 .container {
-  max-width: 1200px;
+  max-width: 1240px;
   margin: 0 auto;
   padding: 0 48px;
 }
 
-@media (max-width: 768px) {
-  .container { padding: 0 24px; }
+.section-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--label);
+  margin-bottom: 18px;
 }
 
-/* ═══════════════════════════════════════════
-   NAV
-   ═══════════════════════════════════════════ */
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 5.5vw, 68px);
+  letter-spacing: 1px;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.section-subtitle {
+  margin-top: 14px;
+  max-width: 760px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--chip-bg);
+  color: var(--fg);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .nav {
   position: fixed;
   top: 0;
@@ -125,94 +143,67 @@ body::after {
   align-items: center;
   justify-content: space-between;
   padding: 0 48px;
-  background: transparent;
   border-bottom: 1px solid transparent;
+  background: transparent;
   transition: background 0.4s var(--ease), border-color 0.4s var(--ease);
 }
-
 .nav.scrolled {
   background: rgba(10, 10, 8, 0.95);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   border-bottom-color: var(--border);
+  backdrop-filter: blur(8px);
 }
-
 .nav-wordmark {
   font-family: var(--font-display);
-  font-size: 28px;
-  letter-spacing: 2px;
-  color: var(--fg);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  cursor: none;
 }
-
 .nav-links {
-  display: flex;
-  gap: 40px;
   list-style: none;
+  display: flex;
+  gap: 30px;
 }
-
 .nav-links a {
-  font-family: var(--font-body);
   font-size: 12px;
-  font-weight: 400;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--muted);
   position: relative;
-  cursor: none;
-  transition: color 0.3s var(--ease);
 }
-
 .nav-links a::after {
   content: '';
   position: absolute;
-  bottom: -4px;
   left: 0;
+  bottom: -4px;
   width: 100%;
   height: 1px;
   background: var(--fg);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.3s var(--ease);
+  transition: transform 0.25s var(--ease);
 }
-
 .nav-links a:hover { color: var(--fg); }
 .nav-links a:hover::after { transform: scaleX(1); }
-
 .nav-cta {
-  font-family: var(--font-body);
   font-size: 12px;
-  font-weight: 400;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--bg);
-  background: var(--accent-cta);
+  background: var(--fg);
   padding: 10px 24px;
-  border: none;
-  cursor: none;
   transition: opacity 0.3s var(--ease);
 }
-
 .nav-cta:hover { opacity: 0.85; }
 
-@media (max-width: 768px) {
-  .nav { padding: 0 24px; }
-  .nav-links { display: none; }
-}
-
-/* ═══════════════════════════════════════════
-   HERO
-   ═══════════════════════════════════════════ */
 .hero {
-  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
-  overflow: hidden;
+  position: relative;
   padding-top: 72px;
+  overflow: hidden;
 }
-
 .hero-watermark {
   position: absolute;
   top: 50%;
@@ -220,706 +211,1683 @@ body::after {
   transform: translate(-50%, -50%);
   font-family: var(--font-display);
   font-size: clamp(200px, 22vw, 360px);
-  letter-spacing: 16px;
-  text-transform: uppercase;
+  letter-spacing: 14px;
   color: transparent;
   -webkit-text-stroke: 1px var(--border);
-  user-select: none;
   pointer-events: none;
+  user-select: none;
   white-space: nowrap;
-  will-change: transform;
 }
-
 .hero-inner {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 80px;
-  align-items: center;
   width: 100%;
-  position: relative;
   z-index: 1;
 }
-
-.hero-left { display: flex; flex-direction: column; gap: 0; }
-
 .hero-eyebrow {
-  font-family: var(--font-body);
   font-size: 11px;
-  font-weight: 400;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: var(--accent-label);
-  margin-bottom: 24px;
+  color: var(--label);
+  margin-bottom: 22px;
   opacity: 0;
 }
-
 .hero-headline {
   font-family: var(--font-display);
-  font-size: clamp(64px, 8vw, 96px);
+  font-size: clamp(62px, 8vw, 96px);
   line-height: 0.95;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--fg);
-  margin-bottom: 0;
 }
-
-.hero-headline .line {
-  display: block;
-  overflow: hidden;
-}
-
-.hero-headline .char {
-  display: inline-block;
-  transform: translateY(100%);
-  opacity: 0;
-}
-
+.hero-headline .line { display: block; overflow: hidden; }
+.hero-headline .char { display: inline-block; transform: translateY(100%); opacity: 0; }
 .hero-right {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 26px;
   opacity: 0;
 }
-
-.hero-body {
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 300;
-  line-height: 1.7;
-  color: var(--muted);
-}
-
-.hero-body p + p { margin-top: 16px; }
-
+.hero-body { color: var(--muted); }
+.hero-body p + p { margin-top: 14px; }
 .waitlist-form {
   display: flex;
-  max-width: 420px;
+  max-width: 430px;
 }
-
 .waitlist-input {
   flex: 1;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 300;
   padding: 14px 16px;
-  background: transparent;
   border: 1px solid var(--border);
   border-right: none;
+  background: transparent;
   color: var(--fg);
-  outline: none;
-  cursor: none;
-  transition: border-color 0.3s var(--ease);
-}
-
-.waitlist-input::placeholder { color: var(--muted); }
-.waitlist-input:focus { border-color: var(--muted); }
-
-.waitlist-btn {
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  padding: 14px 28px;
-  background: var(--accent-cta);
-  color: var(--bg);
-  border: none;
-  cursor: none;
-  white-space: nowrap;
-  transition: opacity 0.3s var(--ease);
-}
-
-.waitlist-btn:hover { opacity: 0.85; }
-
-.waitlist-success {
   font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 400;
-  color: var(--fg);
-  letter-spacing: 0.5px;
 }
-
-.hero-footnote {
+.waitlist-input::placeholder { color: var(--muted); }
+.waitlist-btn {
+  border: none;
+  background: var(--fg);
+  color: var(--bg);
+  padding: 14px 28px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
   font-family: var(--font-body);
+  transition: opacity 0.3s var(--ease);
+  white-space: nowrap;
+}
+.waitlist-btn:hover { opacity: 0.85; }
+.hero-footnote,
+.hero-proof {
   font-size: 11px;
-  font-weight: 300;
   color: var(--muted);
-  letter-spacing: 0.5px;
-  opacity: 0.6;
+  letter-spacing: 0.4px;
 }
+.hero-proof { opacity: 0.75; }
 
-@media (max-width: 900px) {
-  .hero-inner {
-    grid-template-columns: 1fr;
-    gap: 48px;
-  }
-}
-
-/* ═══════════════════════════════════════════
-   TICKER
-   ═══════════════════════════════════════════ */
 .ticker {
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   overflow: hidden;
   padding: 20px 0;
-  position: relative;
 }
-
 .ticker-track {
   display: flex;
   width: max-content;
-  animation: ticker-scroll 40s linear infinite;
+  animation: ticker-scroll 44s linear infinite;
 }
-
-.ticker:hover .ticker-track {
-  animation-play-state: paused;
-}
-
 .ticker-item {
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 300;
+  font-size: 12px;
+  color: var(--muted);
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--muted);
   white-space: nowrap;
-  padding: 0 32px;
-  transition: color 0.3s var(--ease);
+  padding: 0 30px;
 }
-
-.ticker:hover .ticker-item { color: var(--fg); opacity: 0.6; }
-
 .ticker-item::after {
   content: '·';
-  margin-left: 32px;
+  margin-left: 30px;
   color: var(--border);
 }
-
 @keyframes ticker-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
 
-/* ═══════════════════════════════════════════
-   SECTION REVEAL
-   ═══════════════════════════════════════════ */
-.reveal {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
-}
-
-.reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ═══════════════════════════════════════════
-   PROBLEM SECTION
-   ═══════════════════════════════════════════ */
-.problem {
+.stack,
+.problem,
+.how-session,
+.code-section,
+.icp,
+.surfaces,
+.integrations,
+.why,
+.roi {
   padding: 120px 0;
+  border-top: 1px solid var(--border);
+}
+
+.stack-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 34px;
+  margin-top: 24px;
+}
+.stack-copy p { color: var(--muted); }
+.stack-copy p + p { margin-top: 14px; }
+.stack-diagram {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, #11110e 0%, #0a0a08 100%);
+  padding: 20px;
+}
+.diagram-layer {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 14px;
+  text-align: center;
+  color: var(--fg);
+  font-size: 12px;
+}
+.diagram-arrow {
+  text-align: center;
+  color: var(--label);
+  margin: 8px 0;
+}
+.diagram-layer.nexra {
+  border-color: rgba(216, 207, 155, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(216, 207, 155, 0.25);
+  background: rgba(216, 207, 155, 0.05);
+}
+.stack-chips {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .problem-grid {
+  margin-top: 1.375rem;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 80px;
-  align-items: start;
+  gap: 1.125rem;
 }
-
-.problem-headline {
+.problem-card {
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  padding: 1.625rem;
+}
+.problem-card h3 {
   font-family: var(--font-display);
-  font-size: clamp(40px, 5vw, 64px);
-  line-height: 1;
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 0.95;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--fg);
+  margin-bottom: 0.75rem;
 }
-
-.problem-body {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.problem-body p {
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 300;
-  line-height: 1.7;
-  color: var(--muted);
-}
-
-.problem-body strong {
-  color: var(--fg);
-  font-weight: 400;
-}
-
-.section-label {
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--accent-label);
-  margin-bottom: 32px;
-  display: block;
-}
-
-.section-label .counter {
-  font-variant-numeric: tabular-nums;
-}
-
-@media (max-width: 900px) {
-  .problem-grid {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
-}
-
-/* ═══════════════════════════════════════════
-   HOW IT WORKS
-   ═══════════════════════════════════════════ */
-.how {
-  padding: 120px 0;
-  border-top: 1px solid var(--border);
-}
-
-.how-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.how-step {
-  padding: 40px 32px;
-  border-right: 1px solid var(--border);
-  transition: background 0.4s var(--ease);
-  opacity: 0;
-  transform: translateY(24px);
-}
-
-.how-step:last-child { border-right: none; }
-
-.how-step:hover { background: rgba(255, 255, 255, 0.02); }
-
-.how-step.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.how-num {
+.problem-card p { color: var(--muted); }
+.problem-card p + p { margin-top: 0.625rem; }
+.problem-statement {
+  margin-top: 1.875rem;
+  text-align: center;
   font-family: var(--font-display);
-  font-size: 48px;
-  color: var(--accent-label);
-  line-height: 1;
-  margin-bottom: 24px;
+  font-size: clamp(36px, 5vw, 58px);
+  letter-spacing: 1px;
+  line-height: 0.95;
+  text-transform: uppercase;
 }
 
-.how-title {
+.session-shell {
+  margin-top: 28px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.01);
+}
+.session-progress {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.session-progress-bar {
+  display: block;
+  width: 16.66%;
+  height: 100%;
+  background: var(--nexra-accent);
+  transition: width 0.35s var(--ease);
+}
+.session-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  min-height: 530px;
+}
+.session-steps {
+  border-right: 1px solid var(--border);
+  padding: 10px;
+}
+.session-step {
+  width: 100%;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-body);
+  cursor: none;
+  transition: border-color 0.25s var(--ease), background 0.25s var(--ease);
+}
+.session-step + .session-step { margin-top: 8px; }
+.session-step-id {
+  color: var(--label);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 4px;
+}
+.session-step-title {
   font-family: var(--font-display);
   font-size: 28px;
-  letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--fg);
-  margin-bottom: 16px;
+  line-height: 0.95;
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 8px;
 }
-
-.how-desc {
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 300;
-  line-height: 1.7;
+.session-step-desc {
   color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
 }
-
-@media (max-width: 900px) {
-  .how-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .how-step:nth-child(2) { border-right: none; }
-  .how-step:nth-child(1),
-  .how-step:nth-child(2) { border-bottom: 1px solid var(--border); }
+.session-step.active {
+  border-color: rgba(216, 207, 155, 0.45);
+  background: rgba(216, 207, 155, 0.06);
 }
-
-@media (max-width: 600px) {
-  .how-grid { grid-template-columns: 1fr; }
-  .how-step { border-right: none; border-bottom: 1px solid var(--border); }
-  .how-step:last-child { border-bottom: none; }
-}
-
-/* ═══════════════════════════════════════════
-   CODE BLOCK
-   ═══════════════════════════════════════════ */
-.code-section {
-  background: var(--code-bg);
-  padding: 80px 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-
-.code-block {
+.session-panel-wrap {
   position: relative;
-  border: 1px solid var(--border);
-  padding: 40px;
+  padding: 20px;
+}
+.session-chip {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+.session-panel {
+  margin-top: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0c0c0a;
+  color: #d1cdbd;
+  min-height: 430px;
+  padding: 20px;
+  font-size: 12px;
+  line-height: 1.7;
   overflow-x: auto;
+  white-space: pre;
+}
+.session-note {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
+.code-section { background: var(--code-bg); }
+.code-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-size: 11px;
+  color: var(--label);
+  margin-bottom: 18px;
+  display: block;
+}
+.code-intro {
+  color: var(--muted);
+  max-width: 720px;
+  margin-bottom: 20px;
+}
+.code-block,
+.code-output {
+  border: 1px solid var(--border);
+  background: #090908;
+  position: relative;
+}
+.code-block { padding: 40px; overflow-x: auto; }
 .code-tab {
   position: absolute;
   top: 0;
   right: 0;
-  font-family: var(--font-body);
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--accent-label);
-  padding: 8px 16px;
   border-left: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  color: var(--label);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 8px 14px;
 }
-
-.code-block pre {
+.code-block pre,
+.code-output pre {
   font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 400;
   line-height: 1.8;
-  margin: 0;
   white-space: pre;
 }
-
-.code-block .code-line {
+.code-output {
+  margin-top: 14px;
+  padding: 22px;
+  overflow-x: auto;
+}
+.code-output-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--label);
+  margin-bottom: 8px;
+}
+.code-line {
   opacity: 0;
   transform: translateX(-8px);
   transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
 }
-
-.code-block .code-line.visible {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.c-comment { color: #4A4A46; }
+.code-line.visible { opacity: 1; transform: translateX(0); }
+.c-comment { color: #4a4a46; }
 .c-key { color: var(--muted); }
 .c-str { color: var(--fg); }
-.c-val { color: var(--accent-code); }
-.c-fn { color: var(--fg); opacity: 0.7; }
+.c-val { color: #c8c4b8; }
+.c-fn { color: var(--fg); opacity: 0.72; }
 
-/* ═══════════════════════════════════════════
-   WHY NEXRA
-   ═══════════════════════════════════════════ */
-.why {
-  padding: 120px 0;
+.icp-grid,
+.surface-grid,
+.roi-grid {
+  margin-top: 24px;
+  display: grid;
+  gap: 16px;
 }
+.icp-grid { grid-template-columns: repeat(3, 1fr); }
+.icp-card,
+.surface-card,
+.roi-card {
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  padding: 22px;
+}
+.icp-icon {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--label);
+  margin-bottom: 12px;
+}
+.icp-title,
+.roi-title {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 3vw, 40px);
+  text-transform: uppercase;
+  line-height: 0.95;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.icp-card p,
+.roi-card p { color: var(--muted); }
+
+.surfaces .section-subtitle,
+.integrations .section-subtitle,
+.why .section-subtitle,
+.roi .section-subtitle,
+.icp .section-subtitle,
+.stack .section-subtitle,
+.problem .section-subtitle { max-width: 47.5rem; }
+
+.surface-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+.surface-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 250px;
+}
+.surface-card pre {
+  margin-top: 10px;
+  color: #cfcab9;
+  font-size: 12px;
+  line-height: 1.62;
+  white-space: pre;
+  overflow-x: auto;
+}
+.surface-card .chip { margin-top: 12px; }
+.surface-title {
+  font-family: var(--font-display);
+  font-size: 34px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 0.95;
+}
+.surface-card.span-2 { grid-column: span 2; }
+
+.integrations-shell {
+  margin-top: 24px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  padding: 26px;
+}
+.integration-center {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 1px solid rgba(216, 207, 155, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  color: var(--nexra-accent);
+  font-family: var(--font-display);
+  font-size: 34px;
+  letter-spacing: 1px;
+}
+.integration-row {
+  display: grid;
+  gap: 10px;
+}
+.integration-row + .integration-row { margin-top: 10px; }
+.integration-row.top { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.integration-row.bottom { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.integration-item {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: center;
+  padding: 10px 8px;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+.integrations-note {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.integrations-note a { color: var(--fg); text-decoration: underline; }
 
 .why-row {
   display: grid;
   grid-template-columns: 80px 1fr 1.2fr;
-  gap: 48px;
+  gap: 36px;
   align-items: start;
-  padding: 40px 0;
+  padding: 30px 0;
   border-bottom: 1px solid var(--border);
   opacity: 0;
-  transform: translateX(-24px);
+  transform: translateX(-22px);
   transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
 }
-
 .why-row:first-of-type { border-top: 1px solid var(--border); }
-
-.why-row.visible {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.why-num {
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 300;
-  color: var(--muted);
-  padding-top: 4px;
-}
-
+.why-row.visible { opacity: 1; transform: translateX(0); }
+.why-num { color: var(--muted); font-size: 13px; }
 .why-title {
   font-family: var(--font-display);
-  font-size: clamp(32px, 4vw, 48px);
-  line-height: 1;
+  font-size: clamp(30px, 3.8vw, 46px);
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--fg);
-  transition: color 0.4s var(--ease);
+  line-height: 0.95;
 }
+.why-desc { color: var(--muted); }
 
-.why-row:hover .why-title { color: var(--muted); }
-
-.why-desc {
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 300;
-  line-height: 1.7;
+.roi-stat {
+  margin-top: 22px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  text-align: center;
+  padding: 26px;
+}
+.roi-stat strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(88px, 14vw, 170px);
+  line-height: 0.8;
+  letter-spacing: 1px;
+  color: var(--nexra-accent);
+}
+.roi-stat span {
+  display: block;
+  margin-top: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   color: var(--muted);
-  padding-top: 4px;
+  font-size: 12px;
 }
+.roi-grid { grid-template-columns: repeat(3, 1fr); }
 
-@media (max-width: 900px) {
-  .why-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-}
-
-/* ═══════════════════════════════════════════
-   FOOTER CTA
-   ═══════════════════════════════════════════ */
 .footer-cta {
+  border-top: 1px solid var(--border);
   position: relative;
+  overflow: hidden;
   padding: 160px 0 80px;
   text-align: center;
-  overflow: hidden;
 }
-
 .footer-watermark {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   font-family: var(--font-display);
-  font-size: clamp(120px, 16vw, 280px);
-  letter-spacing: 12px;
-  text-transform: uppercase;
+  font-size: clamp(130px, 16vw, 280px);
   color: transparent;
   -webkit-text-stroke: 1px var(--border);
-  user-select: none;
+  letter-spacing: 12px;
+  text-transform: uppercase;
   pointer-events: none;
-  white-space: nowrap;
-  animation: slow-rotate 60s linear infinite;
+  user-select: none;
 }
-
-@keyframes slow-rotate {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
 .footer-headline {
+  position: relative;
+  z-index: 1;
   font-family: var(--font-display);
-  font-size: clamp(40px, 5vw, 64px);
-  line-height: 1.05;
+  font-size: clamp(42px, 5vw, 66px);
+  line-height: 0.95;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--fg);
-  margin-bottom: 40px;
-  position: relative;
-  z-index: 1;
 }
-
-.footer-form {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 16px;
-  position: relative;
-  z-index: 1;
-}
-
-.footer-footnote {
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 300;
+.footer-sub {
+  display: block;
   color: var(--muted);
-  letter-spacing: 0.5px;
-  opacity: 0.6;
-  position: relative;
-  z-index: 1;
+  margin-top: 8px;
+  font-size: clamp(28px, 3vw, 42px);
 }
+.footer-form { position: relative; z-index: 1; margin-top: 28px; display: flex; justify-content: center; }
+.footer-footnote { position: relative; z-index: 1; margin-top: 14px; color: var(--muted); font-size: 11px; }
 
-/* ═══════════════════════════════════════════
-   BOTTOM BAR
-   ═══════════════════════════════════════════ */
 .bottom-bar {
   border-top: 1px solid var(--border);
   padding: 24px 0;
 }
-
 .bottom-inner {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
 }
-
 .bottom-wordmark {
   font-family: var(--font-display);
   font-size: 18px;
   letter-spacing: 2px;
   text-transform: uppercase;
+}
+.bottom-links {
+  list-style: none;
+  display: flex;
+  gap: 28px;
+}
+.bottom-links a {
+  color: var(--muted);
+  font-size: 12px;
+}
+.bottom-links a:hover { color: var(--fg); }
+.bottom-copy { color: var(--muted); font-size: 11px; opacity: 0.65; }
+
+/* Design-only polish pass */
+.container { max-width: 1100px; }
+
+p { color: var(--text-primary); }
+
+.section-label {
+  font-size: 0.72em;
+  letter-spacing: 0.15em;
+  opacity: 1;
+  color: var(--text-meta);
+  margin-bottom: 12px;
+}
+
+.section-title {
+  letter-spacing: -0.01em;
+  margin-bottom: 16px;
+}
+
+.section-subtitle {
+  margin-top: 0;
+  margin-bottom: 32px;
+  opacity: 1;
+  color: var(--text-primary);
+  line-height: 1.7;
+  font-size: 0.9em;
+}
+
+.stack,
+.problem,
+.how-session,
+.code-section,
+.icp,
+.surfaces,
+.integrations,
+.why,
+.roi {
+  padding: 100px 0;
+}
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 80px 0;
+}
+
+.hero-inner {
+  align-items: flex-start;
+  gap: 64px;
+}
+
+.hero-left { max-width: 620px; }
+
+.hero-eyebrow { margin-bottom: 10px; }
+
+.hero-headline {
+  font-size: clamp(42px, 5.8vw, 76px);
+  line-height: 0.9;
+}
+
+.hero-headline .line {
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.hero-right {
+  align-self: flex-start;
+  padding-top: 6px;
+  max-width: 470px;
+}
+
+.hero-body,
+.stack-copy p,
+.problem-card p,
+.why-desc,
+.icp-card p,
+.roi-card p,
+.code-intro {
+  color: var(--text-primary);
+  opacity: 1;
+  line-height: 1.7;
+}
+
+.stack-copy p {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.hero-body {
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.hero-proof {
+  color: var(--text-secondary);
+  opacity: 1;
+}
+
+.hero-footnote,
+.footer-footnote,
+.bottom-copy {
+  color: var(--text-disabled);
+  opacity: 1;
+}
+
+.nav-links a,
+.why-num,
+.session-step-desc,
+.code-output-label,
+.code-tab,
+.integrations-note,
+.ticker-item,
+.bottom-links a {
+  color: var(--text-secondary);
+}
+
+.hero-watermark {
+  font-size: clamp(170px, 18vw, 290px);
+  color: rgba(232, 230, 222, 0.06);
+  -webkit-text-stroke: 1px rgba(232, 230, 222, 0.08);
+}
+
+.ticker {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.ticker-track {
+  animation-duration: 36s;
+}
+
+.ticker-item {
+  letter-spacing: 0.09em;
+  padding: 0 28px;
+}
+
+.ticker-item::after {
+  content: '◆';
+  margin-left: 28px;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.stack-grid {
+  gap: 20px;
+  margin-top: 18px;
+}
+
+.stack-diagram {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.diagram-layer {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.diagram-layer.nexra {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.06);
+}
+
+.diagram-arrow {
+  color: transparent;
+  font-size: 0;
+  height: 28px;
+  margin: 6px 0;
+  position: relative;
+}
+
+.diagram-arrow::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  transform: translateX(-50%);
+}
+
+.diagram-arrow::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 1px;
+  height: 14px;
+  transform: translateX(-50%);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0));
+  animation: stack-flow 1.8s linear infinite;
+}
+
+@keyframes stack-flow {
+  0% { top: -12px; opacity: 0; }
+  25% { opacity: 1; }
+  100% { top: 28px; opacity: 0; }
+}
+
+.stack-chips { margin-top: 10px; }
+
+.stack-chips .chip {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  font-size: 0.7em;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  padding: 5px 8px;
+}
+
+.problem {
+  padding-top: 7.5rem;
+  padding-bottom: 7.5rem;
+}
+
+.problem-grid {
+  margin-top: 3.75rem;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
+  gap: 5rem;
+}
+
+.problem-card {
+  grid-column: span 6;
+  height: auto;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: default;
+  transition: none;
+}
+
+.problem-card h3 {
+  font-size: clamp(1.5rem, 2.35vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  line-height: 1.16;
+  color: rgba(255, 255, 255, 0.92);
+  text-transform: none;
+  margin-bottom: 1.35rem;
+  max-width: 26.25rem;
+}
+
+.problem-card p {
+  max-width: 26.25rem;
+  font-size: 0.88rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.62);
+  font-weight: 400;
+}
+
+.problem-card p + p { margin-top: 1.1rem; }
+
+.problem-card--emphasis h3 {
+  font-size: clamp(1.68rem, 2.6vw, 2.35rem);
+  font-weight: 800;
+  letter-spacing: -0.016em;
+  line-height: 1.06;
+}
+
+.problem-card--emphasis h3 span {
+  display: block;
+}
+
+.problem-statement {
+  margin-top: 6.75rem;
+  margin-bottom: 0;
+  font-size: clamp(2.3rem, 4.8vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.022em;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.95);
+  text-transform: none;
+  line-height: 1.04;
+  max-width: 50rem;
+  margin-left: auto;
+  margin-right: auto;
+  opacity: 1;
+}
+
+.problem-arch {
+  width: min(100%, 28rem);
+  margin: 2.6rem auto 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.72rem;
+}
+
+.problem-arch-node {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.68rem 1rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.problem-arch-node.problem-arch-node--focus {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.problem-arch-link {
+  width: 1px;
+  height: 1.1rem;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.2));
+}
+
+.how-session { padding-top: 90px; }
+
+.session-shell {
+  margin-top: 20px;
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.session-progress {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.session-progress-bar {
+  display: block;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.65);
+  transition: width 0.4s ease;
+}
+
+.session-grid {
+  grid-template-columns: 32% 68%;
+  min-height: 620px;
+  align-items: stretch;
+}
+
+.session-steps {
+  padding: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+}
+
+.session-step {
+  width: 100%;
+  padding: 18px 22px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 2px solid transparent;
+  background: transparent;
+  opacity: 0.35;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease, border-color 0.15s ease, padding 0.15s ease;
+}
+
+.session-step:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.session-step:last-child {
+  border-bottom: 0;
+}
+
+.session-step.active {
+  background: rgba(255, 255, 255, 0.04);
+  opacity: 1;
+  border-left-color: rgba(255, 255, 255, 0.8);
+  padding-left: 20px;
+}
+
+.session-step-id {
+  display: block;
+  margin-bottom: 5px;
+  font-family: var(--font-body);
+  font-size: 0.62em;
+  letter-spacing: 0.13em;
+  opacity: 0.45;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.session-step-title {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--font-body);
+  font-size: 1.05em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.session-step-desc {
+  font-family: var(--font-body);
+  font-size: 0.76em;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.session-panel-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0d0d0d;
+}
+
+.terminal-header {
+  height: 38px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 6px;
+}
+
+.terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.terminal-step-label {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: 0.65em;
+  letter-spacing: 0.11em;
+  opacity: 0.38;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  transition: opacity 0.15s ease;
+}
+
+.session-panel {
+  position: relative;
+  flex: 1;
+  padding: 28px 32px 56px;
+  font-family: var(--font-body);
+  font-size: 0.81em;
+  line-height: 1.88;
+  color: rgba(255, 255, 255, 0.78);
+  overflow-y: auto;
+  white-space: normal;
+  transition: opacity 0.15s ease;
+}
+
+.terminal-divider {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  margin: 13px 0;
+}
+
+.term-line {
+  white-space: pre-wrap;
+}
+
+.term-line + .term-line {
+  margin-top: 1px;
+}
+
+.term-key {
+  display: inline-block;
+  min-width: 14ch;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.term-success {
+  color: rgba(120, 220, 140, 0.85);
+}
+
+.term-strong {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+.term-heavy {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+}
+
+.term-muted {
+  opacity: 0.45;
+}
+
+.session-chip {
+  position: absolute;
+  bottom: 18px;
+  left: 28px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 2px;
+  font-size: 0.67em;
+  letter-spacing: 0.09em;
+  padding: 3px 10px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-body);
+  transition: opacity 0.15s ease;
+}
+
+.session-note {
+  margin-top: 28px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.79em;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.code-block,
+.code-output,
+.surface-card {
+  background: #0d0d0d;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.code-block,
+.code-output {
+  padding: 56px 32px 26px;
+}
+
+.code-block::before,
+.code-output::before,
+.surface-card::before {
+  content: '● ● ●';
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.code-block::after,
+.code-output::after,
+.surface-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.code-tab {
+  top: 10px;
+  right: 14px;
+  border: 0;
+  padding: 0;
+  font-size: 0.72em;
+  opacity: 0.7;
+}
+
+.code-output {
+  margin-top: 24px;
+}
+
+.code-sequence {
+  position: relative;
+  height: 14px;
+  margin: 10px 0 4px;
+}
+
+.code-sequence::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  transform: translateX(-50%);
+}
+
+.code-sequence::after {
+  content: '↓';
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+}
+
+.code-output-label {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  margin: 0;
+  font-size: 0.72em;
+  opacity: 0.7;
+}
+
+.code-block pre,
+.code-output pre {
+  font-size: 0.82em;
+  line-height: 1.75;
+}
+
+.c-comment { color: rgba(255, 255, 255, 0.3); }
+.c-str { color: rgba(255, 255, 255, 0.78); }
+.c-key { color: rgba(255, 255, 255, 0.92); }
+.c-fn { color: rgba(255, 255, 255, 0.96); opacity: 1; }
+.c-val { color: rgba(255, 255, 255, 0.7); }
+
+.icp { padding-bottom: 80px; }
+.surfaces { padding-top: 92px; }
+
+.icp-grid,
+.surface-grid,
+.roi-grid {
+  gap: 20px;
+  align-items: stretch;
+}
+
+.icp-card,
+.roi-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 28px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.icp-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.82em;
+  margin-bottom: 14px;
+}
+
+.icp-title {
+  font-family: var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 1.3em;
+}
+
+.icp-card p {
+  opacity: 0.65;
+  font-size: 0.85em;
+  line-height: 1.65;
+}
+
+.surface-grid { gap: 20px; }
+
+.surface-card {
+  padding: 54px 28px 20px;
+  min-height: 270px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.surface-title {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.8em;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.surface-card pre {
+  margin-top: 6px;
+  font-size: 0.78em;
+  line-height: 1.8;
+}
+
+.surface-card .chip {
+  margin-top: auto;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  font-size: 0.68em;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+}
+
+.spend-bars {
+  margin: 10px 0 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.spend-bar-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.spend-bar-row span {
+  font-size: 0.72em;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.spend-bar-row .bar {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.spend-bar-row .bar span {
+  display: block;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.integrations-shell {
+  margin-top: 20px;
+  position: relative;
+  padding: 24px 22px 20px;
+}
+
+.integration-center {
+  margin: 0 auto 14px;
+  position: relative;
+}
+
+.integration-center::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 2px);
+  height: 18px;
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+  transform: translateX(-50%);
+  animation: connector-pulse 2s ease-in-out infinite;
+}
+
+.integration-row {
+  position: relative;
+}
+
+.integration-row.top::before,
+.integration-row.bottom::before {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: -8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+@keyframes connector-pulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.8; }
+}
+
+.integration-item {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 3px;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.08em;
+  font-size: 0.78em;
+  padding: 10px 16px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.integration-row.top .integration-item {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.integration-item:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.integrations-note {
+  text-align: center;
+  opacity: 0.45;
+  font-size: 0.8em;
+}
+
+.why-row {
+  padding: 36px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  transition: background 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.why-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.why-num {
+  opacity: 0.35;
+  font-size: 0.85em;
+}
+
+.why-title {
+  letter-spacing: 0.03em;
+}
+
+.why-desc {
+  color: var(--text-primary);
+  opacity: 1;
+  font-size: 0.87em;
+  line-height: 1.7;
+}
+
+.roi-stat {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 48px 0;
+}
+
+.roi-stat strong {
+  font-size: clamp(64px, 10vw, 96px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--fg);
 }
 
-.bottom-links {
-  display: flex;
-  gap: 32px;
-  list-style: none;
+.roi-stat span {
+  letter-spacing: 0.12em;
+  opacity: 0.55;
+  font-size: 0.75em;
 }
 
-.bottom-links a {
+.roi-card:nth-child(1) { border-left: 3px solid rgba(255, 255, 255, 0.4); }
+.roi-card:nth-child(2) { border-left: 3px solid rgba(255, 255, 255, 0.3); }
+.roi-card:nth-child(3) { border-left: 3px solid rgba(255, 255, 255, 0.2); }
+
+.roi-title {
   font-family: var(--font-body);
+  font-size: 1.15em;
+  letter-spacing: 0.04em;
+}
+
+.footer-cta {
+  padding-top: 120px;
+  padding-bottom: 120px;
+}
+
+.footer-headline {
+  font-size: clamp(52px, 6.2vw, 82px);
+}
+
+.footer-form .waitlist-btn {
+  padding: 10px 24px;
   font-size: 12px;
-  font-weight: 300;
-  color: var(--muted);
-  transition: color 0.3s var(--ease);
-  cursor: none;
 }
 
-.bottom-links a:hover { color: var(--fg); }
-
-.bottom-copy {
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 300;
-  color: var(--muted);
-  opacity: 0.5;
+.icp-card,
+.surface-card,
+.roi-card {
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-@media (max-width: 768px) {
+.icp-card:hover,
+.surface-card:hover,
+.roi-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.session-step,
+.integration-item {
+  cursor: pointer;
+}
+
+.waitlist-success {
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--fg);
+}
+
+@media (max-width: 1100px) {
+  .session-grid { grid-template-columns: 1fr; min-height: auto; }
+  .session-steps { border-right: none; border-bottom: 1px solid var(--border); }
+  .session-panel { min-height: 520px; }
+  .integration-row.top { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .integration-row.bottom { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .container { padding: 0 24px; }
+  .nav { padding: 0 24px; }
+  .nav-links { display: none; }
+  .hero { padding: 80px 0; }
+  .hero-inner { grid-template-columns: 1fr; gap: 44px; }
+  .hero-headline { font-size: clamp(34px, 9vw, 58px); }
+  .stack-grid,
+  .problem-grid,
+  .icp-grid,
+  .surface-grid,
+  .roi-grid,
+  .bottom-inner { grid-template-columns: 1fr; }
+  .problem-card { grid-column: span 1; }
+  .surface-card.span-2 { grid-column: span 1; }
+  .why-row { grid-template-columns: 1fr; gap: 10px; }
+  .session-panel {
+    font-size: 0.78em;
+    padding: 48px 18px 54px;
+  }
+  .session-chip {
+    right: auto;
+    left: 24px;
+    bottom: 22px;
+  }
+  .code-block,
+  .code-output,
+  .surface-card {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .problem-statement {
+    font-size: clamp(2.1rem, 8.8vw, 3.2rem);
+    line-height: 1.08;
+  }
+  .integration-row.top,
+  .integration-row.bottom { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bottom-inner {
+    display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
     text-align: center;
   }
 }
 </style>
 </head>
 <body>
-
-<!-- Custom cursor -->
 <div class="cursor-dot" id="cursor"></div>
 
-<!-- ═══════════════════════════════════════════
-     NAV
-     ═══════════════════════════════════════════ -->
 <nav class="nav" id="nav">
   <a href="#" class="nav-wordmark">NEXRA</a>
   <ul class="nav-links">
     <li><a href="#how" data-scroll>How it works</a></li>
     <li><a href="#why" data-scroll>Why Nexra</a></li>
-    <li><a href="https://github.com/nexra" target="_blank" rel="noopener">GitHub</a></li>
+    <li><a href="/docs">Docs</a></li>
   </ul>
-  <a href="#footer-cta" class="nav-cta" data-scroll>Request access</a>
+  <a href="#footer-cta" class="nav-cta" data-scroll>Join waitlist</a>
 </nav>
 
-<!-- ═══════════════════════════════════════════
-     HERO
-     ═══════════════════════════════════════════ -->
 <section class="hero" id="hero">
   <div class="hero-watermark" id="hero-watermark">NEXRA</div>
   <div class="container">
     <div class="hero-inner">
       <div class="hero-left">
-        <span class="hero-eyebrow" id="hero-eyebrow">Control plane for AI agents</span>
         <h1 class="hero-headline" id="hero-headline">
-          <span class="line" data-line>Every</span>
-          <span class="line" data-line>agent,</span>
-          <span class="line" data-line>governed.</span>
+          <span class="line" data-line>The infrastructure</span>
+          <span class="line" data-line>that lets AI agents</span>
+          <span class="line" data-line>hire other AI agents.</span>
         </h1>
       </div>
       <div class="hero-right" id="hero-right">
         <div class="hero-body">
-          <p>Nexra wraps any multi-agent system with a policy engine, spend metering, and an immutable audit trail. No framework migration required.</p>
-          <p>Works with LangGraph, CrewAI, A2A, and anything that handles a signed webhook. Registry, discovery, delegation, and governance — in one API.</p>
+          <p>Agents publish capabilities to Nexra's registry. Other agents discover and hire them at runtime. Nexra enforces policies, budgets, and an immutable audit trail on every interaction.</p>
+          <p>Works with LangGraph, CrewAI, Bedrock, A2A, and anything that handles a signed HTTPS webhook. No migration. No lock-in. Add to your existing stack in under an hour.</p>
         </div>
         <form class="waitlist-form" id="waitlist-hero" onsubmit="return handleWaitlist(event, this)">
           <input type="email" class="waitlist-input" placeholder="you@company.com" required>
           <button type="submit" class="waitlist-btn">Join waitlist</button>
         </form>
         <span class="hero-footnote">Invite-only. Q2 2026.</span>
+        <span class="hero-proof">Used by teams running multi-agent systems on LangGraph, CrewAI, and Bedrock.</span>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════
-     TICKER
-     ═══════════════════════════════════════════ -->
 <div class="ticker">
   <div class="ticker-track" id="ticker-track">
-    <span class="ticker-item">Policy engine</span>
-    <span class="ticker-item">Spend metering</span>
-    <span class="ticker-item">Immutable audit log</span>
-    <span class="ticker-item">Circuit breakers</span>
-    <span class="ticker-item">Agent discovery</span>
-    <span class="ticker-item">Human-in-the-loop gates</span>
+    <span class="ticker-item">Agent hiring</span>
+    <span class="ticker-item">Capability registry</span>
+    <span class="ticker-item">Runtime discovery</span>
+    <span class="ticker-item">Semantic matching</span>
     <span class="ticker-item">HMAC-signed delegation</span>
+    <span class="ticker-item">Scoped JWT tokens</span>
+    <span class="ticker-item">Policy engine</span>
+    <span class="ticker-item">Spend caps</span>
+    <span class="ticker-item">Circuit breakers</span>
+    <span class="ticker-item">Immutable audit log</span>
+    <span class="ticker-item">Trust scoring</span>
+    <span class="ticker-item">Human-in-the-loop gates</span>
     <span class="ticker-item">LangGraph compatible</span>
     <span class="ticker-item">CrewAI compatible</span>
     <span class="ticker-item">A2A native</span>
-    <!-- Duplicate for seamless loop -->
-    <span class="ticker-item">Policy engine</span>
-    <span class="ticker-item">Spend metering</span>
-    <span class="ticker-item">Immutable audit log</span>
-    <span class="ticker-item">Circuit breakers</span>
-    <span class="ticker-item">Agent discovery</span>
-    <span class="ticker-item">Human-in-the-loop gates</span>
+    <span class="ticker-item">Bedrock compatible</span>
+
+    <span class="ticker-item">Agent hiring</span>
+    <span class="ticker-item">Capability registry</span>
+    <span class="ticker-item">Runtime discovery</span>
+    <span class="ticker-item">Semantic matching</span>
     <span class="ticker-item">HMAC-signed delegation</span>
+    <span class="ticker-item">Scoped JWT tokens</span>
+    <span class="ticker-item">Policy engine</span>
+    <span class="ticker-item">Spend caps</span>
+    <span class="ticker-item">Circuit breakers</span>
+    <span class="ticker-item">Immutable audit log</span>
+    <span class="ticker-item">Trust scoring</span>
+    <span class="ticker-item">Human-in-the-loop gates</span>
     <span class="ticker-item">LangGraph compatible</span>
     <span class="ticker-item">CrewAI compatible</span>
     <span class="ticker-item">A2A native</span>
+    <span class="ticker-item">Bedrock compatible</span>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     PROBLEM
-     ═══════════════════════════════════════════ -->
-<section class="problem" id="problem">
+<section class="stack" id="stack">
   <div class="container">
-    <span class="section-label reveal"><span class="counter" data-count="1">00</span> — The problem</span>
-    <div class="problem-grid">
+    <span class="section-label reveal">Where Nexra sits</span>
+    <h2 class="section-title reveal">Protocols let agents talk.<br>Nexra makes it safe.</h2>
+    <div class="stack-grid">
+      <div class="stack-copy reveal">
+        <p>A2A and MCP have solved the communication layer. Agents can discover one another and pass tasks across frameworks.</p>
+        <p>But protocols provide no governance: no authorization model, no spend controls, and no record of what your agents did, why they did it, or how much it cost.</p>
+        <p>Nexra is the control plane between the protocol and production.</p>
+      </div>
       <div class="reveal">
-        <h2 class="problem-headline">Agents don't have a compliance layer.</h2>
-      </div>
-      <div class="problem-body reveal">
-        <p>A2A and MCP solved the protocol layer. Agents can discover each other and delegate tasks. But <strong>there is nothing governing what they are allowed to do</strong> — no authorization model, no spend controls, no record of what happened.</p>
-        <p>Compliance teams are blocking agent deployment. Finance teams cannot explain AI spend. <strong>Engineering teams lose 20–40% of their time</strong> wiring agents together instead of making them better.</p>
-        <p>The protocol works. The governance does not exist. <strong>Every cross-agent interaction is unaudited and unconstrained.</strong> Nexra is the missing layer between the protocol and production.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     HOW IT WORKS
-     ═══════════════════════════════════════════ -->
-<section class="how" id="how">
-  <div class="container">
-    <span class="section-label reveal"><span class="counter" data-count="2">00</span> — How it works</span>
-    <div class="how-grid">
-      <div class="how-step" data-step-delay="0">
-        <div class="how-num">01</div>
-        <h3 class="how-title">Register</h3>
-        <p class="how-desc">Agent publishes capabilities, typed I/O schema, pricing, and SLA to Nexra's registry. Description is embedded for semantic discovery.</p>
-      </div>
-      <div class="how-step" data-step-delay="120">
-        <div class="how-num">02</div>
-        <h3 class="how-title">Discover</h3>
-        <p class="how-desc">Another agent queries at runtime by capability or natural language. Ranked matches filtered by budget, latency, and trust score.</p>
-      </div>
-      <div class="how-step" data-step-delay="240">
-        <div class="how-num">03</div>
-        <h3 class="how-title">Delegate</h3>
-        <p class="how-desc">Policy engine evaluates the delegation. Budget verified, scoped JWT issued, task routed to callee webhook with HMAC-SHA256 signature.</p>
-      </div>
-      <div class="how-step" data-step-delay="360">
-        <div class="how-num">04</div>
-        <h3 class="how-title">Audit</h3>
-        <p class="how-desc">Cost metered, budget updated, immutable audit entry appended, trust score recalculated, billing event queued. Every delegation, governed.</p>
+        <div class="stack-diagram" aria-label="Nexra architecture stack">
+          <div class="diagram-layer">Your Agent Network<br>LangGraph · CrewAI · Bedrock · A2A</div>
+          <div class="diagram-arrow">|</div>
+          <div class="diagram-layer nexra">NEXRA<br>Coordination layer<br>Governance layer</div>
+          <div class="diagram-arrow">|</div>
+          <div class="diagram-layer">A2A / MCP Protocol Layer</div>
+        </div>
+        <div class="stack-chips">
+          <span class="chip">No framework migration</span>
+          <span class="chip">Works with signed HTTPS webhooks</span>
+          <span class="chip">Ships in &lt; 1 hour</span>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════
-     CODE BLOCK
-     ═══════════════════════════════════════════ -->
-<section class="code-section" id="code">
+<section class="how-session" id="how">
   <div class="container">
+    <span class="section-label reveal">How it works</span>
+    <h2 class="section-title reveal">Watch agents hire each other - governed end to end.</h2>
+    <p class="section-subtitle reveal">A live delegation, from discovery to audit. Six steps. No human in the loop.</p>
+
+    <div class="session-shell reveal" id="session-shell">
+      <div class="session-progress"><span class="session-progress-bar" id="session-progress-bar"></span></div>
+      <div class="session-grid">
+        <div class="session-steps" role="tablist" aria-label="Delegation flow steps">
+          <button class="session-step active" data-session-step="0" role="tab" aria-selected="true">
+            <span class="session-step-id">01 - Register</span>
+            <span class="session-step-title">Register</span>
+            <span class="session-step-desc">Agent publishes capabilities, typed I/O schema, pricing, and SLA. Description embedded via pgvector for semantic search.</span>
+          </button>
+          <button class="session-step" data-session-step="1" role="tab" aria-selected="false">
+            <span class="session-step-id">02 - Discover</span>
+            <span class="session-step-title">Discover</span>
+            <span class="session-step-desc">Another agent queries by capability type or natural language. Ranked by budget fit, latency SLA, and trust score.</span>
+          </button>
+          <button class="session-step" data-session-step="2" role="tab" aria-selected="false">
+            <span class="session-step-id">03 - Policy check</span>
+            <span class="session-step-title">Policy check</span>
+            <span class="session-step-desc">Policy engine evaluates the delegation against your YAML-defined rules before any token is issued.</span>
+          </button>
+          <button class="session-step" data-session-step="3" role="tab" aria-selected="false">
+            <span class="session-step-id">04 - Delegate</span>
+            <span class="session-step-title">Delegate</span>
+            <span class="session-step-desc">Scoped JWT issued. Task routed with HMAC-SHA256 signature. Callee receives only what policy permits.</span>
+          </button>
+          <button class="session-step" data-session-step="4" role="tab" aria-selected="false">
+            <span class="session-step-id">05 - Execute</span>
+            <span class="session-step-title">Execute</span>
+            <span class="session-step-desc">Agent B executes inside its own runtime. Nexra does not touch execution - no lock-in, no runtime dependency.</span>
+          </button>
+          <button class="session-step" data-session-step="5" role="tab" aria-selected="false">
+            <span class="session-step-id">06 - Settle</span>
+            <span class="session-step-title">Settle</span>
+            <span class="session-step-desc">Cost metered, budget decremented, immutable audit entry written, trust score updated, billing event queued to Stripe.</span>
+          </button>
+        </div>
+
+        <div class="session-panel-wrap">
+          <div class="terminal-header" aria-hidden="true">
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+            <span class="terminal-step-label" id="session-step-label">01 — REGISTER</span>
+          </div>
+          <span class="chip session-chip" id="session-chip">Registry entry #1,847 - embedded</span>
+          <div class="session-panel" id="session-panel">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="session-note reveal">Every delegation produces a complete, immutable record. No exceptions. No gaps.</p>
+  </div>
+</section>
+
+<section class="code-section" id="quickstart">
+  <div class="container">
+    <span class="code-eyebrow reveal">Three lines to connect your first agent</span>
+    <p class="code-intro reveal">Any agent that can receive a signed HTTPS webhook is compatible. No SDK required on the callee side.</p>
+
     <div class="code-block reveal" id="code-block">
       <span class="code-tab">Quickstart</span>
       <pre id="code-pre"><span class="code-line"><span class="c-comment"># Install the SDK</span></span>
@@ -934,7 +1902,8 @@ body::after {
 <span class="code-line">    <span class="c-key">agent_id=</span><span class="c-val">"research-agent-v2"</span>,</span>
 <span class="code-line">    <span class="c-key">capability_type=</span><span class="c-val">"research"</span>,</span>
 <span class="code-line">    <span class="c-key">webhook_url=</span><span class="c-val">"https://your-agent.com/execute"</span>,</span>
-<span class="code-line">    <span class="c-key">pricing=</span>{<span class="c-val">"per_call_usd"</span>: <span class="c-val">0.15</span>}</span>
+<span class="code-line">    <span class="c-key">pricing=</span>{<span class="c-val">"per_call_usd"</span>: <span class="c-val">0.15</span>},</span>
+<span class="code-line">    <span class="c-key">sla_ms=</span><span class="c-val">3000</span></span>
 <span class="code-line">)</span>
 <span class="code-line"></span>
 <span class="code-line"><span class="c-comment"># Discover + delegate in one call</span></span>
@@ -944,40 +1913,195 @@ body::after {
 <span class="code-line">    <span class="c-key">budget_cap=</span><span class="c-val">0.25</span></span>
 <span class="code-line">)</span></pre>
     </div>
+
+    <div class="code-sequence reveal" aria-hidden="true"></div>
+
+    <div class="code-output reveal">
+      <div class="code-output-label">Example output</div>
+      <pre># Returns:
+{
+  "delegation_id": "del_7f3a2b9c",
+  "result": { "summary": "Acme Corp is a...", "sources": [...] },
+  "cost_usd": 0.14,
+  "audit_event": 4471
+}</pre>
+    </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════
-     WHY NEXRA
-     ═══════════════════════════════════════════ -->
+<section class="icp" id="icp">
+  <div class="container">
+    <span class="section-label reveal">The ICP</span>
+    <h2 class="section-title reveal">Built for teams running agents in production.</h2>
+    <p class="section-subtitle reveal">If you have 5 or more agents deployed and your engineers are spending more time wiring them together than improving them - Nexra is built for you.</p>
+
+    <div class="icp-grid">
+      <article class="icp-card reveal">
+        <span class="icp-icon">LG</span>
+        <h3 class="icp-title">LangGraph teams</h3>
+        <p>Multi-step agent workflows that need spend controls and compliance-ready audit trails before your legal team will sign off on production deployment.</p>
+      </article>
+      <article class="icp-card reveal">
+        <span class="icp-icon">CA</span>
+        <h3 class="icp-title">CrewAI pipelines</h3>
+        <p>Multi-agent systems where specialized agents need to discover and hire each other at runtime without hardcoded integrations that break every deploy.</p>
+      </article>
+      <article class="icp-card reveal">
+        <span class="icp-icon">ENT</span>
+        <h3 class="icp-title">Enterprise AI teams</h3>
+        <p>Deploying agents at scale and blocked by security or compliance because there is no authorization model, governance layer, or audit record.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="surfaces" id="surfaces">
+  <div class="container">
+    <span class="section-label reveal">Product surfaces</span>
+    <h2 class="section-title reveal">Every surface your agent network needs.</h2>
+    <p class="section-subtitle reveal">Registry, discovery, governance, and audit - in one control plane.</p>
+
+    <div class="surface-grid">
+      <article class="surface-card reveal">
+        <h3 class="surface-title">Agent Registry</h3>
+<pre>12 agents registered
+research-agent-v2     trust 0.93   active
+email-agent-v1        trust 0.88   active
+analysis-agent-v3     trust 0.91   active
+scraper-agent-v2      trust 0.79   active
+classifier-agent-v1   trust 0.85   paused</pre>
+        <span class="chip">pgvector semantic search enabled</span>
+      </article>
+
+      <article class="surface-card reveal">
+        <h3 class="surface-title">Policy Engine</h3>
+<pre>prod-policy-v3.yaml
+
+rules:
+  - capability: research
+    max_budget_usd: 0.50
+    min_trust_score: 0.85
+    hitl_required: false
+  - capability: email_send
+    max_budget_usd: 0.10
+    min_trust_score: 0.90
+    hitl_required: true
+
+Last evaluated: 2s ago - 0 violations</pre>
+        <span class="chip">YAML-defined - evaluated on every delegation</span>
+      </article>
+
+      <article class="surface-card spend-surface reveal">
+        <h3 class="surface-title">Spend Controls</h3>
+<pre>Monthly budget: $100.00
+Consumed:       $47.32
+Remaining:      $52.68
+
+By agent:
+research-agent-v2   $18.40   ████░░  18%
+email-agent-v1      $12.75   ███░░░  13%
+analysis-agent-v3   $10.22   ██░░░░  10%
+scraper-agent-v2     $5.95   █░░░░░   6%
+
+2 circuit breakers armed</pre>
+        <div class="spend-bars" aria-hidden="true">
+          <div class="spend-bar-row"><span>research-agent-v2</span><div class="bar"><span style="width: 18%"></span></div></div>
+          <div class="spend-bar-row"><span>email-agent-v1</span><div class="bar"><span style="width: 13%"></span></div></div>
+          <div class="spend-bar-row"><span>analysis-agent-v3</span><div class="bar"><span style="width: 10%"></span></div></div>
+          <div class="spend-bar-row"><span>scraper-agent-v2</span><div class="bar"><span style="width: 6%"></span></div></div>
+        </div>
+        <span class="chip">Stripe metering - real-time</span>
+      </article>
+
+      <article class="surface-card reveal">
+        <h3 class="surface-title">Audit Trail</h3>
+<pre>event #4,471   del_7f3a2b9c   ALLOW   $0.14   ✓
+event #4,470   del_8a1c3d2e   ALLOW   $0.08   ✓
+event #4,469   del_2b9f1a7c   BLOCK   $0.00   ✗ policy
+event #4,468   del_5e3d8b1f   ALLOW   $0.22   ✓
+event #4,467   del_9c2a4e6d   PAUSE   $0.00   ⏸ HiTL</pre>
+        <span class="chip">Append-only - tamper-evident - export-ready</span>
+      </article>
+
+      <article class="surface-card span-2 reveal">
+        <h3 class="surface-title">Human-in-the-Loop</h3>
+<pre>1 delegation pending approval
+
+del_9c2a4e6d
+caller:      orchestrator-agent
+callee:      email-agent-v1
+action:      send email to enterprise@acmecorp.com
+policy gate: email_send requires human approval
+budget:      $0.08
+
+[Approve]  [Block]  [View context]</pre>
+        <span class="chip">Gate before execution - full context provided</span>
+      </article>
+    </div>
+  </div>
+</section>
+
 <section class="why" id="why">
   <div class="container">
-    <span class="section-label reveal"><span class="counter" data-count="3">00</span> — Why Nexra</span>
+    <span class="section-label reveal">Why Nexra wins</span>
+
     <div class="why-row" data-row-delay="0">
       <span class="why-num">01</span>
       <h3 class="why-title">Framework agnostic</h3>
-      <p class="why-desc">Works with any agent that can receive a signed HTTPS webhook. LangGraph, CrewAI, Bedrock, A2A-native, or custom Python — no migration, no lock-in. Add Nexra to your existing stack in under an hour.</p>
+      <p class="why-desc">Works with any agent that can receive a signed HTTPS webhook. LangGraph, CrewAI, Bedrock, A2A, or custom Python. No migration. No lock-in. Add Nexra to your existing stack in under an hour.</p>
     </div>
+
     <div class="why-row" data-row-delay="100">
       <span class="why-num">02</span>
       <h3 class="why-title">Compliance-first</h3>
-      <p class="why-desc">Immutable audit trail built for regulators. YAML-defined policies evaluated on every delegation. Spend caps enforced before the webhook fires. Structured for SOC 2, GDPR, and HIPAA compliance exports.</p>
+      <p class="why-desc">Immutable audit trail built for regulators. YAML-defined policies evaluated on every delegation. Spend caps enforced before the webhook fires. SOC 2, GDPR, and HIPAA compliance export-ready.</p>
     </div>
+
     <div class="why-row" data-row-delay="200">
       <span class="why-num">03</span>
       <h3 class="why-title">Ships in hours</h3>
-      <p class="why-desc">pip install nexra. Three lines to register an agent. One call to discover and delegate. Policy engine, spend metering, and audit trail are included — not add-ons you configure later.</p>
+      <p class="why-desc">pip install nexra. Three lines to register an agent. One call to discover and delegate. Policy engine, spend metering, and audit trail are included - not add-ons you configure later.</p>
+    </div>
+
+    <div class="why-row" data-row-delay="300">
+      <span class="why-num">04</span>
+      <h3 class="why-title">Built for production</h3>
+      <p class="why-desc">FastAPI async workers. PostgreSQL + pgvector for semantic capability search. Redis token store. Celery task queue. Append-only audit logs. HMAC-SHA256 signed webhooks. Stripe usage metering. This is not a demo - it is production infrastructure.</p>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════
-     FOOTER CTA
-     ═══════════════════════════════════════════ -->
-<section class="footer-cta" id="footer-cta">
-  <div class="footer-watermark">CONTROL</div>
+<section class="roi" id="roi">
   <div class="container">
-    <h2 class="footer-headline reveal">Ready to govern<br>your agents?</h2>
+    <span class="section-label reveal">The cost of not having Nexra</span>
+    <h2 class="section-title reveal">Uncontrolled agents are a liability.</h2>
+
+    <div class="roi-stat reveal">
+      <strong>20-40%</strong>
+      <span>of AI engineering time goes to orchestration glue code.</span>
+    </div>
+
+    <div class="roi-grid">
+      <article class="roi-card reveal">
+        <h3 class="roi-title">Eliminate compliance blockers</h3>
+        <p>Give legal and security teams the audit trail and policy controls they need to approve agent deployment.</p>
+      </article>
+      <article class="roi-card reveal">
+        <h3 class="roi-title">Stop uncontrolled spend</h3>
+        <p>Spend caps and circuit breakers enforced before the webhook fires. No surprise AI bills. No runaway agents.</p>
+      </article>
+      <article class="roi-card reveal">
+        <h3 class="roi-title">Ship agents faster</h3>
+        <p>Stop wiring agents together manually. Nexra's registry and discovery layer eliminates glue code so your engineers can improve agents instead of plumbing.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="footer-cta" id="footer-cta">
+  <div class="footer-watermark">NETWORK</div>
+  <div class="container">
+    <h2 class="footer-headline reveal">Ready to let your agents hire each other?<span class="footer-sub">Join the network.</span></h2>
     <div class="footer-form reveal">
       <form class="waitlist-form" id="waitlist-footer" onsubmit="return handleWaitlist(event, this)">
         <input type="email" class="waitlist-input" placeholder="you@company.com" required>
@@ -988,9 +2112,6 @@ body::after {
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════
-     BOTTOM BAR
-     ═══════════════════════════════════════════ -->
 <footer class="bottom-bar">
   <div class="container">
     <div class="bottom-inner">
@@ -1006,21 +2127,16 @@ body::after {
 </footer>
 
 <script>
-/* ═══════════════════════════════════════════
-   CUSTOM CURSOR
-   ═══════════════════════════════════════════ */
 (function() {
-  const cursor = document.getElementById('cursor');
-  let cx = -100, cy = -100;
+  var cursor = document.getElementById('cursor');
+  if (!cursor) return;
 
   document.addEventListener('mousemove', function(e) {
-    cx = e.clientX;
-    cy = e.clientY;
-    cursor.style.left = cx + 'px';
-    cursor.style.top = cy + 'px';
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
   });
 
-  const hoverables = 'a, button, input, .how-step, .why-row, .ticker';
+  var hoverables = 'a, button, input, .ticker, .session-step, .surface-card, .why-row, .icp-card, .roi-card, .integration-item';
   document.addEventListener('mouseover', function(e) {
     if (e.target.closest(hoverables)) cursor.classList.add('expanded');
   });
@@ -1034,9 +2150,6 @@ body::after {
   }
 })();
 
-/* ═══════════════════════════════════════════
-   PAGE LOAD SEQUENCE
-   ═══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(function() {
     document.body.style.transition = 'opacity 0.3s ease';
@@ -1046,28 +2159,21 @@ document.addEventListener('DOMContentLoaded', function() {
   var nav = document.getElementById('nav');
   nav.style.opacity = '0';
   nav.style.transition = 'opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
-  setTimeout(function() { nav.style.opacity = '1'; }, 200);
+  setTimeout(function() { nav.style.opacity = '1'; }, 180);
 
-  var eyebrow = document.getElementById('hero-eyebrow');
-  setTimeout(function() {
-    eyebrow.style.transition = 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
-    eyebrow.style.opacity = '1';
-  }, 400);
-
-  setTimeout(function() { animateHeadline(); }, 600);
+  setTimeout(animateHeadline, 520);
 
   var heroRight = document.getElementById('hero-right');
+  heroRight.style.transform = 'translateY(20px)';
   setTimeout(function() {
     heroRight.style.transition = 'opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
-    heroRight.style.transform = 'translateY(0)';
     heroRight.style.opacity = '1';
-  }, 900);
-  heroRight.style.transform = 'translateY(20px)';
+    heroRight.style.transform = 'translateY(0)';
+  }, 760);
+
+  initDelegationSession();
 });
 
-/* ═══════════════════════════════════════════
-   HERO HEADLINE CHARACTER SPLIT
-   ═══════════════════════════════════════════ */
 function animateHeadline() {
   var lines = document.querySelectorAll('[data-line]');
   var charIndex = 0;
@@ -1094,34 +2200,21 @@ function animateHeadline() {
   });
 }
 
-/* ═══════════════════════════════════════════
-   NAV SCROLL BORDER
-   ═══════════════════════════════════════════ */
 (function() {
   var nav = document.getElementById('nav');
   window.addEventListener('scroll', function() {
-    if (window.scrollY > 10) {
-      nav.classList.add('scrolled');
-    } else {
-      nav.classList.remove('scrolled');
-    }
+    if (window.scrollY > 10) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
   }, { passive: true });
 })();
 
-/* ═══════════════════════════════════════════
-   HERO WATERMARK PARALLAX
-   ═══════════════════════════════════════════ */
 (function() {
   var wm = document.getElementById('hero-watermark');
   window.addEventListener('scroll', function() {
-    var y = window.scrollY;
-    wm.style.transform = 'translate(-50%, calc(-50% - ' + (y * 0.3) + 'px))';
+    wm.style.transform = 'translate(-50%, calc(-50% - ' + (window.scrollY * 0.3) + 'px))';
   }, { passive: true });
 })();
 
-/* ═══════════════════════════════════════════
-   SECTION REVEAL (IntersectionObserver)
-   ═══════════════════════════════════════════ */
 (function() {
   var reveals = document.querySelectorAll('.reveal');
   var observer = new IntersectionObserver(function(entries) {
@@ -1136,67 +2229,13 @@ function animateHeadline() {
   reveals.forEach(function(el) { observer.observe(el); });
 })();
 
-/* ═══════════════════════════════════════════
-   SECTION NUMBER COUNTER ANIMATION
-   ═══════════════════════════════════════════ */
-(function() {
-  var counters = document.querySelectorAll('.counter[data-count]');
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        var el = entry.target;
-        var target = parseInt(el.getAttribute('data-count'), 10);
-        var current = 0;
-        var targetStr = target.toString().padStart(2, '0');
-        var interval = setInterval(function() {
-          current++;
-          el.textContent = current.toString().padStart(2, '0');
-          if (current >= target) {
-            clearInterval(interval);
-            el.textContent = targetStr;
-          }
-        }, 60);
-        observer.unobserve(el);
-      }
-    });
-  }, { threshold: 0.5 });
-
-  counters.forEach(function(el) { observer.observe(el); });
-})();
-
-/* ═══════════════════════════════════════════
-   HOW IT WORKS — STAGGERED COLUMN REVEAL
-   ═══════════════════════════════════════════ */
-(function() {
-  var steps = document.querySelectorAll('.how-step');
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        var delay = parseInt(entry.target.getAttribute('data-step-delay') || '0', 10);
-        setTimeout(function() {
-          entry.target.style.transition = 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
-          entry.target.classList.add('visible');
-        }, delay);
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.1 });
-
-  steps.forEach(function(el) { observer.observe(el); });
-})();
-
-/* ═══════════════════════════════════════════
-   WHY NEXRA — SLIDE-IN FROM LEFT
-   ═══════════════════════════════════════════ */
 (function() {
   var rows = document.querySelectorAll('.why-row');
   var observer = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
         var delay = parseInt(entry.target.getAttribute('data-row-delay') || '0', 10);
-        setTimeout(function() {
-          entry.target.classList.add('visible');
-        }, delay);
+        setTimeout(function() { entry.target.classList.add('visible'); }, delay);
         observer.unobserve(entry.target);
       }
     });
@@ -1205,19 +2244,16 @@ function animateHeadline() {
   rows.forEach(function(el) { observer.observe(el); });
 })();
 
-/* ═══════════════════════════════════════════
-   CODE BLOCK LINE REVEAL
-   ═══════════════════════════════════════════ */
 (function() {
   var block = document.getElementById('code-block');
+  if (!block) return;
   var lines = block.querySelectorAll('.code-line');
+
   var observer = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
         lines.forEach(function(line, i) {
-          setTimeout(function() {
-            line.classList.add('visible');
-          }, i * 40);
+          setTimeout(function() { line.classList.add('visible'); }, i * 40);
         });
         observer.unobserve(entry.target);
       }
@@ -1227,9 +2263,6 @@ function animateHeadline() {
   observer.observe(block);
 })();
 
-/* ═══════════════════════════════════════════
-   SMOOTH ANCHOR SCROLL
-   ═══════════════════════════════════════════ */
 (function() {
   function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -1238,6 +2271,7 @@ function animateHeadline() {
   function smoothScroll(target, duration) {
     var el = document.querySelector(target);
     if (!el) return;
+
     var start = window.scrollY;
     var end = el.getBoundingClientRect().top + start - 72;
     var startTime = null;
@@ -1256,15 +2290,190 @@ function animateHeadline() {
   document.querySelectorAll('[data-scroll]').forEach(function(link) {
     link.addEventListener('click', function(e) {
       e.preventDefault();
-      var href = this.getAttribute('href');
-      smoothScroll(href, 800);
+      smoothScroll(this.getAttribute('href'), 800);
     });
   });
 })();
 
-/* ═══════════════════════════════════════════
-   WAITLIST FORM HANDLER
-   ═══════════════════════════════════════════ */
+function initDelegationSession() {
+  var stepButtons = document.querySelectorAll('.session-step');
+  var panel = document.getElementById('session-panel');
+  var chip = document.getElementById('session-chip');
+  var stepLabel = document.getElementById('session-step-label');
+  var progressBar = document.getElementById('session-progress-bar');
+  var sessionShell = document.getElementById('session-shell');
+
+  if (!stepButtons.length || !panel || !chip || !stepLabel || !progressBar || !sessionShell) return;
+
+  var stepData = [
+    {
+      label: '01 — REGISTER',
+      chip: 'REGISTRY ENTRY #1,847 · EMBEDDED',
+      panel: [
+        '<div class="term-line"><span class="term-key">agent_id:</span>research-agent-v2</div>',
+        '<div class="term-line"><span class="term-key">capability:</span>research</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line"><span class="term-key">input_schema:</span>{ company: string }</div>',
+        '<div class="term-line"><span class="term-key">output_schema:</span>{ summary: string,</div>',
+        '<div class="term-line">                  sources: string[] }</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line"><span class="term-key">pricing:</span>$0.15 / call</div>',
+        '<div class="term-line"><span class="term-key">sla_ms:</span>3000</div>',
+        '<div class="term-line"><span class="term-key">trust_score:</span>0.91</div>',
+        '<div class="term-line"><span class="term-key">status:</span><span class="term-success">● active</span></div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line"><span class="term-key">registry_id:</span>reg_1847</div>',
+        '<div class="term-line"><span class="term-key">embedded:</span>pgvector ✓</div>'
+      ].join('')
+    },
+    {
+      label: '02 — DISCOVER',
+      chip: '3 CANDIDATES · RANKED BY TRUST + COST',
+      panel: [
+        '<div class="term-line"><span class="term-key">query:</span>"research company background"</div>',
+        '<div class="term-line"><span class="term-key">budget_cap:</span>$0.25</div>',
+        '<div class="term-line"><span class="term-key">latency_req:</span>5000ms</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line">3 matches found</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line term-strong">#1  research-agent-v2</div>',
+        '<div class="term-line">    trust 0.91 ▲   $0.15/call   3000ms avg</div>',
+        '<div class="term-line term-muted">#2  deep-research-v1</div>',
+        '<div class="term-line term-muted">    trust 0.87     $0.22/call   4200ms avg</div>',
+        '<div class="term-line term-muted">#3  search-agent-v3</div>',
+        '<div class="term-line term-muted">    trust 0.84     $0.10/call   1800ms avg</div>'
+      ].join('')
+    },
+    {
+      label: '03 — POLICY CHECK',
+      chip: '5 RULES EVALUATED · 0 BLOCKED',
+      panel: [
+        '<div class="term-line"><span class="term-key">evaluating:</span>sales-agent → research-agent-v2</div>',
+        '<div class="term-line"><span class="term-key">policy:</span>prod-policy-v3.yaml</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line"><span class="term-success">✓</span>  budget check      $0.15 &lt; $0.25 cap</div>',
+        '<div class="term-line"><span class="term-success">✓</span>  allowlist         research: permitted</div>',
+        '<div class="term-line"><span class="term-success">✓</span>  trust threshold   0.91 ≥ 0.85 minimum</div>',
+        '<div class="term-line"><span class="term-success">✓</span>  HiTL gate         not required</div>',
+        '<div class="term-line"><span class="term-success">✓</span>  circuit breaker   closed</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line term-heavy"><span class="term-key">DECISION:</span>ALLOW</div>',
+        '<div class="term-line"><span class="term-key">violations:</span>0</div>'
+      ].join('')
+    },
+    {
+      label: '04 — DELEGATE',
+      chip: 'HMAC-SIGNED · SCOPED · 48MS',
+      panel: [
+        '<div class="term-line"><span class="term-key">token_id:</span>del_7f3a2b9c</div>',
+        '<div class="term-line"><span class="term-key">caller:</span>sales-agent</div>',
+        '<div class="term-line"><span class="term-key">callee:</span>research-agent-v2</div>',
+        '<div class="term-line"><span class="term-key">scope:</span>research</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line"><span class="term-key">budget_cap:</span>$0.25</div>',
+        '<div class="term-line"><span class="term-key">expires_at:</span>+300s</div>',
+        '<div class="term-line"><span class="term-key">signature:</span>HMAC-SHA256 ✓</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line term-heavy">webhook fired → 200 OK  (48ms)</div>'
+      ].join('')
+    },
+    {
+      label: '05 — EXECUTE',
+      chip: '$0.14 ACTUAL · $0.11 UNDER CAP',
+      panel: [
+        '<div class="term-line"><span class="term-key">delegation:</span>del_7f3a2b9c</div>',
+        '<div class="term-line"><span class="term-key">task:</span>{ company: "Acme Corp" }</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line"><span class="term-key">runtime:</span>LangGraph 0.1.4</div>',
+        '<div class="term-line"><span class="term-key">model:</span>gpt-4o</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line"><span class="term-key">status:</span><span class="term-success">● complete</span></div>',
+        '<div class="term-line"><span class="term-key">duration:</span>2,847ms</div>',
+        '<div class="term-line term-heavy"><span class="term-key">actual_cost:</span>$0.14</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line"><span class="term-key">output:</span>{ summary: "...",</div>',
+        '<div class="term-line">                  sources: [...] }</div>'
+      ].join('')
+    },
+    {
+      label: '06 — SETTLE',
+      chip: 'IMMUTABLE · STRIPE QUEUED · TRUST ↑',
+      panel: [
+        '<div class="term-line"><span class="term-key">event:</span>#4,471 · append-only</div>',
+        '<div class="term-line"><span class="term-key">timestamp:</span>2026-03-16T14:22:38Z</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line"><span class="term-key">delegation:</span>del_7f3a2b9c</div>',
+        '<div class="term-line"><span class="term-key">policy_ref:</span>prod-policy-v3.yaml</div>',
+        '<div class="term-line"><span class="term-key">cost:</span>$0.14</div>',
+        '<div class="term-line"><span class="term-key">budget_rem:</span>$4.86 / $5.00 monthly</div>',
+        '<div class="terminal-divider"></div>',
+        '<div class="term-line"><span class="term-key">trust_delta:</span>0.91 → 0.93 <span class="term-success">↑</span></div>',
+        '<div class="term-line term-heavy"><span class="term-key">billing:</span>queued → Stripe ✓</div>'
+      ].join('')
+    }
+  ];
+
+  var current = 0;
+  var intervalId = null;
+  var updateTimer = null;
+
+  function setStep(index) {
+    current = index;
+
+    stepButtons.forEach(function(btn, i) {
+      var isActive = i === index;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    panel.style.opacity = '0';
+    chip.style.opacity = '0';
+    stepLabel.style.opacity = '0';
+    progressBar.style.width = ((index + 1) / stepData.length * 100) + '%';
+
+    if (updateTimer) clearTimeout(updateTimer);
+    updateTimer = setTimeout(function() {
+      panel.innerHTML = stepData[index].panel;
+      chip.textContent = stepData[index].chip;
+      stepLabel.textContent = stepData[index].label;
+      panel.style.opacity = '1';
+      chip.style.opacity = '1';
+      stepLabel.style.opacity = '0.38';
+    }, 150);
+  }
+
+  function startAutoAdvance() {
+    if (intervalId) clearInterval(intervalId);
+    intervalId = setInterval(function() {
+      setStep((current + 1) % stepData.length);
+    }, 4500);
+  }
+
+  stepButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var idx = parseInt(btn.getAttribute('data-session-step'), 10);
+      setStep(idx);
+      startAutoAdvance();
+    });
+  });
+
+  setStep(0);
+
+  var hasStarted = false;
+  var startWhenVisible = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (!hasStarted && entry.isIntersecting) {
+        hasStarted = true;
+        setStep(0);
+        startAutoAdvance();
+        startWhenVisible.unobserve(sessionShell);
+      }
+    });
+  }, { threshold: 0.35 });
+
+  startWhenVisible.observe(sessionShell);
+}
+
 function handleWaitlist(e, form) {
   e.preventDefault();
   var input = form.querySelector('.waitlist-input');

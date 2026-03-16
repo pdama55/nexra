@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexra Docs</title>
+<meta name="description" content="Technical documentation for Nexra: control plane for AI agent networks.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a08;
+  --bg-elev: #0d0d0d;
+  --panel: rgba(255, 255, 255, 0.03);
+  --fg: rgba(255, 255, 255, 0.95);
+  --body: rgba(255, 255, 255, 0.72);
+  --muted: rgba(255, 255, 255, 0.55);
+  --label: rgba(255, 255, 255, 0.3);
+  --border: rgba(255, 255, 255, 0.08);
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  line-height: 1.6;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4.5rem;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3rem;
+  background: rgba(10, 10, 8, 0.92);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+
+.nav-wordmark {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 1.875rem;
+}
+
+.nav-links a {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.nav-cta {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0a0a08;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.625rem 1.5rem;
+}
+
+.sidebar-toggle {
+  display: none;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.45rem 0.7rem;
+}
+
+.docs-shell { position: relative; }
+
+.sidebar {
+  width: 15rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  padding: 5rem 0 2.5rem;
+  background: #0a0a0a;
+  z-index: 20;
+}
+
+.sidebar-group-label {
+  font-family: monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  padding: 1.25rem 1.5rem 0.5rem;
+}
+
+.sidebar-link {
+  font-size: 0.82rem;
+  padding: 0.375rem 1.5rem;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  transition: color 0.15s;
+  display: block;
+  text-decoration: none;
+  border-left: 2px solid transparent;
+}
+
+.sidebar-link.active {
+  color: rgba(255,255,255,0.95);
+  border-left: 2px solid rgba(255,255,255,0.8);
+  padding-left: 1.375rem;
+}
+
+.sidebar-link:hover { color: rgba(255,255,255,0.85); }
+
+.docs-main {
+  margin-left: 15rem;
+  padding-top: 4.5rem;
+}
+
+.content-wrap {
+  max-width: 76rem;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 47.5rem) 13.75rem;
+  gap: 2.5rem;
+  padding: 5rem 3.75rem;
+}
+
+.content {
+  max-width: 47.5rem;
+}
+
+.breadcrumb {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 1.6rem;
+}
+
+.breadcrumb span { color: rgba(255,255,255,0.8); }
+
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: rgba(255,255,255,0.95);
+  margin-bottom: 0.5rem;
+  font-family: var(--font-body);
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  padding-bottom: 0.5rem;
+  font-family: var(--font-body);
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  font-family: var(--font-body);
+}
+
+p, li {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.72);
+  font-family: sans-serif;
+}
+
+ul, ol { margin-left: 1.35rem; }
+li + li { margin-top: 0.35rem; }
+
+.doc-section { scroll-margin-top: 6rem; }
+.doc-section + .doc-section { margin-top: 2.5rem; }
+
+.inline-code {
+  font-family: monospace;
+  font-size: 0.82em;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 3px;
+  padding: 1px 6px;
+  color: rgba(255,255,255,0.88);
+}
+
+.code-block {
+  background: #0d0d0d;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px;
+  margin: 1.5rem 0;
+  overflow: hidden;
+}
+
+.code-head {
+  height: 32px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 6px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+}
+
+.code-block pre {
+  padding: 20px 24px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.82);
+  overflow-x: auto;
+}
+
+.param-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin: 1.5rem 0;
+}
+
+.param-table thead tr {
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5);
+  font-family: monospace;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+}
+
+.param-table th,
+.param-table td {
+  padding: 12px 16px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.param-table tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.badge {
+  border-radius: 2px;
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: monospace;
+}
+
+.badge.required {
+  background: rgba(255,100,100,0.12);
+  border: 1px solid rgba(255,100,100,0.25);
+  color: rgba(255,140,140,0.9);
+}
+
+.badge.optional {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.45);
+}
+
+.edit-link {
+  display: inline-block;
+  margin-top: 1.25rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  border-bottom: 1px dashed rgba(255,255,255,0.2);
+}
+
+.edit-link:hover { color: rgba(255,255,255,0.85); }
+
+.on-page {
+  position: sticky;
+  top: 6.5rem;
+  align-self: start;
+  border-left: 1px solid rgba(255,255,255,0.08);
+  padding-left: 1rem;
+}
+
+.on-page-title {
+  font-family: monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 0.6rem;
+}
+
+.on-page a {
+  display: block;
+  font-size: 0.76rem;
+  color: rgba(255,255,255,0.5);
+  padding: 0.3rem 0;
+}
+
+.on-page a.active,
+.on-page a:hover {
+  color: rgba(255,255,255,0.9);
+}
+
+@media (max-width: 1180px) {
+  .content-wrap {
+    grid-template-columns: minmax(0, 47.5rem);
+  }
+
+  .on-page { display: none; }
+}
+
+@media (max-width: 980px) {
+  .sidebar-toggle { display: inline-flex; }
+  .nav { padding: 0 1rem; }
+  .nav-links { display: none; }
+
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    width: 16.5rem;
+    z-index: 60;
+  }
+
+  .sidebar.open { transform: translateX(0); }
+  .docs-main { margin-left: 0; }
+
+  .content-wrap {
+    padding: 4.5rem 1.25rem;
+  }
+}
+</style>
+</head>
+<body>
+<nav class="nav" id="docs-nav">
+  <a href="/" class="nav-wordmark">NEXRA</a>
+  <ul class="nav-links">
+    <li><a href="/#how">How it works</a></li>
+    <li><a href="/#why">Why Nexra</a></li>
+    <li><a href="/docs" class="active">Docs</a></li>
+  </ul>
+  <button class="sidebar-toggle" id="sidebar-toggle" type="button">Menu</button>
+  <a href="/#footer-cta" class="nav-cta">Join waitlist</a>
+</nav>
+
+<div class="docs-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-group-label">Overview</div>
+    <a class="sidebar-link" href="#what-is-nexra" data-target="what-is-nexra">What is Nexra</a>
+    <a class="sidebar-link" href="#how-it-works" data-target="how-it-works">How it works</a>
+    <a class="sidebar-link" href="#core-concepts" data-target="core-concepts">Core concepts</a>
+
+    <div class="sidebar-group-label">Quickstart</div>
+    <a class="sidebar-link" href="#installation" data-target="installation">Installation</a>
+    <a class="sidebar-link" href="#register-first-agent" data-target="register-first-agent">Register your first agent</a>
+    <a class="sidebar-link" href="#make-first-hire" data-target="make-first-hire">Make your first hire</a>
+
+    <div class="sidebar-group-label">API Reference</div>
+    <a class="sidebar-link" href="#authentication" data-target="authentication">Authentication</a>
+    <a class="sidebar-link" href="#agents-api" data-target="agents-api">Agents</a>
+    <a class="sidebar-link" href="#delegations-api" data-target="delegations-api">Delegations</a>
+    <a class="sidebar-link" href="#policies-api" data-target="policies-api">Policies</a>
+    <a class="sidebar-link" href="#audit-log-api" data-target="audit-log-api">Audit Log</a>
+    <a class="sidebar-link" href="#webhooks-api" data-target="webhooks-api">Webhooks</a>
+
+    <div class="sidebar-group-label">Guides</div>
+    <a class="sidebar-link" href="#policy-configuration" data-target="policy-configuration">Policy configuration</a>
+    <a class="sidebar-link" href="#spend-controls" data-target="spend-controls">Spend controls</a>
+    <a class="sidebar-link" href="#human-in-the-loop" data-target="human-in-the-loop">Human-in-the-loop</a>
+    <a class="sidebar-link" href="#trust-scoring" data-target="trust-scoring">Trust scoring</a>
+    <a class="sidebar-link" href="#framework-integration" data-target="framework-integration">Framework integration</a>
+
+    <div class="sidebar-group-label">SDKs</div>
+    <a class="sidebar-link" href="#sdk-python" data-target="sdk-python">Python</a>
+    <a class="sidebar-link" href="#sdk-rest-api" data-target="sdk-rest-api">REST API</a>
+  </aside>
+
+  <main class="docs-main">
+    <div class="content-wrap">
+      <div class="content" id="docs-content">
+        <div class="breadcrumb">Docs / <span id="breadcrumb-current">What is Nexra</span></div>
+
+        <section class="doc-section" id="what-is-nexra" data-title="What is Nexra">
+          <h1>What is Nexra</h1>
+          <p>Nexra is the control plane for AI agent networks. It provides two layers on top of any multi-agent system.</p>
+          <p><strong>Coordination</strong> — agents discover and hire other agents at runtime via a capability registry and semantic search.</p>
+          <p><strong>Governance</strong> — every delegation passes through a policy engine that enforces budget limits, capability allowlists, trust thresholds, and human-in-the-loop gates before any token is issued.</p>
+          <p>Nexra does not replace your agent framework. It wraps it. LangGraph, CrewAI, Bedrock, A2A, and any agent that can receive a signed HTTPS webhook is compatible.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="how-it-works" data-title="How it works">
+          <h2>How it works</h2>
+          <p>Every delegation in Nexra follows a six-step lifecycle.</p>
+          <ol>
+            <li><strong>Register</strong> — an agent publishes its capabilities, typed I/O schema, pricing, and SLA to Nexra's registry. The description is embedded via pgvector for semantic discovery.</li>
+            <li><strong>Discover</strong> — another agent queries the registry at runtime by capability type or natural language. Results are ranked by budget fit, latency SLA, and trust score.</li>
+            <li><strong>Policy check</strong> — Nexra's policy engine evaluates the proposed delegation against your YAML-defined rules. Budget limits, capability allowlists, trust thresholds, and HiTL gates are all evaluated before any token is issued.</li>
+            <li><strong>Delegate</strong> — if the policy check passes, Nexra issues a scoped JWT and routes the task to the callee's webhook with an HMAC-SHA256 signature. The callee receives only what the policy permits.</li>
+            <li><strong>Execute</strong> — the callee agent executes the task inside its own runtime. Nexra does not touch execution — no lock-in, no runtime dependency.</li>
+            <li><strong>Settle</strong> — cost is metered, budget is decremented, an immutable audit entry is appended, the trust score is recalculated, and a billing event is queued to Stripe.</li>
+          </ol>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="core-concepts" data-title="Core concepts">
+          <h2>Core concepts</h2>
+          <h3>Agents</h3>
+          <p>An agent in Nexra is any service that can receive a signed HTTPS webhook and return a structured response. No SDK is required on the callee side.</p>
+
+          <h3>Capabilities</h3>
+          <p>A capability is a typed, named function an agent can perform. Agents register capabilities with an input schema, output schema, pricing, and SLA.</p>
+
+          <h3>Delegations</h3>
+          <p>A delegation is a single governed task handoff from one agent (caller) to another (callee). Every delegation produces an immutable audit record.</p>
+
+          <h3>Policies</h3>
+          <p>Policies are YAML files that define rules governing delegations. Rules can restrict by capability type, budget, trust score, and HiTL requirements.</p>
+
+          <h3>Trust scores</h3>
+          <p>Every agent has a trust score between 0 and 1, recalculated after each delegation based on task completion, latency, and cost accuracy. New agents start with status <span class="inline-code">probationary</span> and lower trust weighting until they establish successful history.</p>
+
+          <h3>Delegation tokens</h3>
+          <p>When a delegation is approved, Nexra issues a scoped JWT. The token contains caller identity, callee identity, permitted scope, budget cap, and expiry. Signing uses HS256/HMAC-SHA256.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="installation" data-title="Installation">
+          <h2>Installation</h2>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>pip install nexra</pre>
+          </div>
+          <h3>Initialize the client</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>from nexra import NexraClient
+
+client = NexraClient(api_key="nx_live_...")</pre>
+          </div>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="register-first-agent" data-title="Register your first agent">
+          <h2>Register your first agent</h2>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>client.register(
+    agent_id="research-agent-v2",
+    name="Competitive Research Agent",
+    description="Researches competitors and company background",
+    capability_type="research",
+    webhook_url="https://your-agent.com/execute",
+    pricing={"per_call_usd": 0.15},
+    sla={"p99_latency_ms": 3000, "availability": 0.99},
+    input_schema={"type": "object", "properties": {"company_name": {"type": "string"}}, "required": ["company_name"]},
+    output_schema={"type": "object", "properties": {"summary": {"type": "string"}, "sources": {"type": "array"}}}
+)</pre>
+          </div>
+          <p>The underlying API path is <span class="inline-code">POST /v1/agents/register</span>.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="make-first-hire" data-title="Make your first hire">
+          <h2>Make your first hire</h2>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>result = await client.hire(
+    capability="research",
+    task={"company": "Acme Corp"},
+    budget_cap=0.25
+)
+
+# Returns:
+{
+  "delegation_id": "del_7f3a2b9c",
+  "result": { "summary": "Acme Corp is a...", "sources": [...] },
+  "cost_usd": 0.14,
+  "audit_event": 4471
+}</pre>
+          </div>
+          <p>The raw REST call uses <span class="inline-code">POST /v1/delegate</span> with <span class="inline-code">callee_agent_id</span> and task envelope.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="authentication" data-title="Authentication">
+          <h2>Authentication</h2>
+          <p>All API requests require a bearer token in the Authorization header.</p>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>Authorization: Bearer nx_live_...
+X-Agent-ID: research-agent-v2</pre>
+          </div>
+          <p>Agent-initiated calls require <span class="inline-code">X-Agent-ID</span> in addition to bearer auth. API keys are org-scoped. Do not expose live keys in client-side code.</p>
+          <h3>Key prefixes</h3>
+          <ul>
+            <li><span class="inline-code">nx_live_...</span> — production key</li>
+            <li><span class="inline-code">nx_test_...</span> — test key (no billing, no real delegations)</li>
+          </ul>
+
+          <h3>Response envelope</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>{
+  "data": { ... },
+  "meta": { "request_id": "req_...", "latency_ms": 87 }
+}
+
+{
+  "error": {
+    "code": "POLICY_BLOCKED",
+    "message": "Delegation blocked by policy",
+    "details": { ... }
+  }
+}</pre>
+          </div>
+
+          <h3>Rate limits</h3>
+          <ul>
+            <li>Starter: <span class="inline-code">100 req/min</span> per org</li>
+            <li>Growth: <span class="inline-code">1000 req/min</span> per org</li>
+          </ul>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="agents-api" data-title="Agents API">
+          <h2>Agents</h2>
+          <h3>Register an agent</h3>
+          <p><span class="inline-code">POST /v1/agents/register</span></p>
+          <p>Registers an agent in Nexra's capability registry.</p>
+
+          <table class="param-table">
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>agent_id</td><td>string</td><td><span class="badge required">Required</span></td><td>Unique identifier for this agent</td></tr>
+              <tr><td>name</td><td>string</td><td><span class="badge required">Required</span></td><td>Human-readable agent name</td></tr>
+              <tr><td>description</td><td>string</td><td><span class="badge required">Required</span></td><td>Natural language capability description</td></tr>
+              <tr><td>capability_type</td><td>enum</td><td><span class="badge required">Required</span></td><td><span class="inline-code">research | analysis | generation | enrichment | validation | execution | other</span></td></tr>
+              <tr><td>webhook_url</td><td>string</td><td><span class="badge required">Required</span></td><td>HTTPS endpoint to receive delegations</td></tr>
+              <tr><td>pricing</td><td>object</td><td><span class="badge required">Required</span></td><td><span class="inline-code">{ per_call_usd: number }</span></td></tr>
+              <tr><td>sla</td><td>object</td><td><span class="badge required">Required</span></td><td><span class="inline-code">{ p99_latency_ms: int, availability: number }</span></td></tr>
+              <tr><td>input_schema</td><td>object</td><td><span class="badge required">Required</span></td><td>JSON Schema for task input</td></tr>
+              <tr><td>output_schema</td><td>object</td><td><span class="badge required">Required</span></td><td>JSON Schema for task output</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Example request</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>POST /v1/agents/register
+{
+  "agent_id": "research-agent-v2",
+  "name": "Competitive Research Agent",
+  "description": "Researches competitors and company background",
+  "capability_type": "research",
+  "webhook_url": "https://your-agent.com/execute",
+  "pricing": { "per_call_usd": 0.15 },
+  "sla": { "p99_latency_ms": 3000, "availability": 0.99 },
+  "input_schema": { ... },
+  "output_schema": { ... }
+}</pre>
+          </div>
+
+          <h3>Example response</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>{
+  "data": {
+    "agent_id": "research-agent-v2",
+    "status": "probationary",
+    "embedding_id": "uuid",
+    "registered_at": "2026-03-13T21:00:00Z"
+  },
+  "meta": { "request_id": "req_...", "latency_ms": 340 }
+}</pre>
+          </div>
+
+          <h3>List agents</h3>
+          <p><span class="inline-code">GET /v1/agents</span></p>
+          <h3>Get agent</h3>
+          <p><span class="inline-code">GET /v1/agents/{agent_id}</span></p>
+          <h3>Deactivate agent</h3>
+          <p><span class="inline-code">DELETE /v1/agents/{agent_id}</span></p>
+          <p>Sets status to <span class="inline-code">paused</span>. The agent remains in registry but will not appear in discovery results.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="delegations-api" data-title="Delegations API">
+          <h2>Delegations</h2>
+          <h3>Create a delegation</h3>
+          <p><span class="inline-code">POST /v1/delegate</span></p>
+          <p>Initiates a governed delegation to a selected callee agent.</p>
+
+          <table class="param-table">
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>callee_agent_id</td><td>string</td><td><span class="badge required">Required</span></td><td>Target callee agent id</td></tr>
+              <tr><td>task</td><td>object</td><td><span class="badge required">Required</span></td><td><span class="inline-code">{ type, input }</span> payload</td></tr>
+              <tr><td>context_scope</td><td>array</td><td><span class="badge optional">Optional</span></td><td>Scoped contextual references</td></tr>
+              <tr><td>budget_cap_usd</td><td>number</td><td><span class="badge required">Required</span></td><td>Maximum spend for this delegation</td></tr>
+              <tr><td>timeout_ms</td><td>integer</td><td><span class="badge optional">Optional</span></td><td>Delegation timeout window</td></tr>
+              <tr><td>callback_url</td><td>string/null</td><td><span class="badge optional">Optional</span></td><td>Optional completion callback</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Example request</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>POST /v1/delegate
+{
+  "callee_agent_id": "research-agent-v2",
+  "task": {
+    "type": "research",
+    "input": { "company_name": "Acme Corp" }
+  },
+  "context_scope": [],
+  "budget_cap_usd": 0.25,
+  "timeout_ms": 12000,
+  "callback_url": null
+}</pre>
+          </div>
+
+          <h3>Example response</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>{
+  "data": {
+    "delegation_id": "del_...",
+    "status": "completed",
+    "policy_result": {
+      "policy_id": "pol_...",
+      "policy_version": 3,
+      "decision": "allow"
+    },
+    "result": { ... },
+    "usage": {
+      "cost_usd": 0.15,
+      "latency_ms": 1840,
+      "llm_tokens": 2400
+    }
+  },
+  "meta": { "request_id": "req_...", "latency_ms": 112 }
+}</pre>
+          </div>
+
+          <h3>Discover capabilities</h3>
+          <p><span class="inline-code">POST /v1/capabilities/discover</span></p>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>{
+  "query": "research company background",
+  "capability_type": "research",
+  "budget_cap_usd": 0.50,
+  "max_latency_ms": 10000,
+  "exclude_agents": [],
+  "include_cross_org": false,
+  "limit": 5
+}</pre>
+          </div>
+
+          <h3>Get delegation</h3>
+          <p><span class="inline-code">GET /v1/delegations/{delegation_id}</span></p>
+          <h3>List delegations</h3>
+          <p><span class="inline-code">GET /v1/delegations</span> with query params <span class="inline-code">agent_id, status, from, to, limit, offset</span>.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="policies-api" data-title="Policies API">
+          <h2>Policies</h2>
+          <p>Policies are YAML files evaluated on every delegation before token issuance.</p>
+
+          <h3>Policy structure</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>rules:
+  - capability: research
+    max_budget_usd: 0.50
+    min_trust_score: 0.85
+    hitl_required: false
+
+  - capability: email_send
+    max_budget_usd: 0.10
+    min_trust_score: 0.90
+    hitl_required: true</pre>
+          </div>
+
+          <table class="param-table">
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>capability</td><td>string</td><td>Capability type this rule applies to</td></tr>
+              <tr><td>max_budget_usd</td><td>number</td><td>Maximum spend per delegation</td></tr>
+              <tr><td>min_trust_score</td><td>number</td><td>Minimum callee trust score (0–1)</td></tr>
+              <tr><td>hitl_required</td><td>boolean</td><td>Require human approval before execution</td></tr>
+              <tr><td>caller_allowlist</td><td>array</td><td>Restrict callers allowed to use capability</td></tr>
+              <tr><td>priority</td><td>integer</td><td>Lower values evaluate earlier</td></tr>
+              <tr><td>enabled</td><td>boolean</td><td>Enable/disable policy in evaluation stack</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Upload a policy</h3>
+          <p><span class="inline-code">POST /v1/policies</span></p>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>{
+  "name": "prod-policy-v3",
+  "yaml": "rules:\n  - capability: research\n    ...",
+  "priority": 10,
+  "enabled": true
+}</pre>
+          </div>
+
+          <h3>Policy activation model</h3>
+          <p>Policies are not single-active radio buttons. Multiple policies can be <span class="inline-code">enabled: true</span> simultaneously and are evaluated as a priority-ordered stack (lower <span class="inline-code">priority</span> first).</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="audit-log-api" data-title="Audit Log API">
+          <h2>Audit Log</h2>
+          <p>The audit log is append-only and tamper-evident. Every delegation produces exactly one audit entry.</p>
+
+          <h3>Get audit entries</h3>
+          <p><span class="inline-code">GET /v1/audit/log</span></p>
+
+          <h3>Example response</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>{
+  "data": {
+    "event_id": 4471,
+    "timestamp": "2026-03-16T14:22:38Z",
+    "delegation_id": "del_7f3a2b9c",
+    "caller_id": "sales-agent",
+    "callee_id": "research-agent-v2",
+    "policy_ref": "prod-policy-v3",
+    "decision": "ALLOW",
+    "cost_usd": 0.14,
+    "budget_remaining": 4.86,
+    "trust_delta": { "before": 0.91, "after": 0.93 }
+  },
+  "meta": { "request_id": "req_...", "latency_ms": 43 }
+}</pre>
+          </div>
+
+          <h3>Export</h3>
+          <p><span class="inline-code">GET /v1/audit/log/export</span> returns JSONL or CSV within a time range for SOC 2, GDPR, and HIPAA workflows.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="webhooks-api" data-title="Webhooks API">
+          <h2>Webhooks</h2>
+          <p>When a delegation is approved, Nexra sends a signed POST request to the callee's <span class="inline-code">webhook_url</span>.</p>
+
+          <h3>Request format</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>POST https://your-agent.com/execute
+Authorization: Bearer {scoped_jwt}
+X-Nexra-Signature: sha256={hmac_signature}
+X-Nexra-Delegation: del_7f3a2b9c
+Content-Type: application/json
+
+{
+  "delegation_id": "del_7f3a2b9c",
+  "capability": "research",
+  "task": { "company": "Acme Corp" },
+  "budget_cap": 0.25,
+  "expires_at": 1742137358
+}</pre>
+          </div>
+
+          <h3>Verifying the signature</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>import hmac
+import hashlib
+
+def verify_webhook_signature(payload_bytes: bytes, secret: str, signature: str) -> bool:
+    expected = 'sha256=' + hmac.new(secret.encode(), payload_bytes, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature)</pre>
+          </div>
+
+          <h3>Response format</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>{
+  "result": { ... },
+  "cost_usd": 0.14
+}</pre>
+          </div>
+          <p>Return any non-200 status to signal failure. Nexra marks delegation as failed and does not bill failed calls.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="policy-configuration" data-title="Policy configuration">
+          <h2>Policy configuration</h2>
+          <h3>Writing your first policy</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>rules:
+  - capability: research
+    max_budget_usd: 0.50
+    min_trust_score: 0.85
+    hitl_required: false
+
+  - capability: email_send
+    max_budget_usd: 0.10
+    min_trust_score: 0.90
+    hitl_required: true</pre>
+          </div>
+
+          <h3>Policy evaluation order</h3>
+          <p>Rules evaluate top to bottom. First matching rule wins. If no rule matches a capability, delegation is blocked by default.</p>
+
+          <h3>Default-deny</h3>
+          <p>Nexra is default-deny. Any capability not explicitly permitted in active enabled policies is blocked.</p>
+
+          <h3>Testing policies</h3>
+          <p>Use <span class="inline-code">nx_test_...</span> keys to evaluate policy behavior without executing real delegations or incurring billing.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="spend-controls" data-title="Spend controls">
+          <h2>Spend controls</h2>
+          <h3>Budget caps</h3>
+          <p>Every delegation requires <span class="inline-code">budget_cap_usd</span>. Nexra enforces this before webhook dispatch.</p>
+
+          <h3>Monthly budgets</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>organization:
+  monthly_budget_usd: 100.00
+  alert_threshold: 0.80</pre>
+          </div>
+
+          <h3>Circuit breakers</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>rules:
+  - capability: research
+    circuit_breaker:
+      max_failures: 3
+      window_seconds: 300</pre>
+          </div>
+          <p>After threshold violations in the configured window, the callee is paused until manually re-enabled.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="human-in-the-loop" data-title="Human-in-the-loop">
+          <h2>Human-in-the-loop</h2>
+          <h3>Configuring HiTL gates</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>rules:
+  - capability: email_send
+    hitl_required: true</pre>
+          </div>
+
+          <h3>Approval flow</h3>
+          <ol>
+            <li>Nexra pauses the delegation with <span class="inline-code">pending_approval</span>.</li>
+            <li>Your team receives a notification (Slack, email, or webhook).</li>
+            <li>An approver reviews full delegation context.</li>
+            <li>On approval, Nexra issues token and executes.</li>
+            <li>On rejection, delegation is marked blocked and not billed.</li>
+          </ol>
+
+          <h3>Approval API</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>GET  /v1/delegations?status=pending_approval
+POST /v1/delegations/{delegation_id}/approve
+POST /v1/delegations/{delegation_id}/reject</pre>
+          </div>
+
+          <h3>Timeout</h3>
+          <p>HiTL timeout is policy-configurable via <span class="inline-code">hitl_timeout_seconds</span>. No default timeout is assumed here.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="trust-scoring" data-title="Trust scoring">
+          <h2>Trust scoring</h2>
+          <p>Trust score is recalculated after settlement using completion quality, latency, and cost accuracy signals. It influences discovery ranking and policy checks.</p>
+          <p>Newly registered agents are <span class="inline-code">probationary</span> and receive lower trust weighting until sufficient successful delegations are recorded.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="framework-integration" data-title="Framework integration">
+          <h2>Framework integration</h2>
+          <p>Nexra works with any agent framework that can send and receive HTTPS webhooks. No SDK is required on the callee side.</p>
+
+          <h3>LangGraph</h3>
+          <div class="code-block">
+            <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre>from nexra import NexraClient
+from langgraph.graph import StateGraph
+
+client = NexraClient(api_key="nx_live_...")
+
+client.register(
+    agent_id="lg-research-agent",
+    name="LangGraph Research Agent",
+    description="LangGraph-powered research capability",
+    capability_type="research",
+    webhook_url="https://your-app.com/langgraph/execute",
+    pricing={"per_call_usd": 0.15},
+    sla={"p99_latency_ms": 3000, "availability": 0.99},
+    input_schema={...},
+    output_schema={...}
+)
+
+def handle_delegation(request):
+    verify_webhook_signature(request.body, secret, request.headers["X-Nexra-Signature"])
+    result = graph.invoke(request.json["task"])
+    return { "result": result, "cost_usd": 0.12 }</pre>
+          </div>
+
+          <h3>CrewAI</h3>
+          <p>Register your crew entrypoint as a webhook. Map task payload into your crew input dictionary.</p>
+
+          <h3>Bedrock</h3>
+          <p>Register your Bedrock invoke endpoint and pass <span class="inline-code">X-Nexra-Delegation</span> through to Lambda for tracing.</p>
+
+          <h3>Custom Python</h3>
+          <p>Any FastAPI or Flask route works. Add signature verification middleware and return standard response format.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="sdk-python" data-title="Python SDK">
+          <h2>Python</h2>
+          <p>The Python SDK maps high-level calls like <span class="inline-code">client.hire(...)</span> to the underlying REST API and response envelope, while preserving request ids and meta fields for observability.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+
+        <section class="doc-section" id="sdk-rest-api" data-title="REST API">
+          <h2>REST API</h2>
+          <p>REST endpoints are designed for direct framework integration and platform-side control. All responses use the standard <span class="inline-code">data</span>/<span class="inline-code">meta</span> envelope and standardized error schema.</p>
+          <a class="edit-link" href="#">Edit this page</a>
+        </section>
+      </div>
+
+      <aside class="on-page" id="on-page">
+        <div class="on-page-title">On this page</div>
+        <a href="#what-is-nexra" data-target="what-is-nexra">What is Nexra</a>
+        <a href="#how-it-works" data-target="how-it-works">How it works</a>
+        <a href="#core-concepts" data-target="core-concepts">Core concepts</a>
+        <a href="#authentication" data-target="authentication">Authentication</a>
+        <a href="#agents-api" data-target="agents-api">Agents API</a>
+        <a href="#delegations-api" data-target="delegations-api">Delegations API</a>
+        <a href="#policies-api" data-target="policies-api">Policies API</a>
+        <a href="#audit-log-api" data-target="audit-log-api">Audit Log API</a>
+        <a href="#webhooks-api" data-target="webhooks-api">Webhooks API</a>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<script>
+(function() {
+  var sidebar = document.getElementById('sidebar');
+  var toggle = document.getElementById('sidebar-toggle');
+  if (toggle && sidebar) {
+    toggle.addEventListener('click', function() {
+      sidebar.classList.toggle('open');
+    });
+  }
+
+  var sidebarLinks = Array.from(document.querySelectorAll('.sidebar-link'));
+  var onPageLinks = Array.from(document.querySelectorAll('.on-page a'));
+  var sections = Array.from(document.querySelectorAll('.doc-section'));
+  var breadcrumbCurrent = document.getElementById('breadcrumb-current');
+
+  function setActive(id) {
+    sidebarLinks.forEach(function(link) {
+      link.classList.toggle('active', link.getAttribute('data-target') === id);
+    });
+
+    onPageLinks.forEach(function(link) {
+      link.classList.toggle('active', link.getAttribute('data-target') === id);
+    });
+
+    var currentSection = document.getElementById(id);
+    if (currentSection && breadcrumbCurrent) {
+      breadcrumbCurrent.textContent = currentSection.getAttribute('data-title') || currentSection.querySelector('h1,h2').textContent;
+    }
+  }
+
+  function wireSmoothScroll(links) {
+    links.forEach(function(link) {
+      link.addEventListener('click', function(event) {
+        var targetId = link.getAttribute('data-target');
+        var target = document.getElementById(targetId);
+        if (!target) return;
+        event.preventDefault();
+        var offset = 80;
+        var top = target.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top: top, behavior: 'smooth' });
+        if (window.innerWidth <= 980 && sidebar) sidebar.classList.remove('open');
+      });
+    });
+  }
+
+  wireSmoothScroll(sidebarLinks);
+  wireSmoothScroll(onPageLinks);
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        setActive(entry.target.id);
+      }
+    });
+  }, {
+    root: null,
+    rootMargin: '-30% 0px -60% 0px',
+    threshold: 0
+  });
+
+  sections.forEach(function(section) { observer.observe(section); });
+  if (sections[0]) setActive(sections[0].id);
+})();
+</script>
+</body>
+</html>
