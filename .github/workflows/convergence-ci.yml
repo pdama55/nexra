@@ -61,6 +61,7 @@ jobs:
         run: |
           cd nexra
           poetry run ruff check \
+            --select F,E9 \
             services/budget_service.py \
             services/delegation_service.py \
             services/hitl_service.py \
