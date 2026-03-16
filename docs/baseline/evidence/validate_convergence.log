@@ -1,0 +1,64 @@
+poetry not found; skipping ruff/mypy checks in local validation script
+OpenAPI snapshot check passed
+.................................................................        [100%]
+65 passed in 3.71s
+....                                                                     [100%]
+=============================== warnings summary ===============================
+tests/contracts/test_api_contracts.py::test_required_dashboard_paths_and_methods_present
+  /Users/parthdama/Documents/Nexra/nexra/api/main.py:97: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+tests/contracts/test_api_contracts.py::test_required_dashboard_paths_and_methods_present
+  /Users/parthdama/Documents/Nexra/nexra/venv/lib/python3.12/site-packages/fastapi/applications.py:4495: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 2 warnings in 1.50s
+
+> nexra-dashboard@0.0.0 build
+> tsc -b && vite build
+
+vite v6.4.1 building for production...
+transforming...
+✓ 759 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                             0.47 kB │ gzip:   0.30 kB
+dist/assets/index-CIrw-mkW.css              8.82 kB │ gzip:   2.35 kB
+dist/assets/formatters-CRQ5zJIT.js          0.73 kB │ gzip:   0.41 kB │ map:     3.80 kB
+dist/assets/StatusPill-WUBonxbF.js          1.20 kB │ gzip:   0.45 kB │ map:     2.79 kB
+dist/assets/PolicyEngine-DKW0bXy3.js        2.13 kB │ gzip:   0.97 kB │ map:     4.89 kB
+dist/assets/EmptyState-DA1nTZwG.js          2.58 kB │ gzip:   1.12 kB │ map:     8.34 kB
+dist/assets/useMutation-DP6YFonD.js         3.15 kB │ gzip:   1.31 kB │ map:     9.65 kB
+dist/assets/TrustScores-CEkaM4vb.js         3.35 kB │ gzip:   1.35 kB │ map:     7.67 kB
+dist/assets/AgentRegistry-cWJJOt6_.js       3.57 kB │ gzip:   1.40 kB │ map:     8.93 kB
+dist/assets/DelegationFeed-C4U-DMnx.js      3.72 kB │ gzip:   1.41 kB │ map:     9.47 kB
+dist/assets/ComplianceExport-gBHgG7Cd.js    3.85 kB │ gzip:   1.69 kB │ map:    10.49 kB
+dist/assets/HitlQueue-DzJNyyzI.js           4.10 kB │ gzip:   1.51 kB │ map:    10.22 kB
+dist/assets/PolicyDetail-B097qtzU.js        4.21 kB │ gzip:   1.48 kB │ map:    11.24 kB
+dist/assets/Anomalies-D5iqfPI-.js           4.46 kB │ gzip:   1.32 kB │ map:    10.40 kB
+dist/assets/DelegationDetail-C3EwhnpJ.js    5.03 kB │ gzip:   1.68 kB │ map:    12.42 kB
+dist/assets/AuditLog-BYmS8mce.js            5.11 kB │ gzip:   2.02 kB │ map:    13.23 kB
+dist/assets/SpendBudget-hUyAmhEH.js         5.76 kB │ gzip:   2.05 kB │ map:    15.66 kB
+dist/assets/Settings-B9IoMiIW.js            5.77 kB │ gzip:   1.91 kB │ map:    15.31 kB
+dist/assets/Overview-CBLvERoz.js            6.28 kB │ gzip:   2.10 kB │ map:    16.72 kB
+dist/assets/AgentDetail-D95NY4Eb.js         7.69 kB │ gzip:   2.35 kB │ map:    19.95 kB
+dist/assets/useQuery-CMdczVsP.js           10.47 kB │ gzip:   3.75 kB │ map:    41.07 kB
+dist/assets/index-D_qEOmcW.js             269.46 kB │ gzip:  85.40 kB │ map: 1,458.67 kB
+dist/assets/LineChart-B_-jdrJZ.js         346.01 kB │ gzip: 103.58 kB │ map: 1,799.92 kB
+✓ built in 2.44s
+
+> @nexra/sdk@0.1.0 build
+> tsc
+
+Convergence validation checks passed
