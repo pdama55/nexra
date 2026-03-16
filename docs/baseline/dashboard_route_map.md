@@ -1,0 +1,57 @@
+# Dashboard API Route Map
+
+## Dashboard Calls
+- nexra/internal-dashboard/src/views/AgentDetail.tsx:20:    queryFn: () => apiGet(`/agents/${agentId}`),
+- nexra/internal-dashboard/src/views/DelegationDetail.tsx:14:    queryFn: () => apiGet(`/delegations/${id}`),
+- nexra/internal-dashboard/src/views/DelegationFeed.tsx:21:    queryFn: () => apiGet('/delegations', {
+- nexra/internal-dashboard/src/views/HitlQueue.tsx:25:    mutationFn: (id: string) => apiPost(`/delegations/${id}/approve`),
+- nexra/internal-dashboard/src/views/HitlQueue.tsx:33:    mutationFn: (id: string) => apiPost(`/delegations/${id}/reject`),
+- nexra/internal-dashboard/src/views/Overview.tsx:21:    queryFn: () => apiGet('/analytics/usage', { window: params.window }),
+- nexra/internal-dashboard/src/views/Overview.tsx:27:    queryFn: () => apiGet('/analytics/usage', { window: params.window, bucket: 'hour' }),
+- nexra/internal-dashboard/src/views/PolicyDetail.tsx:33:    queryFn: () => apiGet(`/policies/${id}`),
+- nexra/internal-dashboard/src/views/Settings.tsx:33:    queryFn: () => apiGet('/orgs/me'),
+- nexra/internal-dashboard/src/views/Settings.tsx:37:    queryFn: () => apiGet('/siem/config'),
+- nexra/internal-dashboard/src/views/Settings.tsx:41:    queryFn: () => apiGet('/marketplace/connect-status'),
+- nexra/internal-dashboard/src/views/Settings.tsx:68:    mutationFn: () => apiPatch('/orgs/me', { name: orgName, approval_url: approvalUrl || null }),
+- nexra/internal-dashboard/src/views/Settings.tsx:75:    mutationFn: () => apiPost('/siem/config', {
+
+## Backend Route Decorators
+- nexra/api/routers/agents.py:115:@router.get("/{agent_ref}")
+- nexra/api/routers/agents.py:164:@router.get("/{agent_ref}/trust", response_model=DataResponse[dict[str, Any]])
+- nexra/api/routers/agents.py:213:@router.post("/{agent_ref}/quarantine")
+- nexra/api/routers/agents.py:234:@router.post("/{agent_ref}/activate")
+- nexra/api/routers/agents.py:39:@router.post("/register")
+- nexra/api/routers/agents.py:69:@router.get("/registry", response_model=DataResponse[dict[str, Any]])
+- nexra/api/routers/analytics.py:131:@router.get("/spend/summary", response_model=DataResponse[dict[str, Any]])
+- nexra/api/routers/analytics.py:159:@router.post("/spend/budget-cap", response_model=DataResponse[dict[str, Any]])
+- nexra/api/routers/analytics.py:205:@router.get("/dashboard/volume", response_model=DataResponse[list[dict[str, Any]]])
+- nexra/api/routers/analytics.py:235:@router.get("/dashboard/cost-breakdown", response_model=DataResponse[list[dict[str, Any]]])
+- nexra/api/routers/analytics.py:263:@router.get("/dashboard/failure-rates", response_model=DataResponse[list[dict[str, Any]]])
+- nexra/api/routers/analytics.py:293:@router.get("/dashboard/trust-leaderboard", response_model=DataResponse[list[dict[str, Any]]])
+- nexra/api/routers/analytics.py:319:@router.get("/dashboard/budget-alerts", response_model=DataResponse[list[dict[str, Any]]])
+- nexra/api/routers/analytics.py:347:@router.get("/dashboard/network-graph", response_model=DataResponse[dict[str, Any]])
+- nexra/api/routers/analytics.py:37:@router.get("/analytics/usage", response_model=DataResponse[Any])
+- nexra/api/routers/audit.py:18:@router.get("/log", response_model=DataResponse[dict[str, Any]])
+- nexra/api/routers/capabilities.py:29:@router.post("/discover")
+- nexra/api/routers/compliance.py:18:@router.get("/report/{report_type}", response_model=DataResponse[dict])
+- nexra/api/routers/compliance.py:44:@router.get("/export/csv")
+- nexra/api/routers/delegations.py:110:@router.get("/delegations", response_model=DataResponse[dict[str, Any]])
+- nexra/api/routers/delegations.py:155:@router.get("/delegations/{delegation_id}", response_model=DataResponse[dict[str, Any]])
+- nexra/api/routers/delegations.py:200:@router.post("/delegations/{delegation_id}/complete")
+- nexra/api/routers/delegations.py:238:@router.post("/delegations/{delegation_id}/approve")
+- nexra/api/routers/delegations.py:256:@router.post("/delegations/{delegation_id}/reject")
+- nexra/api/routers/delegations.py:76:@router.post("/delegate")
+- nexra/api/routers/health.py:13:@router.get("/health")
+- nexra/api/routers/marketplace.py:15:@router.post("/connect-onboard", response_model=DataResponse[dict])
+- nexra/api/routers/marketplace.py:35:@router.get("/connect-status", response_model=DataResponse[dict])
+- nexra/api/routers/orgs.py:107:@router.patch("/me", response_model=DataResponse[dict])
+- nexra/api/routers/orgs.py:43:@router.post("/register", status_code=201, response_model=DataResponse[dict])
+- nexra/api/routers/orgs.py:84:@router.get("/me", response_model=DataResponse[dict])
+- nexra/api/routers/policies.py:113:@router.get("/{policy_id}", response_model=DataResponse[dict[str, Any]])
+- nexra/api/routers/policies.py:150:@router.get("/{policy_id}/versions", response_model=DataResponse[PolicyVersionsResponse])
+- nexra/api/routers/policies.py:187:@router.put("/{policy_id}")
+- nexra/api/routers/policies.py:246:@router.delete("/{policy_id}")
+- nexra/api/routers/policies.py:49:@router.post("")
+- nexra/api/routers/policies.py:86:@router.get("", response_model=DataResponse[dict[str, Any]])
+- nexra/api/routers/siem.py:27:@router.post("/config", response_model=DataResponse[dict])
+- nexra/api/routers/siem.py:61:@router.get("/config", response_model=DataResponse[dict])

@@ -1,0 +1,4 @@
+.DS_Store
+*.swp
+*~
+nexra/internal-dashboard/src/* 2.tsx

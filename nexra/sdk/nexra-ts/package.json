@@ -13,7 +13,8 @@
     "typescript": "^5.5"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.2.0",
+    "npm": ">=10.7.0"
   },
   "files": ["dist", "README.md", "LICENSE"]
 }

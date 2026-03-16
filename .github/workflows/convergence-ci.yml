@@ -1,0 +1,115 @@
+name: convergence-ci
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  python-quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nexra_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d nexra_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/nexra_test
+      REDIS_URL: redis://localhost:6379/1
+      OPENAI_API_KEY: test-openai-key
+      STRIPE_SECRET_KEY: test-stripe-key
+      STRIPE_WEBHOOK_SECRET: test-webhook-secret
+      STRIPE_DELEGATION_METER_ID: meter_test
+      SECRET_KEY_ENCRYPTION_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Install Python dependencies
+        run: |
+          cd nexra
+          poetry install --no-interaction
+      - name: Migration forward/rollback smoke
+        run: |
+          cd nexra
+          poetry run alembic upgrade head
+          poetry run alembic downgrade -1
+          poetry run alembic upgrade head
+      - name: Ruff lint
+        run: |
+          cd nexra
+          poetry run ruff check .
+      - name: Mypy type check
+        run: |
+          cd nexra
+          poetry run mypy \
+            services/budget_service.py \
+            services/delegation_service.py \
+            services/hitl_service.py \
+            services/siem_service.py \
+            api/routers/siem.py \
+            api/routers/policies.py
+      - name: OpenAPI snapshot contract gate
+        run: |
+          cd nexra
+          poetry run python ../scripts/check_openapi_snapshot.py
+      - name: Run unit tests
+        run: |
+          cd nexra
+          poetry run pytest -q tests/unit
+      - name: Run contract tests
+        run: |
+          cd nexra
+          poetry run pytest -q tests/contracts
+      - name: Run integration tests
+        run: |
+          cd nexra
+          poetry run pytest -q tests/integration
+      - name: Run e2e tests
+        run: |
+          cd nexra
+          poetry run pytest -q tests/e2e
+
+  ts-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: |
+            nexra/internal-dashboard/package-lock.json
+            nexra/sdk/nexra-ts/package-lock.json
+      - name: Dashboard install
+        run: npm --prefix nexra/internal-dashboard ci
+      - name: Dashboard typecheck
+        run: npx --prefix nexra/internal-dashboard tsc -b --pretty false
+      - name: Dashboard build
+        run: npm --prefix nexra/internal-dashboard run build
+      - name: TS SDK install
+        run: npm --prefix nexra/sdk/nexra-ts ci
+      - name: TS SDK build
+        run: npm --prefix nexra/sdk/nexra-ts run build

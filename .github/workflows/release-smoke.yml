@@ -1,0 +1,89 @@
+name: release-smoke
+
+on:
+  workflow_dispatch:
+
+jobs:
+  migration-and-smoke:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nexra_smoke
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d nexra_smoke"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/nexra_smoke
+      REDIS_URL: redis://localhost:6379/0
+      OPENAI_API_KEY: test-openai-key
+      STRIPE_SECRET_KEY: test-stripe-key
+      STRIPE_WEBHOOK_SECRET: test-webhook-secret
+      STRIPE_DELEGATION_METER_ID: meter_test
+      SECRET_KEY_ENCRYPTION_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      API_BASE_URL: http://127.0.0.1:8000
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Install Python dependencies
+        run: |
+          cd nexra
+          poetry install --no-interaction
+      - name: Migration forward/rollback/forward
+        run: |
+          cd nexra
+          poetry run alembic upgrade head
+          poetry run alembic downgrade -1
+          poetry run alembic upgrade head
+      - name: API smoke
+        run: |
+          cd nexra
+          poetry run uvicorn api.main:app --host 127.0.0.1 --port 8000 &
+          PID=$!
+          sleep 5
+          curl -fsS http://127.0.0.1:8000/health
+          API_KEY=$(curl -fsS -X POST http://127.0.0.1:8000/v1/orgs/register \
+            -H "Content-Type: application/json" \
+            -d '{"name":"smoke-org","plan":"growth"}' | python -c "import json,sys; print(json.load(sys.stdin)['data']['api_key'])")
+          curl -fsS http://127.0.0.1:8000/v1/agents/registry -H "Authorization: Bearer $API_KEY"
+          curl -fsS http://127.0.0.1:8000/v1/delegations -H "Authorization: Bearer $API_KEY"
+          curl -fsS "http://127.0.0.1:8000/v1/analytics/usage?window=last_24h" -H "Authorization: Bearer $API_KEY"
+          kill $PID
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: nexra/internal-dashboard/package-lock.json
+      - name: Dashboard build + route smoke
+        run: |
+          npm --prefix nexra/internal-dashboard ci
+          npm --prefix nexra/internal-dashboard run build
+          node --input-type=module -e "
+            import fs from 'node:fs';
+            const src = fs.readFileSync('nexra/internal-dashboard/src/App.tsx','utf8');
+            const required = ['path=\"/\"','path=\"/agents\"','path=\"/delegations\"','path=\"/policies\"','path=\"/spend\"','path=\"/audit\"','path=\"/hitl\"','path=\"/trust\"','path=\"/anomalies\"','path=\"/compliance\"','path=\"/settings\"'];
+            const missing = required.filter((r) => !src.includes(r));
+            if (missing.length) { console.error('Missing dashboard routes:', missing.join(', ')); process.exit(1); }
+            console.log('Dashboard route smoke passed');
+          "

@@ -1,0 +1,3131 @@
+{
+  "components": {
+    "schemas": {
+      "AgentRegisterRequest": {
+        "properties": {
+          "agent_id": {
+            "description": "Lowercase alphanumeric + hyphens only.",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "capability_type": {
+            "title": "Capability Type",
+            "type": "string"
+          },
+          "description": {
+            "minLength": 20,
+            "title": "Description",
+            "type": "string"
+          },
+          "input_schema": {
+            "additionalProperties": true,
+            "description": "JSON Schema Draft 7 for task input",
+            "title": "Input Schema",
+            "type": "object"
+          },
+          "is_public": {
+            "default": false,
+            "title": "Is Public",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "output_schema": {
+            "additionalProperties": true,
+            "description": "JSON Schema Draft 7 for result",
+            "title": "Output Schema",
+            "type": "object"
+          },
+          "pricing": {
+            "$ref": "#/components/schemas/PricingSchema"
+          },
+          "sla": {
+            "$ref": "#/components/schemas/SLASchema"
+          },
+          "webhook_secret": {
+            "minLength": 32,
+            "title": "Webhook Secret",
+            "type": "string"
+          },
+          "webhook_url": {
+            "title": "Webhook Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_id",
+          "name",
+          "description",
+          "capability_type",
+          "input_schema",
+          "output_schema",
+          "pricing",
+          "sla",
+          "webhook_url",
+          "webhook_secret"
+        ],
+        "title": "AgentRegisterRequest",
+        "type": "object"
+      },
+      "DataResponse_Any_": {
+        "properties": {
+          "data": {
+            "title": "Data"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/MetaResponse",
+            "default": {}
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DataResponse[Any]",
+        "type": "object"
+      },
+      "DataResponse_PolicyVersionsResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PolicyVersionsResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/MetaResponse",
+            "default": {}
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DataResponse[PolicyVersionsResponse]",
+        "type": "object"
+      },
+      "DataResponse_dict_": {
+        "properties": {
+          "data": {
+            "additionalProperties": true,
+            "title": "Data",
+            "type": "object"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/MetaResponse",
+            "default": {}
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DataResponse[dict]",
+        "type": "object"
+      },
+      "DataResponse_dict_str__Any__": {
+        "properties": {
+          "data": {
+            "additionalProperties": true,
+            "title": "Data",
+            "type": "object"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/MetaResponse",
+            "default": {}
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DataResponse[dict[str, Any]]",
+        "type": "object"
+      },
+      "DataResponse_list_dict_str__Any___": {
+        "properties": {
+          "data": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/MetaResponse",
+            "default": {}
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DataResponse[list[dict[str, Any]]]",
+        "type": "object"
+      },
+      "DelegateRequest": {
+        "properties": {
+          "budget_cap_usd": {
+            "description": "Max cost for this delegation",
+            "exclusiveMinimum": 0.0,
+            "title": "Budget Cap Usd",
+            "type": "number"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Async callback URL (null=sync)",
+            "title": "Callback Url"
+          },
+          "callee_agent_id": {
+            "description": "Target agent's agent_id",
+            "title": "Callee Agent Id",
+            "type": "string"
+          },
+          "context_scope": {
+            "description": "Explicit data grant keys",
+            "items": {
+              "type": "string"
+            },
+            "title": "Context Scope",
+            "type": "array"
+          },
+          "include_cross_org": {
+            "default": false,
+            "description": "Allow cross-org callee resolution",
+            "title": "Include Cross Org",
+            "type": "boolean"
+          },
+          "parent_delegation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional parent delegation ID for nested delegation chains",
+            "title": "Parent Delegation Id"
+          },
+          "task": {
+            "additionalProperties": true,
+            "description": "Task payload validated against callee's input_schema",
+            "title": "Task",
+            "type": "object"
+          },
+          "timeout_ms": {
+            "default": 30000,
+            "description": "Webhook timeout in ms",
+            "maximum": 120000.0,
+            "minimum": 1000.0,
+            "title": "Timeout Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "callee_agent_id",
+          "task",
+          "budget_cap_usd"
+        ],
+        "title": "DelegateRequest",
+        "type": "object"
+      },
+      "DelegationCompleteRequest": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "description": "Task result validated against output_schema",
+            "title": "Result",
+            "type": "object"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Self-reported usage: llm_tokens, external_api_cost_usd",
+            "title": "Usage"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "DelegationCompleteRequest",
+        "type": "object"
+      },
+      "DiscoverRequest": {
+        "properties": {
+          "budget_cap_usd": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Exclude agents above this price",
+            "title": "Budget Cap Usd"
+          },
+          "capability_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Hard filter: exact capability_type match",
+            "title": "Capability Type"
+          },
+          "exclude_agents": {
+            "description": "Agent IDs to exclude",
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclude Agents",
+            "type": "array"
+          },
+          "include_cross_org": {
+            "default": false,
+            "description": "Include public agents from other orgs",
+            "title": "Include Cross Org",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 5,
+            "description": "Max results to return",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "max_latency_ms": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Exclude agents above this SLA",
+            "title": "Max Latency Ms"
+          },
+          "query": {
+            "description": "Natural language capability query",
+            "minLength": 3,
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "DiscoverRequest",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "MetaResponse": {
+        "properties": {
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "title": "MetaResponse",
+        "type": "object"
+      },
+      "OrgCreateRequest": {
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "plan": {
+            "default": "starter",
+            "description": "starter | growth | enterprise",
+            "title": "Plan",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "OrgCreateRequest",
+        "type": "object"
+      },
+      "OrgSettingsUpdateRequest": {
+        "properties": {
+          "approval_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Url"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "OrgSettingsUpdateRequest",
+        "type": "object"
+      },
+      "PolicyCreateRequest": {
+        "properties": {
+          "allow": {
+            "additionalProperties": true,
+            "description": "Allow block: caller_type, callee_type, capability_types",
+            "title": "Allow",
+            "type": "object"
+          },
+          "conditions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Conditions",
+            "type": "array"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "hil_threshold_usd": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hil Threshold Usd"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "on_violation": {
+            "default": "block_and_alert",
+            "title": "On Violation",
+            "type": "string"
+          },
+          "priority": {
+            "default": 100,
+            "description": "Lower = evaluated first",
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Priority",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "allow"
+        ],
+        "title": "PolicyCreateRequest",
+        "type": "object"
+      },
+      "PolicyResponse": {
+        "properties": {
+          "allow": {
+            "additionalProperties": true,
+            "title": "Allow",
+            "type": "object"
+          },
+          "conditions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Conditions",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "hil_threshold_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hil Threshold Usd"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "on_violation": {
+            "title": "On Violation",
+            "type": "string"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "priority",
+          "version",
+          "enabled",
+          "allow",
+          "conditions",
+          "hil_threshold_usd",
+          "on_violation",
+          "created_at"
+        ],
+        "title": "PolicyResponse",
+        "type": "object"
+      },
+      "PolicyUpdateRequest": {
+        "properties": {
+          "allow": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allow"
+          },
+          "conditions": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditions"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "hil_threshold_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hil Threshold Usd"
+          },
+          "on_violation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On Violation"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "maximum": 10000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          }
+        },
+        "title": "PolicyUpdateRequest",
+        "type": "object"
+      },
+      "PolicyVersionsResponse": {
+        "properties": {
+          "policy_id": {
+            "title": "Policy Id",
+            "type": "string"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyResponse"
+            },
+            "title": "Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "policy_id",
+          "versions"
+        ],
+        "title": "PolicyVersionsResponse",
+        "type": "object"
+      },
+      "PricingSchema": {
+        "properties": {
+          "per_call_usd": {
+            "description": "Cost per delegation call in USD",
+            "exclusiveMinimum": 0.0,
+            "title": "Per Call Usd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "per_call_usd"
+        ],
+        "title": "PricingSchema",
+        "type": "object"
+      },
+      "SIEMConfigRequest": {
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "API key for authentication",
+            "title": "Api Key"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "endpoint": {
+            "description": "SIEM ingestion endpoint URL",
+            "title": "Endpoint",
+            "type": "string"
+          },
+          "event_types": {
+            "description": "Optional allow-list of audit event types; empty means all",
+            "items": {
+              "type": "string"
+            },
+            "title": "Event Types",
+            "type": "array"
+          },
+          "target": {
+            "description": "splunk | datadog | elastic | generic",
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target",
+          "endpoint"
+        ],
+        "title": "SIEMConfigRequest",
+        "type": "object"
+      },
+      "SLASchema": {
+        "properties": {
+          "availability": {
+            "description": "Availability target (0.0-1.0)",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Availability",
+            "type": "number"
+          },
+          "p99_latency_ms": {
+            "description": "P99 latency target in milliseconds",
+            "exclusiveMinimum": 0.0,
+            "title": "P99 Latency Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "p99_latency_ms",
+          "availability"
+        ],
+        "title": "SLASchema",
+        "type": "object"
+      },
+      "SetBudgetCapRequest": {
+        "properties": {
+          "agent_id": {
+            "description": "Agent to set cap for",
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "cap_usd": {
+            "description": "Budget cap in USD",
+            "exclusiveMinimum": 0.0,
+            "title": "Cap Usd",
+            "type": "number"
+          },
+          "period_type": {
+            "description": "'daily' or 'monthly'",
+            "title": "Period Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_id",
+          "period_type",
+          "cap_usd"
+        ],
+        "title": "SetBudgetCapRequest",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "The control plane for AI agent networks",
+    "title": "Nexra API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "description": "Health check endpoint. No authentication required.\n\nReturns 200 if all dependencies reachable, 503 if any are down.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Check",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/v1/agents/register": {
+      "post": {
+        "description": "Register or re-register an agent capability.\n\nIdempotent on agent_id. New agents start with status='probationary'.",
+        "operationId": "register_agent_v1_agents_register_post",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register Agent",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
+    "/v1/agents/registry": {
+      "get": {
+        "description": "List registered agents for the authenticated org.",
+        "operationId": "list_agents_v1_agents_registry_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "capability_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Capability Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "is_public",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Public"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_str__Any__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Agents",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
+    "/v1/agents/{agent_ref}": {
+      "get": {
+        "description": "Get agent details by UUID or agent_id.",
+        "operationId": "get_agent_v1_agents__agent_ref__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_ref",
+            "required": true,
+            "schema": {
+              "title": "Agent Ref",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Agent",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
+    "/v1/agents/{agent_ref}/activate": {
+      "post": {
+        "description": "Manually activate an agent.",
+        "operationId": "activate_agent_v1_agents__agent_ref__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_ref",
+            "required": true,
+            "schema": {
+              "title": "Agent Ref",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Activate Agent",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
+    "/v1/agents/{agent_ref}/quarantine": {
+      "post": {
+        "description": "Manually quarantine an agent.",
+        "operationId": "quarantine_agent_v1_agents__agent_ref__quarantine_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_ref",
+            "required": true,
+            "schema": {
+              "title": "Agent Ref",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quarantine Agent",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
+    "/v1/agents/{agent_ref}/trust": {
+      "get": {
+        "description": "Get trust score and recent score events for an agent.",
+        "operationId": "get_agent_trust_v1_agents__agent_ref__trust_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_ref",
+            "required": true,
+            "schema": {
+              "title": "Agent Ref",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_str__Any__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Agent Trust",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
+    "/v1/analytics/usage": {
+      "get": {
+        "description": "Dashboard usage endpoint.\n\n- No bucket: returns aggregate usage stats for the requested window.\n- bucket=hour|day: returns timeseries buckets (completed/blocked/failed/total).",
+        "operationId": "usage_stats_v1_analytics_usage_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "window",
+            "required": false,
+            "schema": {
+              "default": "last_24h",
+              "title": "Window",
+              "type": "string"
+            }
+          },
+          {
+            "description": "hour|day for timeseries buckets",
+            "in": "query",
+            "name": "bucket",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "hour|day for timeseries buckets",
+              "title": "Bucket"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_Any_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Usage Stats",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/v1/audit/log": {
+      "get": {
+        "description": "Query the immutable audit log.",
+        "operationId": "query_audit_log_v1_audit_log_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "agent_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Agent Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "event_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "delegation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Delegation Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "json or csv",
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "description": "json or csv",
+              "title": "Format",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_str__Any__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Query Audit Log",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
+    "/v1/capabilities/discover": {
+      "post": {
+        "description": "Discover agent capabilities via semantic search.\n\nRequires X-Agent-ID header. Returns ranked matches with composite score.",
+        "operationId": "discover_capabilities_v1_capabilities_discover_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Agent-ID",
+            "required": true,
+            "schema": {
+              "title": "X-Agent-Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Discover Capabilities",
+        "tags": [
+          "capabilities"
+        ]
+      }
+    },
+    "/v1/compliance/export/csv": {
+      "get": {
+        "description": "Export full audit log as CSV for compliance.",
+        "operationId": "export_audit_csv_v1_compliance_export_csv_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Audit Csv",
+        "tags": [
+          "compliance"
+        ]
+      }
+    },
+    "/v1/compliance/report/{report_type}": {
+      "get": {
+        "description": "Generate a compliance report (soc2, gdpr, hipaa).",
+        "operationId": "generate_compliance_report_v1_compliance_report__report_type__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_type",
+            "required": true,
+            "schema": {
+              "title": "Report Type",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Compliance Report",
+        "tags": [
+          "compliance"
+        ]
+      }
+    },
+    "/v1/dashboard/budget-alerts": {
+      "get": {
+        "description": "Agents approaching budget caps.",
+        "operationId": "budget_alerts_v1_dashboard_budget_alerts_get",
+        "parameters": [
+          {
+            "description": "Alert when spent/cap exceeds this ratio",
+            "in": "query",
+            "name": "threshold",
+            "required": false,
+            "schema": {
+              "default": 0.8,
+              "description": "Alert when spent/cap exceeds this ratio",
+              "maximum": 1.0,
+              "minimum": 0,
+              "title": "Threshold",
+              "type": "number"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_dict_str__Any___"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Budget Alerts",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/v1/dashboard/cost-breakdown": {
+      "get": {
+        "description": "Cost breakdown by agent.",
+        "operationId": "cost_breakdown_v1_dashboard_cost_breakdown_get",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_dict_str__Any___"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cost Breakdown",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/v1/dashboard/failure-rates": {
+      "get": {
+        "description": "Failure rates by agent.",
+        "operationId": "failure_rates_v1_dashboard_failure_rates_get",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_dict_str__Any___"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Failure Rates",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/v1/dashboard/network-graph": {
+      "get": {
+        "description": "Agent delegation network graph (edges = delegation relationships).",
+        "operationId": "network_graph_v1_dashboard_network_graph_get",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_str__Any__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Network Graph",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/v1/dashboard/trust-leaderboard": {
+      "get": {
+        "description": "Agent trust score leaderboard.",
+        "operationId": "trust_leaderboard_v1_dashboard_trust_leaderboard_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_dict_str__Any___"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Trust Leaderboard",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/v1/dashboard/volume": {
+      "get": {
+        "description": "Delegation volume over time.",
+        "operationId": "delegation_volume_v1_dashboard_volume_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_dict_str__Any___"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delegation Volume",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/v1/delegate": {
+      "post": {
+        "description": "Initiate a delegation (full 13-step flow).\n\nRequires X-Agent-ID header.",
+        "operationId": "delegate_v1_delegate_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Agent-ID",
+            "required": true,
+            "schema": {
+              "title": "X-Agent-Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DelegateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delegate",
+        "tags": [
+          "delegations"
+        ]
+      }
+    },
+    "/v1/delegations": {
+      "get": {
+        "description": "List delegations for dashboard views.",
+        "operationId": "list_delegations_v1_delegations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "created_at:desc",
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_str__Any__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Delegations",
+        "tags": [
+          "delegations"
+        ]
+      }
+    },
+    "/v1/delegations/{delegation_id}": {
+      "get": {
+        "description": "Get delegation status and result.",
+        "operationId": "get_delegation_status_v1_delegations__delegation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "delegation_id",
+            "required": true,
+            "schema": {
+              "title": "Delegation Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_str__Any__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Delegation Status",
+        "tags": [
+          "delegations"
+        ]
+      }
+    },
+    "/v1/delegations/{delegation_id}/approve": {
+      "post": {
+        "description": "Approve a paused delegation (HiTL).",
+        "operationId": "approve_delegation_v1_delegations__delegation_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "delegation_id",
+            "required": true,
+            "schema": {
+              "title": "Delegation Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Delegation",
+        "tags": [
+          "delegations"
+        ]
+      }
+    },
+    "/v1/delegations/{delegation_id}/complete": {
+      "post": {
+        "description": "Callee posts result back to Nexra. Auth: Delegation JWT (not org API key).",
+        "operationId": "complete_delegation_v1_delegations__delegation_id__complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "delegation_id",
+            "required": true,
+            "schema": {
+              "title": "Delegation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DelegationCompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Complete Delegation",
+        "tags": [
+          "delegations"
+        ]
+      }
+    },
+    "/v1/delegations/{delegation_id}/reject": {
+      "post": {
+        "description": "Reject a paused delegation (HiTL).",
+        "operationId": "reject_delegation_v1_delegations__delegation_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "delegation_id",
+            "required": true,
+            "schema": {
+              "title": "Delegation Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reject Delegation",
+        "tags": [
+          "delegations"
+        ]
+      }
+    },
+    "/v1/marketplace/connect-onboard": {
+      "post": {
+        "description": "Initiate Stripe Connect Express onboarding for the organization.",
+        "operationId": "connect_onboard_v1_marketplace_connect_onboard_post",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Connect Onboard",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/v1/marketplace/connect-status": {
+      "get": {
+        "description": "Check Stripe Connect onboarding status.",
+        "operationId": "connect_status_v1_marketplace_connect_status_get",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Connect Status",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/v1/orgs/me": {
+      "get": {
+        "operationId": "get_org_settings_v1_orgs_me_get",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Org Settings",
+        "tags": [
+          "organizations"
+        ]
+      },
+      "patch": {
+        "operationId": "update_org_settings_v1_orgs_me_patch",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgSettingsUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Org Settings",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/v1/orgs/register": {
+      "post": {
+        "description": "Create a new organization and return its API key.\n\nThe API key is returned exactly once in this response.\nIt is bcrypt-hashed before storage and cannot be retrieved again.",
+        "operationId": "create_organization_v1_orgs_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Organization",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/v1/policies": {
+      "get": {
+        "description": "List all policies for the authenticated org.",
+        "operationId": "list_policies_v1_policies_get",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_str__Any__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Policies",
+        "tags": [
+          "policies"
+        ]
+      },
+      "post": {
+        "description": "Create a new delegation policy.",
+        "operationId": "create_policy_v1_policies_post",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Policy",
+        "tags": [
+          "policies"
+        ]
+      }
+    },
+    "/v1/policies/{policy_id}": {
+      "delete": {
+        "description": "Disable a policy (soft delete). Preserves history.",
+        "operationId": "disable_policy_v1_policies__policy_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "policy_id",
+            "required": true,
+            "schema": {
+              "title": "Policy Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Disable Policy",
+        "tags": [
+          "policies"
+        ]
+      },
+      "get": {
+        "description": "Get a policy by ID with version history.",
+        "operationId": "get_policy_v1_policies__policy_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "policy_id",
+            "required": true,
+            "schema": {
+              "title": "Policy Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_str__Any__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Policy",
+        "tags": [
+          "policies"
+        ]
+      },
+      "put": {
+        "description": "Update a policy. Creates a new version; old version is preserved.",
+        "operationId": "update_policy_v1_policies__policy_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "policy_id",
+            "required": true,
+            "schema": {
+              "title": "Policy Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Policy",
+        "tags": [
+          "policies"
+        ]
+      }
+    },
+    "/v1/policies/{policy_id}/versions": {
+      "get": {
+        "description": "Get immutable version history for a policy family.",
+        "operationId": "get_policy_versions_v1_policies__policy_id__versions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "policy_id",
+            "required": true,
+            "schema": {
+              "title": "Policy Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_PolicyVersionsResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Policy Versions",
+        "tags": [
+          "policies"
+        ]
+      }
+    },
+    "/v1/siem/config": {
+      "get": {
+        "description": "Get current SIEM configuration.",
+        "operationId": "get_siem_config_v1_siem_config_get",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Siem Config",
+        "tags": [
+          "siem"
+        ]
+      },
+      "post": {
+        "description": "Configure SIEM export for the organization.",
+        "operationId": "set_siem_config_v1_siem_config_post",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SIEMConfigRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Siem Config",
+        "tags": [
+          "siem"
+        ]
+      }
+    },
+    "/v1/spend/budget-cap": {
+      "post": {
+        "description": "Set a daily or monthly budget cap for an agent.",
+        "operationId": "set_budget_cap_v1_spend_budget_cap_post",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetBudgetCapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_str__Any__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Budget Cap",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/v1/spend/summary": {
+      "get": {
+        "description": "CFO-facing spend summary by agent and period.",
+        "operationId": "spend_summary_v1_spend_summary_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "agent_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Agent Id"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_str__Any__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Spend Summary",
+        "tags": [
+          "analytics"
+        ]
+      }
+    }
+  }
+}
