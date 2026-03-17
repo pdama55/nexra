@@ -1,7 +1,7 @@
 # Convergence Evidence Pack
 
-Generated: 2026-03-16
-Branch: `stabilization/prd-tdd-convergence`
+Generated: 2026-03-17
+Branch: `main`
 
 ## Commands Executed
 
@@ -10,6 +10,7 @@ Branch: `stabilization/prd-tdd-convergence`
 3. `cd nexra && ./venv/bin/python ../scripts/check_openapi_snapshot.py`
 4. `cd nexra && npm --prefix internal-dashboard run build`
 5. `cd nexra && npm --prefix sdk/nexra-ts run build`
+6. `cd nexra/sdk/nexra-ts && npm pack --dry-run`
 
 ## Output Logs
 
@@ -18,6 +19,7 @@ Branch: `stabilization/prd-tdd-convergence`
 - `openapi_snapshot_check.log`
 - `dashboard_build.log`
 - `sdk_build.log`
+- `sdk_pack_dry_run.log`
 
 ## Operational Docs
 
@@ -26,7 +28,8 @@ Branch: `stabilization/prd-tdd-convergence`
 ## Result Summary
 
 - Convergence validation script: passed
-- Integration + E2E suites: passed (`24 passed`)
+- Integration + E2E suites: passed (`42 passed`)
 - OpenAPI snapshot gate: passed
 - Dashboard build: passed
 - TS SDK build: passed
+- TS SDK pack dry-run: passed (LICENSE + README + dist artifacts present)

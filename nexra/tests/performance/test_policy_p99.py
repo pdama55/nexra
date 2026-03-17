@@ -1,4 +1,8 @@
-"""Performance sanity test for policy evaluation."""
+"""Synthetic performance sanity test for policy evaluation.
+
+This test is intentionally fake-infra for fast CI feedback.
+See `test_live_infra_perf.py` for real Postgres/Redis performance checks.
+"""
 
 import time
 import uuid

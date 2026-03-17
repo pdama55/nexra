@@ -113,13 +113,18 @@ class DelegationService:
         parent_id, depth = await self._derive_depth(
             str(org.id), request.parent_delegation_id
         )
-        if depth > settings.max_delegation_depth_default:
+        max_depth = (
+            int(org.max_delegation_depth)
+            if org.max_delegation_depth is not None
+            else settings.max_delegation_depth_default
+        )
+        if depth > max_depth:
             raise NexraError(
                 400,
                 MAX_DEPTH_EXCEEDED,
                 (
                     f"Delegation depth {depth} exceeds "
-                    f"limit {settings.max_delegation_depth_default}"
+                    f"limit {max_depth}"
                 ),
             )
 
@@ -258,6 +263,7 @@ class DelegationService:
                 estimated_cost_usd=estimated_cost,
                 context_scope=request.context_scope,
             )
+            approval_deadline = str(approval["approval_deadline"])
             delegation.status = "pending_approval"
             await self.db.commit()
             await self.audit_service.append(
@@ -270,7 +276,7 @@ class DelegationService:
                     "policy_id": decision.policy_id,
                     "policy_version": decision.policy_version,
                     "estimated_cost_usd": estimated_cost,
-                    "approval_deadline": approval["approval_deadline"],
+                    "approval_deadline": approval_deadline,
                     "workflow": delegation.workflow,
                 },
                 delegation_id=str(delegation.id),
@@ -284,7 +290,7 @@ class DelegationService:
                     decision="pause",
                 ),
                 poll_url=f"/v1/delegations/{delegation.id}",
-                approval_deadline=approval["approval_deadline"],
+                approval_deadline=approval_deadline,
             )
 
         return await self._dispatch_to_callee(

@@ -1,0 +1,31 @@
+[info] running migrations...
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 007 -> 008, add callback delivery events to audit_log event constraint
+INFO  [alembic.runtime.migration] Running upgrade 008 -> 009, add org max delegation depth and owner email
+[info] starting core services...
+[start] api
+[start] api pid=35924 log=/var/folders/qx/b6lgpn4d7mq2_t_qb9y2_5gw0000gn/T//nexra-live-demo-20260317-131332/api.log
+[start] worker
+[start] worker pid=35930 log=/var/folders/qx/b6lgpn4d7mq2_t_qb9y2_5gw0000gn/T//nexra-live-demo-20260317-131332/worker.log
+[start] beat
+[start] beat pid=35934 log=/var/folders/qx/b6lgpn4d7mq2_t_qb9y2_5gw0000gn/T//nexra-live-demo-20260317-131332/beat.log
+[info] creating demo org + api key...
+[info] creating demo allow policy (avoids default-deny)...
+[info] skipping demo agents (NEXRA_SKIP_DEMO_AGENTS=1)
+[info] skipping dashboard (NEXRA_SKIP_DASHBOARD=1)
+
+========== Nexra Live Demo ==========
+API:        http://127.0.0.1:8000
+Health:     http://127.0.0.1:8000/health
+Logs dir:   /var/folders/qx/b6lgpn4d7mq2_t_qb9y2_5gw0000gn/T//nexra-live-demo-20260317-131332
+State file: test-results/live-demo/verification-run/live-stack-state.json
+
+API key auto-injected into dashboard from launch URL.
+If needed manually in browser console:
+localStorage.setItem('nexra_api_key', 'nx_live_LdeegGEax9EvBaZTr6c_M2ahFdhO-JAautOJW-tCnBE'); location.reload();
+
+Press Ctrl+C to stop everything.
+=====================================
+
+[info] NEXRA_NO_TAIL=1 enabled; keeping supervisor process alive without log tail

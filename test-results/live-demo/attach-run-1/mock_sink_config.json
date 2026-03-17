@@ -1,0 +1,7 @@
+{
+  "base_url": "http://127.0.0.1:8800",
+  "capture_dir": "test-results/live-demo/attach-run-1/captures",
+  "fail_endpoints": [
+    "slack"
+  ]
+}

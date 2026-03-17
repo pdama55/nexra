@@ -48,6 +48,19 @@
           "sla": {
             "$ref": "#/components/schemas/SLASchema"
           },
+          "team": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team"
+          },
           "webhook_secret": {
             "minLength": 32,
             "title": "Webhook Secret",
@@ -226,6 +239,20 @@
             "minimum": 1000.0,
             "title": "Timeout Ms",
             "type": "integer"
+          },
+          "workflow": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional workflow grouping key; defaults to 'unclassified'",
+            "title": "Workflow"
           }
         },
         "required": [
@@ -380,12 +407,30 @@
         "title": "MetaResponse",
         "type": "object"
       },
+      "OrgApiKeyCreateRequest": {
+        "properties": {
+          "name": {
+            "default": "dashboard",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "OrgApiKeyCreateRequest",
+        "type": "object"
+      },
       "OrgCreateRequest": {
         "properties": {
           "name": {
             "maxLength": 200,
             "minLength": 1,
             "title": "Name",
+            "type": "string"
+          },
+          "owner_email": {
+            "default": "admin@nexra.local",
+            "title": "Owner Email",
             "type": "string"
           },
           "plan": {
@@ -401,6 +446,40 @@
         "title": "OrgCreateRequest",
         "type": "object"
       },
+      "OrgMemberCreateRequest": {
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "role": {
+            "default": "viewer",
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "OrgMemberCreateRequest",
+        "type": "object"
+      },
+      "OrgMemberUpdateRequest": {
+        "properties": {
+          "role": {
+            "description": "admin|engineer|compliance|viewer",
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "OrgMemberUpdateRequest",
+        "type": "object"
+      },
       "OrgSettingsUpdateRequest": {
         "properties": {
           "approval_url": {
@@ -414,6 +493,19 @@
             ],
             "title": "Approval Url"
           },
+          "max_delegation_depth": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Delegation Depth"
+          },
           "name": {
             "anyOf": [
               {
@@ -426,9 +518,62 @@
               }
             ],
             "title": "Name"
+          },
+          "notification_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notification Url"
           }
         },
         "title": "OrgSettingsUpdateRequest",
+        "type": "object"
+      },
+      "OrgWebhookSettingsRequest": {
+        "properties": {
+          "approval_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Url"
+          },
+          "notification_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notification Url"
+          }
+        },
+        "title": "OrgWebhookSettingsRequest",
+        "type": "object"
+      },
+      "OrgWebhookTestRequest": {
+        "properties": {
+          "target": {
+            "description": "approval|notification",
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "title": "OrgWebhookTestRequest",
         "type": "object"
       },
       "PolicyCreateRequest": {
@@ -1158,6 +1303,22 @@
               "title": "Authorization",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
           }
         ],
         "responses": {
@@ -1209,6 +1370,22 @@
               "description": "Bearer nx_live_...",
               "title": "Authorization",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
             }
           }
         ],
@@ -1388,6 +1565,38 @@
           },
           {
             "in": "query",
+            "name": "actor_agent_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Agent Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "target_agent_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Agent Id"
+            }
+          },
+          {
+            "in": "query",
             "name": "event_type",
             "required": false,
             "schema": {
@@ -1400,6 +1609,40 @@
                 }
               ],
               "title": "Event Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "policy_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Policy Id"
+            }
+          },
+          {
+            "description": "allow|block|pause",
+            "in": "query",
+            "name": "policy_decision",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "allow|block|pause",
+              "title": "Policy Decision"
             }
           },
           {
@@ -1434,6 +1677,40 @@
                 }
               ],
               "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cost_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cost Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cost_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cost Max"
             }
           },
           {
@@ -1664,6 +1941,108 @@
           }
         },
         "summary": "Export Audit Csv",
+        "tags": [
+          "compliance"
+        ]
+      }
+    },
+    "/v1/compliance/export/package": {
+      "get": {
+        "operationId": "export_compliance_package_v1_compliance_export_package_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "set",
+            "required": false,
+            "schema": {
+              "default": "soc2_core",
+              "title": "Set",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Compliance Package",
         "tags": [
           "compliance"
         ]
@@ -2148,6 +2527,155 @@
           },
           {
             "in": "query",
+            "name": "caller_agent_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Caller Agent Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "callee_agent_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Callee Agent Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "policy_decision",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Policy Decision"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workflow",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workflow"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cost_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cost Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cost_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cost Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
@@ -2286,6 +2814,22 @@
               "title": "Authorization",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
           }
         ],
         "responses": {
@@ -2398,6 +2942,22 @@
               "title": "Authorization",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
           }
         ],
         "responses": {
@@ -2440,6 +3000,22 @@
               "description": "Bearer nx_live_...",
               "title": "Authorization",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
             }
           }
         ],
@@ -2516,6 +3092,187 @@
         ]
       }
     },
+    "/v1/orgs/api-keys": {
+      "get": {
+        "operationId": "list_api_keys_v1_orgs_api_keys_get",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Api Keys",
+        "tags": [
+          "organizations"
+        ]
+      },
+      "post": {
+        "operationId": "create_api_key_v1_orgs_api_keys_post",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgApiKeyCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Api Key",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/v1/orgs/api-keys/{key_id}": {
+      "delete": {
+        "operationId": "revoke_api_key_v1_orgs_api_keys__key_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key_id",
+            "required": true,
+            "schema": {
+              "title": "Key Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Api Key",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
     "/v1/orgs/me": {
       "get": {
         "operationId": "get_org_settings_v1_orgs_me_get",
@@ -2572,6 +3329,22 @@
               "title": "Authorization",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
           }
         ],
         "requestBody": {
@@ -2607,6 +3380,264 @@
           }
         },
         "summary": "Update Org Settings",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/v1/orgs/members": {
+      "get": {
+        "operationId": "list_members_v1_orgs_members_get",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Members",
+        "tags": [
+          "organizations"
+        ]
+      },
+      "post": {
+        "operationId": "create_member_v1_orgs_members_post",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgMemberCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Member",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/v1/orgs/members/{member_id}": {
+      "delete": {
+        "operationId": "delete_member_v1_orgs_members__member_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "member_id",
+            "required": true,
+            "schema": {
+              "title": "Member Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Member",
+        "tags": [
+          "organizations"
+        ]
+      },
+      "patch": {
+        "operationId": "update_member_v1_orgs_members__member_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "member_id",
+            "required": true,
+            "schema": {
+              "title": "Member Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgMemberUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Member",
         "tags": [
           "organizations"
         ]
@@ -2649,6 +3680,248 @@
           }
         },
         "summary": "Create Organization",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/v1/orgs/session": {
+      "get": {
+        "operationId": "get_org_session_v1_orgs_session_get",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Org Session",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/v1/orgs/webhooks": {
+      "get": {
+        "operationId": "get_webhook_settings_v1_orgs_webhooks_get",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Webhook Settings",
+        "tags": [
+          "organizations"
+        ]
+      },
+      "patch": {
+        "operationId": "update_webhook_settings_v1_orgs_webhooks_patch",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgWebhookSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Webhook Settings",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/v1/orgs/webhooks/test": {
+      "post": {
+        "operationId": "test_webhook_settings_v1_orgs_webhooks_test_post",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgWebhookTestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Webhook Settings",
         "tags": [
           "organizations"
         ]
@@ -2712,6 +3985,22 @@
               "title": "Authorization",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
           }
         ],
         "requestBody": {
@@ -2773,6 +4062,22 @@
               "description": "Bearer nx_live_...",
               "title": "Authorization",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
             }
           }
         ],
@@ -2875,6 +4180,22 @@
               "description": "Bearer nx_live_...",
               "title": "Authorization",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
             }
           }
         ],
@@ -3026,6 +4347,22 @@
               "title": "Authorization",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
           }
         ],
         "requestBody": {
@@ -3080,6 +4417,22 @@
               "description": "Bearer nx_live_...",
               "title": "Authorization",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
             }
           }
         ],
@@ -3143,6 +4496,28 @@
             }
           },
           {
+            "in": "query",
+            "name": "window",
+            "required": false,
+            "schema": {
+              "default": "last_24h",
+              "title": "Window",
+              "type": "string"
+            }
+          },
+          {
+            "description": "all|summary|agent|team|workflow|timeseries|totals",
+            "in": "query",
+            "name": "breakdown",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "all|summary|agent|team|workflow|timeseries|totals",
+              "title": "Breakdown",
+              "type": "string"
+            }
+          },
+          {
             "description": "Bearer nx_live_...",
             "in": "header",
             "name": "authorization",
@@ -3177,6 +4552,86 @@
           }
         },
         "summary": "Spend Summary",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/v1/spend/summary/export": {
+      "get": {
+        "operationId": "export_spend_summary_csv_v1_spend_summary_export_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "agent_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Agent Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "window",
+            "required": false,
+            "schema": {
+              "default": "last_24h",
+              "title": "Window",
+              "type": "string"
+            }
+          },
+          {
+            "description": "all|agent|team|workflow|timeseries|totals",
+            "in": "query",
+            "name": "breakdown",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "all|agent|team|workflow|timeseries|totals",
+              "title": "Breakdown",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Spend Summary Csv",
         "tags": [
           "analytics"
         ]

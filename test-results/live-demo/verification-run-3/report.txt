@@ -1,0 +1,16 @@
+Nexra Live Demo Full Suite Report
+Generated: 2026-03-17T20:23:14.191050+00:00
+Base URL: http://127.0.0.1:8000
+
+[PASS] health_org_bootstrap (required)
+[PASS] org_admin_surface (required)
+[FAIL] agents_and_discovery (required) :: POST /v1/agents/register returned 422, expected [200]; response={"detail":[{"type":"value_error","loc":["body","webhook_url"],"msg":"Value error, webhook_url must use HTTPS","input":"http://127.0.0.1:8800/mock/caller-agent","ctx":{"error":{}}}]}
+[PASS] policies_lifecycle (required)
+[FAIL] delegation_async_callback (required) :: caller/callee agents are not initialized
+[FAIL] hitl_flows (required) :: caller/callee agents are not initialized
+[FAIL] depth_guardrail (required) :: caller/callee agents are not initialized
+[PASS] audit_and_compliance (required)
+[FAIL] analytics_dashboard (required) :: caller agent not initialized
+[FAIL] siem_export (required) :: SIEM export worker did not export any events
+[FAIL] anomaly_fanout (required) :: anomaly prerequisites missing
+[SKIP] marketplace (optional) :: connect-onboard is optional; enable with --enable-stripe-onboard

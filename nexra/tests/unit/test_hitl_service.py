@@ -129,3 +129,103 @@ async def test_expire_stale_marks_blocked_and_emits_events(
     assert stale.status == "failed"
     release_called.assert_awaited_once()
     append_called.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_trigger_approval_request_emits_webhook_and_email(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    org = SimpleNamespace(
+        id="org-1",
+        approval_url="https://example.com/approval",
+        owner_email="owner@example.com",
+    )
+    db = AsyncMock()
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = org
+    db.execute = AsyncMock(return_value=result)
+
+    webhook_post = AsyncMock(return_value=SimpleNamespace(status_code=200, is_success=True))
+
+    class FakeAsyncClient:
+        def __init__(self, timeout: float = 10.0) -> None:
+            self.timeout = timeout
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return None
+
+        async def post(self, *args, **kwargs):
+            return await webhook_post(*args, **kwargs)
+
+    recipients_called = AsyncMock(return_value=["admin@example.com"])
+    notify_called = AsyncMock(return_value=None)
+
+    class FakeNotificationService:
+        def __init__(self, _db: object) -> None:
+            pass
+
+        resolve_org_admin_owner_emails = recipients_called
+        notify_hitl_approval_required = notify_called
+
+    monkeypatch.setattr("services.hitl_service.httpx.AsyncClient", FakeAsyncClient)
+    monkeypatch.setattr("services.hitl_service.NotificationService", FakeNotificationService)
+
+    service = HiTLService(db)
+    payload = await service.trigger_approval_request(
+        delegation_id="deleg-4",
+        org_id="org-1",
+        reason="threshold_exceeded",
+        caller_agent_id="caller-a",
+        callee_agent_id="callee-a",
+        estimated_cost_usd=1.2,
+        context_scope=["deal_metadata"],
+    )
+
+    assert payload["event"] == "hil_approval_required"
+    webhook_post.assert_awaited_once()
+    recipients_called.assert_awaited_once_with(
+        org_id="org-1",
+        owner_email="owner@example.com",
+    )
+    notify_called.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_trigger_approval_request_ignores_email_failures(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    org = SimpleNamespace(
+        id="org-1",
+        approval_url=None,
+        owner_email="owner@example.com",
+    )
+    db = AsyncMock()
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = org
+    db.execute = AsyncMock(return_value=result)
+
+    recipients_called = AsyncMock(return_value=["admin@example.com"])
+    notify_called = AsyncMock(side_effect=RuntimeError("provider down"))
+
+    class FakeNotificationService:
+        def __init__(self, _db: object) -> None:
+            pass
+
+        resolve_org_admin_owner_emails = recipients_called
+        notify_hitl_approval_required = notify_called
+
+    monkeypatch.setattr("services.hitl_service.NotificationService", FakeNotificationService)
+
+    service = HiTLService(db)
+    payload = await service.trigger_approval_request(
+        delegation_id="deleg-5",
+        org_id="org-1",
+        reason="threshold_exceeded",
+    )
+
+    assert payload["status"] == "pending_approval"
+    recipients_called.assert_awaited_once()
+    notify_called.assert_awaited_once()

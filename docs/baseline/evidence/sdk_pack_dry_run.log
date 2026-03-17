@@ -1,0 +1,26 @@
+npm notice
+npm notice 📦  @nexra/sdk@0.1.0
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 306B README.md
+npm notice 988B dist/client.d.ts
+npm notice 3.5kB dist/client.js
+npm notice 3.5kB dist/client.js.map
+npm notice 247B dist/index.d.ts
+npm notice 456B dist/index.js
+npm notice 159B dist/index.js.map
+npm notice 2.0kB dist/types.d.ts
+npm notice 110B dist/types.js
+npm notice 102B dist/types.js.map
+npm notice 459B package.json
+npm notice Tarball Details
+npm notice name: @nexra/sdk
+npm notice version: 0.1.0
+npm notice filename: nexra-sdk-0.1.0.tgz
+npm notice package size: 4.1 kB
+npm notice unpacked size: 12.9 kB
+npm notice shasum: fce150e925d621783d696b9c7990878a81858104
+npm notice integrity: sha512-sKDyG5LZGpzL1[...]MAGuWjNRYOTuQ==
+npm notice total files: 12
+npm notice
+nexra-sdk-0.1.0.tgz

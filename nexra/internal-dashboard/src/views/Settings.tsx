@@ -14,6 +14,8 @@ interface OrgSettings {
   org_id: string;
   name: string;
   plan: string;
+  max_delegation_depth: number | null;
+  owner_email: string | null;
   approval_url: string | null;
   notification_url: string | null;
   stripe_connect_account_id: string | null;
@@ -92,6 +94,7 @@ export function Settings() {
   const [siemEventTypesDraft, setSiemEventTypesDraft] = useState<string | null>(null);
   const [approvalWebhookDraft, setApprovalWebhookDraft] = useState<string | null>(null);
   const [notificationWebhookDraft, setNotificationWebhookDraft] = useState<string | null>(null);
+  const [maxDepthDraft, setMaxDepthDraft] = useState<string | null>(null);
   const [webhookTestResult, setWebhookTestResult] = useState<string | null>(null);
 
   const orgName = orgNameDraft ?? orgQuery.data?.name ?? '';
@@ -102,12 +105,18 @@ export function Settings() {
   const siemEventTypes = siemEventTypesDraft ?? (siemQuery.data?.event_types ?? []).join(',');
   const approvalWebhook = approvalWebhookDraft ?? webhookSettingsQuery.data?.approval_url ?? '';
   const notificationWebhook = notificationWebhookDraft ?? webhookSettingsQuery.data?.notification_url ?? '';
+  const maxDelegationDepth = maxDepthDraft ?? String(orgQuery.data?.max_delegation_depth ?? 5);
 
   const updateOrgMutation = useMutation({
-    mutationFn: () => apiPatch('/orgs/me', { name: orgName, approval_url: approvalUrl || null }),
+    mutationFn: () => apiPatch('/orgs/me', {
+      name: orgName,
+      approval_url: approvalUrl || null,
+      max_delegation_depth: Number(maxDelegationDepth),
+    }),
     onSuccess: () => {
       setOrgNameDraft(null);
       setApprovalUrlDraft(null);
+      setMaxDepthDraft(null);
       queryClient.invalidateQueries({ queryKey: ['org-settings'] });
     },
   });
@@ -234,6 +243,16 @@ export function Settings() {
                 <input value={orgName} onChange={(e) => setOrgNameDraft(e.target.value)} />
                 <div style={{ color: 'var(--text-tertiary)' }}>Approval URL</div>
                 <input value={approvalUrl} onChange={(e) => setApprovalUrlDraft(e.target.value)} placeholder="https://example.com/approval-webhook" />
+                <div style={{ color: 'var(--text-tertiary)' }}>Max Delegation Depth</div>
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={maxDelegationDepth}
+                  onChange={(e) => setMaxDepthDraft(e.target.value)}
+                />
+                <div style={{ color: 'var(--text-tertiary)' }}>Owner Email</div>
+                <div className="mono" style={{ padding: '8px 0' }}>{orgQuery.data.owner_email ?? 'N/A'}</div>
                 <div style={{ color: 'var(--text-tertiary)' }}>Plan</div>
                 <div className="mono" style={{ padding: '8px 0' }}>{orgQuery.data.plan}</div>
                 <div style={{ color: 'var(--text-tertiary)' }}>Org ID</div>

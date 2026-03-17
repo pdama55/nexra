@@ -1,4 +1,8 @@
-"""Performance sanity test for discovery query orchestration."""
+"""Synthetic performance sanity test for discovery query orchestration.
+
+This test is intentionally fake-infra for fast CI feedback.
+See `test_live_infra_perf.py` for real Postgres/Redis performance checks.
+"""
 
 import time
 from types import SimpleNamespace

@@ -72,6 +72,11 @@ jobs:
         run: |
           cd nexra
           poetry run mypy \
+            services/notification_service.py \
+            services/hitl_service.py \
+            services/anomaly_service.py \
+            services/budget_service.py
+          poetry run mypy \
             --ignore-missing-imports \
             --allow-untyped-defs \
             --disable-error-code assignment \
@@ -108,6 +113,11 @@ jobs:
         run: |
           cd nexra
           poetry run pytest -q tests/performance
+      - name: Run live infra performance tests (opt-in)
+        if: ${{ vars.NEXRA_RUN_LIVE_PERF == '1' }}
+        run: |
+          cd nexra
+          NEXRA_RUN_LIVE_PERF=1 poetry run pytest -q tests/performance/test_live_infra_perf.py
 
   ts-quality:
     runs-on: ubuntu-latest
@@ -130,3 +140,11 @@ jobs:
         run: npm --prefix nexra/sdk/nexra-ts ci
       - name: TS SDK build
         run: npm --prefix nexra/sdk/nexra-ts run build
+      - name: TS SDK package smoke
+        run: |
+          cd nexra/sdk/nexra-ts
+          npm pack --dry-run >/tmp/nexra-ts-pack.txt
+          cat /tmp/nexra-ts-pack.txt
+          rg -q "README\\.md" /tmp/nexra-ts-pack.txt
+          rg -q "LICENSE" /tmp/nexra-ts-pack.txt
+          rg -q "dist/index\\.js" /tmp/nexra-ts-pack.txt

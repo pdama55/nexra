@@ -11,6 +11,7 @@ from models.delegation import Delegation
 from models.organization import Organization
 from services.audit_service import AuditService
 from services.budget_service import BudgetService
+from services.notification_service import NotificationService
 
 logger = logging.getLogger("nexra.services.hitl")
 
@@ -30,11 +31,11 @@ class HiTLService:
         callee_agent_id: str | None = None,
         estimated_cost_usd: float | None = None,
         context_scope: list[str] | None = None,
-    ) -> dict:
+    ) -> dict[str, object]:
         settings = get_settings()
         ttl_hours = settings.hil_approval_ttl_hours
         deadline = datetime.now(timezone.utc) + timedelta(hours=ttl_hours)
-        payload = {
+        payload: dict[str, object] = {
             "event": "hil_approval_required",
             "delegation_id": delegation_id,
             "status": "pending_approval",
@@ -52,6 +53,7 @@ class HiTLService:
             select(Organization).where(Organization.id == org_id)
         )
         org = org_result.scalar_one_or_none()
+        notifier = NotificationService(self.db)
         if org and org.approval_url:
             try:
                 async with httpx.AsyncClient(timeout=10.0) as client:
@@ -59,6 +61,20 @@ class HiTLService:
             except Exception as exc:  # pragma: no cover - non-blocking notification
                 logger.warning(
                     "Failed to deliver HiTL approval notification for %s: %s",
+                    delegation_id,
+                    exc,
+                )
+
+        if org:
+            try:
+                recipients = await notifier.resolve_org_admin_owner_emails(
+                    org_id=str(org.id),
+                    owner_email=org.owner_email,
+                )
+                await notifier.notify_hitl_approval_required(recipients, payload)
+            except Exception as exc:  # pragma: no cover - non-blocking notification
+                logger.warning(
+                    "Failed to deliver HiTL approval email notification for %s: %s",
                     delegation_id,
                     exc,
                 )

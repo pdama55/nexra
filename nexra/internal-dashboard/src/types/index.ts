@@ -6,7 +6,10 @@ export interface Organization {
   id: string;
   name: string;
   plan: 'starter' | 'growth' | 'enterprise';
+  max_delegation_depth: number | null;
+  owner_email: string | null;
   approval_url: string | null;
+  notification_url: string | null;
   created_at: string;
 }
 
@@ -133,7 +136,9 @@ export type AuditEventType =
   | 'hil_expired'
   | 'anomaly_detected'
   | 'circuit_breaker_tripped'
-  | 'marketplace_payout';
+  | 'marketplace_payout'
+  | 'callback_delivered'
+  | 'callback_failed';
 
 // ── Agent Budget ──
 export interface AgentBudget {

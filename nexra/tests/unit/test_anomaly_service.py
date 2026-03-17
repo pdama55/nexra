@@ -44,7 +44,21 @@ async def test_detects_anomaly_and_emits_audit(monkeypatch: pytest.MonkeyPatch) 
 
         append = append_called
 
+    resolve_recipients_called = AsyncMock(return_value=["admin@example.com"])
+    notify_called = AsyncMock(return_value=None)
+
+    class FakeNotificationService:
+        def __init__(self, _db: object) -> None:
+            pass
+
+        resolve_org_admin_owner_emails = resolve_recipients_called
+        notify_spend_anomaly = notify_called
+
     monkeypatch.setattr("services.anomaly_service.AuditService", FakeAuditService)
+    monkeypatch.setattr(
+        "services.anomaly_service.NotificationService",
+        FakeNotificationService,
+    )
 
     service = AnomalyService(db)
     anomalies = await service.detect_spend_anomalies()
@@ -52,6 +66,8 @@ async def test_detects_anomaly_and_emits_audit(monkeypatch: pytest.MonkeyPatch) 
     assert len(anomalies) == 1
     assert anomalies[0]["agent_id"] == "agent-1"
     append_called.assert_awaited_once()
+    resolve_recipients_called.assert_awaited_once_with("org-1")
+    notify_called.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -72,10 +88,24 @@ async def test_skips_agents_with_insufficient_baseline(monkeypatch: pytest.Monke
 
         append = append_called
 
+    notify_called = AsyncMock(return_value=None)
+
+    class FakeNotificationService:
+        def __init__(self, _db: object) -> None:
+            pass
+
+        resolve_org_admin_owner_emails = AsyncMock(return_value=["admin@example.com"])
+        notify_spend_anomaly = notify_called
+
     monkeypatch.setattr("services.anomaly_service.AuditService", FakeAuditService)
+    monkeypatch.setattr(
+        "services.anomaly_service.NotificationService",
+        FakeNotificationService,
+    )
 
     service = AnomalyService(db)
     anomalies = await service.detect_spend_anomalies()
 
     assert anomalies == []
     append_called.assert_not_awaited()
+    notify_called.assert_not_awaited()

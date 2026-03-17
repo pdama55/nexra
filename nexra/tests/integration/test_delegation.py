@@ -311,3 +311,129 @@ class TestDelegationDepth:
             assert str(nested.parent_delegation_id) == first.delegation_id
         finally:
             await redis_client.aclose()
+
+    @pytest.mark.asyncio
+    async def test_org_max_delegation_depth_enforced(self, db_session: AsyncSession) -> None:
+        org = await _create_org(db_session)
+        org.max_delegation_depth = 1
+        await db_session.flush()
+        await _register_agent(db_session, str(org.id), "depth-cap-caller")
+        await _register_agent(db_session, str(org.id), "depth-cap-callee", "analysis")
+        await _add_policy(db_session, org.id, {
+            "allow": {},
+            "conditions": [],
+            "on_violation": "block_and_alert",
+        })
+
+        redis_client = aioredis.from_url("redis://localhost:6379/1", decode_responses=True)
+        try:
+            policy_engine = PolicyEngine(redis_client, db_session)
+            budget_service = BudgetService(db_session)
+            audit_service = AuditService(db_session)
+            trust_service = TrustService(db_session)
+            webhook_service = WebhookService()
+            webhook_service.deliver_and_await = AsyncMock(
+                return_value={"result": {"answer": "ok"}, "usage": {"llm_tokens": 1}}
+            )
+            service = DelegationService(
+                db_session, redis_client, policy_engine,
+                webhook_service, budget_service, audit_service, trust_service,
+            )
+            caller = await AgentService(db_session, _mock_openai()).get_by_agent_id(
+                str(org.id), "depth-cap-caller"
+            )
+            first = await service.initiate(
+                org,
+                caller,
+                DelegateRequest(
+                    callee_agent_id="depth-cap-callee",
+                    task={"input": {"query": "depth one"}},
+                    budget_cap_usd=1.0,
+                ),
+            )
+            second = await service.initiate(
+                org,
+                caller,
+                DelegateRequest(
+                    callee_agent_id="depth-cap-callee",
+                    task={"input": {"query": "depth two"}},
+                    budget_cap_usd=1.0,
+                    parent_delegation_id=first.delegation_id,
+                ),
+            )
+            assert second.status == "completed"
+
+            with pytest.raises(NexraError) as exc:
+                await service.initiate(
+                    org,
+                    caller,
+                    DelegateRequest(
+                        callee_agent_id="depth-cap-callee",
+                        task={"input": {"query": "depth three"}},
+                        budget_cap_usd=1.0,
+                        parent_delegation_id=second.delegation_id,
+                    ),
+                )
+            assert exc.value.code == "MAX_DEPTH_EXCEEDED"
+        finally:
+            await redis_client.aclose()
+
+    @pytest.mark.asyncio
+    async def test_depth_falls_back_to_default_when_org_limit_is_null(self, db_session: AsyncSession) -> None:
+        org = await _create_org(db_session)
+        org.max_delegation_depth = None
+        await db_session.flush()
+        await _register_agent(db_session, str(org.id), "depth-default-caller")
+        await _register_agent(db_session, str(org.id), "depth-default-callee", "analysis")
+        await _add_policy(db_session, org.id, {
+            "allow": {},
+            "conditions": [],
+            "on_violation": "block_and_alert",
+        })
+
+        redis_client = aioredis.from_url("redis://localhost:6379/1", decode_responses=True)
+        try:
+            policy_engine = PolicyEngine(redis_client, db_session)
+            budget_service = BudgetService(db_session)
+            audit_service = AuditService(db_session)
+            trust_service = TrustService(db_session)
+            webhook_service = WebhookService()
+            webhook_service.deliver_and_await = AsyncMock(
+                return_value={"result": {"answer": "ok"}, "usage": {"llm_tokens": 1}}
+            )
+            service = DelegationService(
+                db_session, redis_client, policy_engine,
+                webhook_service, budget_service, audit_service, trust_service,
+            )
+            caller = await AgentService(db_session, _mock_openai()).get_by_agent_id(
+                str(org.id), "depth-default-caller"
+            )
+
+            parent_id = None
+            for i in range(6):
+                response = await service.initiate(
+                    org,
+                    caller,
+                    DelegateRequest(
+                        callee_agent_id="depth-default-callee",
+                        task={"input": {"query": f"depth {i}"}},
+                        budget_cap_usd=1.0,
+                        parent_delegation_id=parent_id,
+                    ),
+                )
+                parent_id = response.delegation_id
+
+            with pytest.raises(NexraError) as exc:
+                await service.initiate(
+                    org,
+                    caller,
+                    DelegateRequest(
+                        callee_agent_id="depth-default-callee",
+                        task={"input": {"query": "depth over default"}},
+                        budget_cap_usd=1.0,
+                        parent_delegation_id=parent_id,
+                    ),
+                )
+            assert exc.value.code == "MAX_DEPTH_EXCEEDED"
+        finally:
+            await redis_client.aclose()

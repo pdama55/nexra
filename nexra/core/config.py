@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     anomaly_sigma_threshold: float = 3.0
     celery_broker_url: str | None = None
     api_base_url: str = "http://localhost:8000"
+    sendgrid_api_key: str | None = None
+    sendgrid_base_url: str = "https://api.sendgrid.com"
+    notification_email_from: str = "noreply@nexra.local"
+    anomaly_slack_webhook_url: str | None = None
+    anomaly_pagerduty_routing_key: str | None = None
+    pagerduty_events_base_url: str = "https://events.pagerduty.com"
+    anomaly_email_recipients: str | None = None
 
     @field_validator("secret_key_encryption_key")
     @classmethod

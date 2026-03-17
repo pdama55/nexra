@@ -4,10 +4,18 @@ from core.config import get_settings
 
 settings = get_settings()
 
+
+def _normalize_backend_url(url: str) -> str:
+    # Celery requires ssl_cert_reqs in rediss URLs for result backends.
+    if url.startswith("rediss://") and "ssl_cert_reqs=" not in url:
+        separator = "&" if "?" in url else "?"
+        return f"{url}{separator}ssl_cert_reqs=CERT_NONE"
+    return url
+
 celery_app = Celery(
     "nexra",
     broker=settings.celery_broker,
-    backend=settings.redis_url,
+    backend=_normalize_backend_url(settings.redis_url),
 )
 
 celery_app.conf.update(

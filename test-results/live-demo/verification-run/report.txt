@@ -1,0 +1,37 @@
+Nexra Live Demo Full Suite Report
+Generated: 2026-03-17T20:14:46.427921+00:00
+Base URL: http://127.0.0.1:8000
+
+[PASS] health_org_bootstrap (required)
+[PASS] org_admin_surface (required)
+[PASS] agents_and_discovery (required)
+[PASS] policies_lifecycle (required)
+[FAIL] delegation_async_callback (required) :: POST /v1/delegate returned 500, expected [202]; response=Internal Server Error
+[FAIL] hitl_flows (required) :: POST /v1/delegations/059128d9-6147-4e81-a8f2-48f54dee43d1/approve returned 503, expected [200, 202]; response={"error":{"code":"CALLEE_WEBHOOK_FAILED","message":"Webhook delivery failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)","details":{},"request_id":"0ef57cfd-7c0c-4744-ad20-9d12b75fe25b"}}
+[FAIL] depth_guardrail (required) :: POST /v1/delegate returned 500, expected [202]; response=Internal Server Error
+[PASS] audit_and_compliance (required)
+[PASS] analytics_dashboard (required)
+[PASS] siem_export (required)
+[FAIL] anomaly_fanout (required) :: 7 validation errors for Settings
+database_url
+  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+redis_url
+  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+openai_api_key
+  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+stripe_secret_key
+  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+stripe_webhook_secret
+  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+stripe_delegation_meter_id
+  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+secret_key_encryption_key
+  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+[SKIP] marketplace (optional) :: connect-onboard is optional; enable with --enable-stripe-onboard

@@ -1,0 +1,11 @@
+[info] running migrations...
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+[info] starting core services...
+[start] api
+[start] api pid=40679 log=/var/folders/qx/b6lgpn4d7mq2_t_qb9y2_5gw0000gn/T//nexra-live-demo-20260317-133006/api.log
+[start] worker
+[start] worker pid=40682 log=/var/folders/qx/b6lgpn4d7mq2_t_qb9y2_5gw0000gn/T//nexra-live-demo-20260317-133006/worker.log
+[start] beat
+[start] beat pid=40687 log=/var/folders/qx/b6lgpn4d7mq2_t_qb9y2_5gw0000gn/T//nexra-live-demo-20260317-133006/beat.log
+[info] creating demo org + api key...

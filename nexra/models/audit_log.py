@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Index, Numeric, Text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Numeric, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -34,6 +34,17 @@ class AuditLog(UUIDMixin, Base):
     )
 
     __table_args__ = (
+        CheckConstraint(
+            "event_type IN ("
+            "'policy_evaluated','delegation_initiated','delegation_completed',"
+            "'delegation_failed','delegation_blocked','delegation_timeout',"
+            "'agent_quarantined','agent_activated','budget_exceeded',"
+            "'hil_triggered','hil_approved','hil_expired',"
+            "'anomaly_detected','circuit_breaker_tripped',"
+            "'marketplace_payout','callback_delivered','callback_failed'"
+            ")",
+            name="ck_audit_log_event_type",
+        ),
         Index("ix_audit_log_org", "org_id", "created_at"),
         Index("ix_audit_log_delegation", "delegation_id"),
         Index("ix_audit_log_event_type", "event_type", "created_at"),

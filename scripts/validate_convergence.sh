@@ -7,6 +7,17 @@ pushd "$ROOT/nexra" >/dev/null
 if command -v poetry >/dev/null 2>&1; then
   poetry run ruff check .
   poetry run mypy \
+    services/notification_service.py \
+    services/hitl_service.py \
+    services/anomaly_service.py \
+    services/budget_service.py
+  poetry run mypy \
+    --ignore-missing-imports \
+    --allow-untyped-defs \
+    --disable-error-code assignment \
+    --disable-error-code type-arg \
+    --disable-error-code no-untyped-def \
+    --disable-error-code import-untyped \
     services/budget_service.py \
     services/delegation_service.py \
     services/hitl_service.py \

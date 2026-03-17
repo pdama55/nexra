@@ -21,7 +21,13 @@ class Organization(UUIDMixin, TimestampMixin, Base):
     )
     approval_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     notification_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    owner_email: Mapped[str | None] = mapped_column(
+        Text, nullable=True, server_default="admin@nexra.local"
+    )
     jwt_secret_enc: Mapped[str] = mapped_column(Text, nullable=False)
+    max_delegation_depth: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, server_default="5"
+    )
     delegation_count: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
     )
@@ -37,5 +43,9 @@ class Organization(UUIDMixin, TimestampMixin, Base):
         CheckConstraint(
             "plan IN ('starter', 'growth', 'enterprise')",
             name="ck_organizations_plan",
+        ),
+        CheckConstraint(
+            "(max_delegation_depth IS NULL OR max_delegation_depth BETWEEN 1 AND 20)",
+            name="ck_organizations_max_delegation_depth",
         ),
     )

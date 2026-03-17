@@ -41,6 +41,8 @@ class OrgSettingsResponse(BaseModel):
     org_id: str
     name: str
     plan: str
+    max_delegation_depth: int | None
+    owner_email: str | None
     approval_url: str | None
     notification_url: str | None
     stripe_connect_account_id: str | None
@@ -49,6 +51,7 @@ class OrgSettingsResponse(BaseModel):
 
 class OrgSettingsUpdateRequest(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=200)
+    max_delegation_depth: int | None = Field(None, ge=1, le=20)
     approval_url: str | None = None
     notification_url: str | None = None
 
@@ -105,6 +108,7 @@ async def create_organization(
         plan=body.plan,
         api_key_hash=hashed_key,
         api_key_prefix=prefix,
+        owner_email=body.owner_email.lower().strip(),
         jwt_secret_enc=jwt_secret_enc,
     )
     db.add(org)
@@ -153,6 +157,8 @@ async def get_org_settings(
             org_id=str(org.id),
             name=org.name,
             plan=org.plan,
+            max_delegation_depth=org.max_delegation_depth,
+            owner_email=org.owner_email,
             approval_url=org.approval_url,
             notification_url=org.notification_url,
             stripe_connect_account_id=org.stripe_connect_account_id,
@@ -175,6 +181,8 @@ async def update_org_settings(
 ):
     if body.name is not None:
         org.name = body.name
+    if body.max_delegation_depth is not None:
+        org.max_delegation_depth = body.max_delegation_depth
     if body.approval_url is not None:
         org.approval_url = body.approval_url
     if body.notification_url is not None:
@@ -186,6 +194,8 @@ async def update_org_settings(
         "data": {
             "org_id": str(org.id),
             "name": org.name,
+            "max_delegation_depth": org.max_delegation_depth,
+            "owner_email": org.owner_email,
             "approval_url": org.approval_url,
             "notification_url": org.notification_url,
         },

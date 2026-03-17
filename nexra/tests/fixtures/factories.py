@@ -30,6 +30,8 @@ class OrganizationFactory(factory.Factory):
     stripe_id = None
     stripe_connect_account_id = None
     plan = "growth"
+    owner_email = "admin@example.com"
+    max_delegation_depth = 5
     approval_url = None
     jwt_secret_enc = factory.LazyFunction(
         lambda: encrypt_aes_gcm(generate_org_jwt_secret(), TEST_ENCRYPTION_KEY)

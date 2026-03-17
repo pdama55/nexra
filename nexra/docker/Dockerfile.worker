@@ -13,4 +13,4 @@ COPY . .
 USER appuser
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app"
-CMD ["celery", "-A", "workers.celery_app", "worker", "--loglevel=info", "-Q", "webhooks,billing,anomaly"]
+CMD ["celery", "-A", "workers.celery_app", "worker", "--loglevel=info", "-Q", "webhooks,billing,anomaly,hitl,siem"]

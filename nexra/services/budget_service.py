@@ -211,7 +211,11 @@ class BudgetService:
             )
             await self.db.execute(stmt)
 
-    async def get_summary(self, org_id: str, agent_id: str | None = None) -> list[dict]:
+    async def get_summary(
+        self,
+        org_id: str,
+        agent_id: str | None = None,
+    ) -> list[dict[str, object]]:
         q = select(AgentBudget).where(AgentBudget.org_id == org_id)
         if agent_id:
             q = q.where(AgentBudget.agent_id == agent_id)

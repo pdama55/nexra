@@ -1,0 +1,114 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "generated_at": "2026-03-17T20:30:16.691295+00:00",
+  "results": [
+    {
+      "error": "All connection attempts failed",
+      "finished_at": "2026-03-17T20:30:16.691211+00:00",
+      "name": "health_org_bootstrap",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:30:16.687389+00:00"
+    },
+    {
+      "error": "API key not initialized",
+      "finished_at": "2026-03-17T20:30:16.691228+00:00",
+      "name": "org_admin_surface",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:30:16.691221+00:00"
+    },
+    {
+      "error": "API key not initialized",
+      "finished_at": "2026-03-17T20:30:16.691242+00:00",
+      "name": "agents_and_discovery",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:30:16.691231+00:00"
+    },
+    {
+      "error": "API key not initialized",
+      "finished_at": "2026-03-17T20:30:16.691250+00:00",
+      "name": "policies_lifecycle",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:30:16.691245+00:00"
+    },
+    {
+      "error": "caller/callee agents are not initialized",
+      "finished_at": "2026-03-17T20:30:16.691256+00:00",
+      "name": "delegation_async_callback",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:30:16.691252+00:00"
+    },
+    {
+      "error": "caller/callee agents are not initialized",
+      "finished_at": "2026-03-17T20:30:16.691261+00:00",
+      "name": "hitl_flows",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:30:16.691258+00:00"
+    },
+    {
+      "error": "caller/callee agents are not initialized",
+      "finished_at": "2026-03-17T20:30:16.691266+00:00",
+      "name": "depth_guardrail",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:30:16.691263+00:00"
+    },
+    {
+      "error": "API key not initialized",
+      "finished_at": "2026-03-17T20:30:16.691271+00:00",
+      "name": "audit_and_compliance",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:30:16.691268+00:00"
+    },
+    {
+      "error": "caller agent not initialized",
+      "finished_at": "2026-03-17T20:30:16.691276+00:00",
+      "name": "analytics_dashboard",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:30:16.691273+00:00"
+    },
+    {
+      "error": "API key not initialized",
+      "finished_at": "2026-03-17T20:30:16.691281+00:00",
+      "name": "siem_export",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:30:16.691278+00:00"
+    },
+    {
+      "error": "anomaly prerequisites missing",
+      "finished_at": "2026-03-17T20:30:16.691285+00:00",
+      "name": "anomaly_fanout",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:30:16.691283+00:00"
+    },
+    {
+      "error": "API key not initialized",
+      "finished_at": "2026-03-17T20:30:16.691290+00:00",
+      "name": "marketplace",
+      "passed": false,
+      "required": false,
+      "skipped": false,
+      "started_at": "2026-03-17T20:30:16.691288+00:00"
+    }
+  ]
+}

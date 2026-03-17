@@ -9,6 +9,7 @@ from core.config import get_settings
 from models.agent import Agent
 from models.delegation import Delegation
 from services.audit_service import AuditService
+from services.notification_service import NotificationService
 
 logger = logging.getLogger("nexra.services.anomaly")
 
@@ -23,7 +24,7 @@ class AnomalyService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def detect_spend_anomalies(self) -> list[dict]:
+    async def detect_spend_anomalies(self) -> list[dict[str, object]]:
         settings = get_settings()
         sigma_threshold = settings.anomaly_sigma_threshold
         now = datetime.now(timezone.utc)
@@ -37,8 +38,9 @@ class AnomalyService:
         )
         agents = agents_result.all()
 
-        anomalies: list[dict] = []
+        anomalies: list[dict[str, object]] = []
         audit_service = AuditService(self.db)
+        notifier = NotificationService(self.db)
 
         for agent_id, org_id in agents:
             hist_result = await self.db.execute(
@@ -92,5 +94,7 @@ class AnomalyService:
                     target_agent_id=agent_id,
                     details=anomaly,
                 )
+                recipients = await notifier.resolve_org_admin_owner_emails(str(org_id))
+                await notifier.notify_spend_anomaly(recipients, anomaly)
 
         return anomalies

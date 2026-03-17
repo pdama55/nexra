@@ -1,0 +1,16 @@
+Nexra Live Demo Full Suite Report
+Generated: 2026-03-17T20:30:16.691648+00:00
+Base URL: http://127.0.0.1:8000
+
+[FAIL] health_org_bootstrap (required) :: All connection attempts failed
+[FAIL] org_admin_surface (required) :: API key not initialized
+[FAIL] agents_and_discovery (required) :: API key not initialized
+[FAIL] policies_lifecycle (required) :: API key not initialized
+[FAIL] delegation_async_callback (required) :: caller/callee agents are not initialized
+[FAIL] hitl_flows (required) :: caller/callee agents are not initialized
+[FAIL] depth_guardrail (required) :: caller/callee agents are not initialized
+[FAIL] audit_and_compliance (required) :: API key not initialized
+[FAIL] analytics_dashboard (required) :: caller agent not initialized
+[FAIL] siem_export (required) :: API key not initialized
+[FAIL] anomaly_fanout (required) :: anomaly prerequisites missing
+[FAIL] marketplace (optional) :: API key not initialized

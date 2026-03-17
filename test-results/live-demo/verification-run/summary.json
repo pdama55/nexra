@@ -1,0 +1,114 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "generated_at": "2026-03-17T20:14:46.426823+00:00",
+  "results": [
+    {
+      "error": null,
+      "finished_at": "2026-03-17T20:13:43.478471+00:00",
+      "name": "health_org_bootstrap",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:13:40.369208+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T20:13:54.105954+00:00",
+      "name": "org_admin_surface",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:13:43.478554+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T20:14:05.517994+00:00",
+      "name": "agents_and_discovery",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:13:54.106020+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T20:14:12.632575+00:00",
+      "name": "policies_lifecycle",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:14:05.518043+00:00"
+    },
+    {
+      "error": "POST /v1/delegate returned 500, expected [202]; response=Internal Server Error",
+      "finished_at": "2026-03-17T20:14:15.517650+00:00",
+      "name": "delegation_async_callback",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:14:12.632702+00:00"
+    },
+    {
+      "error": "POST /v1/delegations/059128d9-6147-4e81-a8f2-48f54dee43d1/approve returned 503, expected [200, 202]; response={\"error\":{\"code\":\"CALLEE_WEBHOOK_FAILED\",\"message\":\"Webhook delivery failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)\",\"details\":{},\"request_id\":\"0ef57cfd-7c0c-4744-ad20-9d12b75fe25b\"}}",
+      "finished_at": "2026-03-17T20:14:22.349333+00:00",
+      "name": "hitl_flows",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:14:15.517658+00:00"
+    },
+    {
+      "error": "POST /v1/delegate returned 500, expected [202]; response=Internal Server Error",
+      "finished_at": "2026-03-17T20:14:26.841950+00:00",
+      "name": "depth_guardrail",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:14:22.349425+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T20:14:31.365339+00:00",
+      "name": "audit_and_compliance",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:14:26.841961+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T20:14:39.696884+00:00",
+      "name": "analytics_dashboard",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:14:31.365355+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T20:14:43.526483+00:00",
+      "name": "siem_export",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:14:39.696941+00:00"
+    },
+    {
+      "error": "7 validation errors for Settings\ndatabase_url\n  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nredis_url\n  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nopenai_api_key\n  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nstripe_secret_key\n  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nstripe_webhook_secret\n  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nstripe_delegation_meter_id\n  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nsecret_key_encryption_key\n  Field required [type=missing, input_value={'sendgrid_api_key': 'sg-...s': 'admin@nexra.local'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing",
+      "finished_at": "2026-03-17T20:14:45.831256+00:00",
+      "name": "anomaly_fanout",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T20:14:43.526509+00:00"
+    },
+    {
+      "error": "connect-onboard is optional; enable with --enable-stripe-onboard",
+      "finished_at": "2026-03-17T20:14:46.426800+00:00",
+      "name": "marketplace",
+      "passed": true,
+      "required": false,
+      "skipped": true,
+      "started_at": "2026-03-17T20:14:45.831279+00:00"
+    }
+  ]
+}
