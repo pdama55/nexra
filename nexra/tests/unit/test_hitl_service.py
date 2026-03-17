@@ -31,7 +31,12 @@ async def test_approve_requires_pending_approval() -> None:
     service = HiTLService(db)
 
     with pytest.raises(NexraError) as exc:
-        await service.approve("deleg-1", "org-1", "admin")
+        await service.approve(
+            "deleg-1",
+            "org-1",
+            approver_email="admin@example.com",
+            approver_role="admin",
+        )
     assert exc.value.status_code == 409
 
 
@@ -66,7 +71,13 @@ async def test_reject_releases_budget(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("services.hitl_service.AuditService", FakeAuditService)
 
     service = HiTLService(db)
-    result = await service.reject("deleg-2", "org-1", "admin", "denied")
+    result = await service.reject(
+        "deleg-2",
+        "org-1",
+        rejector_email="admin@example.com",
+        rejector_role="admin",
+        reason="denied",
+    )
 
     assert result.status == "blocked"
     assert result.completed_at is not None

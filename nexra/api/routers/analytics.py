@@ -1,15 +1,18 @@
 import time
+import csv
+import io
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_authenticated_org
+from api.dependencies import RequestActor, get_authenticated_org, require_roles
 from api.schemas.common import DataResponse, MetaResponse
 from core.errors import INVALID_REQUEST, NexraError
 from db.session import get_db
@@ -134,14 +137,21 @@ async def spend_summary(
     request: Request,
     agent_id: str | None = Query(None),
     window: str = Query("last_24h"),
-    breakdown: str = Query("all", description="all|summary|agent|timeseries|totals"),
+    breakdown: str = Query(
+        "all",
+        description="all|summary|agent|team|workflow|timeseries|totals",
+    ),
     org: Organization = Depends(get_authenticated_org),
     db: AsyncSession = Depends(get_db),
 ):
     """CFO-facing spend summary by agent and period."""
     start = time.perf_counter()
-    if breakdown not in {"all", "summary", "agent", "timeseries", "totals"}:
-        raise NexraError(400, INVALID_REQUEST, "breakdown must be one of: all,summary,agent,timeseries,totals")
+    if breakdown not in {"all", "summary", "agent", "team", "workflow", "timeseries", "totals"}:
+        raise NexraError(
+            400,
+            INVALID_REQUEST,
+            "breakdown must be one of: all,summary,agent,team,workflow,timeseries,totals",
+        )
 
     service = BudgetService(db)
     org_id = str(org.id)
@@ -218,6 +228,64 @@ async def spend_summary(
         for row in agent_result.fetchall()
     ]
 
+    team_sql = text("""
+        SELECT
+            COALESCE(a.team, 'unassigned') AS team,
+            COUNT(d.id) AS delegation_count,
+            COALESCE(SUM(d.actual_cost_usd), 0) AS total_spend_usd,
+            COALESCE(AVG(d.actual_cost_usd), 0) AS avg_cost_usd
+        FROM delegations d
+        LEFT JOIN agents a
+          ON a.org_id = d.caller_org_id
+         AND a.agent_id = d.caller_agent_id
+        WHERE d.caller_org_id = CAST(:org_id AS uuid)
+          AND d.created_at >= :window_start
+          AND d.status = 'completed'
+          {agent_filter}
+        GROUP BY team
+        ORDER BY total_spend_usd DESC
+    """.replace("{agent_filter}", "AND d.caller_agent_id = :agent_id" if agent_id else ""))
+    team_result = await db.execute(
+        team_sql,
+        {
+            "org_id": org_id,
+            "window_start": window_start,
+            **({"agent_id": agent_id} if agent_id else {}),
+        },
+    )
+    team_breakdown = [
+        {
+            "team": str(row.team or "unassigned"),
+            "delegation_count": int(row.delegation_count or 0),
+            "total_spend_usd": float(row.total_spend_usd or 0),
+            "avg_cost_usd": float(row.avg_cost_usd or 0),
+        }
+        for row in team_result.fetchall()
+    ]
+
+    workflow_stmt = select(
+        Delegation.workflow,
+        func.count(Delegation.id).label("delegation_count"),
+        func.coalesce(func.sum(Delegation.actual_cost_usd), 0).label("total_spend_usd"),
+        func.coalesce(func.avg(Delegation.actual_cost_usd), 0).label("avg_cost_usd"),
+    ).where(
+        Delegation.caller_org_id == org.id,
+        Delegation.created_at >= window_start,
+        Delegation.status == "completed",
+    ).group_by(Delegation.workflow).order_by(text("total_spend_usd DESC"))
+    if agent_id:
+        workflow_stmt = workflow_stmt.where(Delegation.caller_agent_id == agent_id)
+    workflow_result = await db.execute(workflow_stmt)
+    workflow_breakdown = [
+        {
+            "workflow": row.workflow or "unclassified",
+            "delegation_count": int(row.delegation_count or 0),
+            "total_spend_usd": float(row.total_spend_usd or 0),
+            "avg_cost_usd": float(row.avg_cost_usd or 0),
+        }
+        for row in workflow_result.fetchall()
+    ]
+
     total_cap = sum(float(item.get("cap_usd", 0)) for item in summary_rows)
     total_budget_spent = sum(float(item.get("spent_usd", 0)) for item in summary_rows)
     highest = agent_breakdown[0] if agent_breakdown else None
@@ -238,12 +306,18 @@ async def spend_summary(
         "summary": summary_rows,
         "totals": totals,
         "agent_breakdown": agent_breakdown,
+        "team_breakdown": team_breakdown,
+        "workflow_breakdown": workflow_breakdown,
         "timeseries": timeseries,
     }
     if breakdown == "summary":
         data = {"summary": summary_rows}
     elif breakdown == "agent":
         data = {"agent_breakdown": agent_breakdown}
+    elif breakdown == "team":
+        data = {"team_breakdown": team_breakdown}
+    elif breakdown == "workflow":
+        data = {"workflow_breakdown": workflow_breakdown}
     elif breakdown == "timeseries":
         data = {"timeseries": timeseries}
     elif breakdown == "totals":
@@ -260,6 +334,96 @@ async def spend_summary(
     }
 
 
+@router.get("/spend/summary/export")
+async def export_spend_summary_csv(
+    request: Request,
+    agent_id: str | None = Query(None),
+    window: str = Query("last_24h"),
+    breakdown: str = Query("all", description="all|agent|team|workflow|timeseries|totals"),
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    if breakdown not in {"all", "agent", "team", "workflow", "timeseries", "totals"}:
+        raise NexraError(
+            400,
+            INVALID_REQUEST,
+            "breakdown must be one of: all,agent,team,workflow,timeseries,totals",
+        )
+
+    payload = await spend_summary(
+        request=request,
+        agent_id=agent_id,
+        window=window,
+        breakdown="all" if breakdown == "all" else breakdown,
+        org=org,
+        db=db,
+    )
+    data = payload["data"]
+
+    out = io.StringIO()
+    writer = csv.writer(out)
+
+    def write_agent_rows() -> None:
+        writer.writerow(["section", "agent_id", "delegation_count", "total_spend_usd", "avg_cost_usd"])
+        for row in data.get("agent_breakdown", []):
+            writer.writerow(
+                ["agent", row.get("agent_id"), row.get("delegation_count"), row.get("total_spend_usd"), row.get("avg_cost_usd")]
+            )
+
+    def write_team_rows() -> None:
+        writer.writerow(["section", "team", "delegation_count", "total_spend_usd", "avg_cost_usd"])
+        for row in data.get("team_breakdown", []):
+            writer.writerow(
+                ["team", row.get("team"), row.get("delegation_count"), row.get("total_spend_usd"), row.get("avg_cost_usd")]
+            )
+
+    def write_workflow_rows() -> None:
+        writer.writerow(["section", "workflow", "delegation_count", "total_spend_usd", "avg_cost_usd"])
+        for row in data.get("workflow_breakdown", []):
+            writer.writerow(
+                [
+                    "workflow",
+                    row.get("workflow"),
+                    row.get("delegation_count"),
+                    row.get("total_spend_usd"),
+                    row.get("avg_cost_usd"),
+                ]
+            )
+
+    def write_timeseries_rows() -> None:
+        writer.writerow(["section", "timestamp", "spend_usd", "delegation_count"])
+        for row in data.get("timeseries", []):
+            writer.writerow(["timeseries", row.get("timestamp"), row.get("spend_usd"), row.get("delegation_count")])
+
+    def write_totals_rows() -> None:
+        totals = data.get("totals", {}) if isinstance(data.get("totals"), dict) else {}
+        writer.writerow(["section", "metric", "value"])
+        for metric, value in totals.items():
+            if isinstance(value, dict):
+                writer.writerow(["totals", metric, str(value)])
+            else:
+                writer.writerow(["totals", metric, value])
+
+    if breakdown in {"all", "agent"}:
+        write_agent_rows()
+    if breakdown in {"all", "team"}:
+        write_team_rows()
+    if breakdown in {"all", "workflow"}:
+        write_workflow_rows()
+    if breakdown in {"all", "timeseries"}:
+        write_timeseries_rows()
+    if breakdown in {"all", "totals"}:
+        write_totals_rows()
+
+    body = out.getvalue()
+    filename = f"spend-summary-{window}-{breakdown}.csv"
+    return StreamingResponse(
+        iter([body]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 class SetBudgetCapRequest(BaseModel):
     agent_id: str = Field(..., description="Agent to set cap for")
     period_type: str = Field(..., description="'daily' or 'monthly'")
@@ -271,6 +435,7 @@ async def set_budget_cap(
     request: Request,
     body: SetBudgetCapRequest,
     org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin", "engineer")),
     db: AsyncSession = Depends(get_db),
 ):
     """Set a daily or monthly budget cap for an agent."""

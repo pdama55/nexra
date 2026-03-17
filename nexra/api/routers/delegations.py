@@ -8,7 +8,13 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_authenticated_org, get_authenticated_org_and_agent, get_redis
+from api.dependencies import (
+    RequestActor,
+    get_authenticated_org,
+    get_authenticated_org_and_agent,
+    get_redis,
+    require_roles,
+)
 from api.schemas.common import DataResponse, MetaResponse
 from api.schemas.delegations import (
     DelegateRequest,
@@ -80,6 +86,7 @@ def _delegation_to_dashboard_item(delegation: Delegation) -> dict:
         "latency_ms": delegation.latency_ms,
         "llm_tokens": delegation.llm_tokens,
         "callback_url": delegation.callback_url,
+        "workflow": delegation.workflow,
         "delegation_depth": delegation.delegation_depth,
         "parent_delegation_id": str(delegation.parent_delegation_id) if delegation.parent_delegation_id else None,
         "approval_deadline": approval_deadline,
@@ -129,6 +136,7 @@ async def list_delegations(
     caller_agent_id: str | None = Query(None),
     callee_agent_id: str | None = Query(None),
     policy_decision: str | None = Query(None),
+    workflow: str | None = None,
     date_from: datetime | None = Query(None),
     date_to: datetime | None = Query(None),
     cost_min: float | None = Query(None, ge=0),
@@ -150,6 +158,8 @@ async def list_delegations(
         q = q.where(Delegation.callee_agent_id == callee_agent_id)
     if policy_decision:
         q = q.where(Delegation.policy_decision == policy_decision)
+    if workflow:
+        q = q.where(Delegation.workflow == workflow)
     if date_from:
         q = q.where(Delegation.created_at >= date_from)
     if date_to:
@@ -181,6 +191,8 @@ async def list_delegations(
         count_q = count_q.where(Delegation.callee_agent_id == callee_agent_id)
     if policy_decision:
         count_q = count_q.where(Delegation.policy_decision == policy_decision)
+    if workflow:
+        count_q = count_q.where(Delegation.workflow == workflow)
     if date_from:
         count_q = count_q.where(Delegation.created_at >= date_from)
     if date_to:
@@ -300,13 +312,19 @@ async def approve_delegation(
     request: Request,
     delegation_id: str,
     org: Organization = Depends(get_authenticated_org),
+    actor: RequestActor = Depends(require_roles("admin")),
     db: AsyncSession = Depends(get_db),
 ):
     """Approve a paused delegation (HiTL)."""
     start = time.perf_counter()
     redis_client = await get_redis()
     service = _build_delegation_service(db, redis_client)
-    result = await service.approve_and_resume(org, delegation_id, "admin")
+    result = await service.approve_and_resume(
+        org,
+        delegation_id,
+        approver_email=actor.email,
+        approver_role=actor.role,
+    )
     latency = round((time.perf_counter() - start) * 1000, 2)
 
     status_code = 200 if result.status == "completed" else 202
@@ -328,13 +346,19 @@ async def reject_delegation(
     request: Request,
     delegation_id: str,
     org: Organization = Depends(get_authenticated_org),
+    actor: RequestActor = Depends(require_roles("admin")),
     db: AsyncSession = Depends(get_db),
 ):
     """Reject a paused delegation (HiTL)."""
     from services.hitl_service import HiTLService
 
     service = HiTLService(db)
-    delegation = await service.reject(delegation_id, str(org.id), "admin")
+    delegation = await service.reject(
+        delegation_id,
+        str(org.id),
+        rejector_email=actor.email,
+        rejector_role=actor.role,
+    )
     return DataResponse(
         data={"delegation_id": str(delegation.id), "status": delegation.status},
         meta=MetaResponse(request_id=getattr(request.state, "request_id", None)),

@@ -7,10 +7,11 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_authenticated_org, get_authenticated_org_and_agent
+from api.dependencies import get_authenticated_org, get_authenticated_org_and_agent, get_request_actor
 from core.crypto import encrypt_aes_gcm, generate_api_key, generate_org_jwt_secret
 from models.agent import Agent
 from models.org_api_key import OrgApiKey
+from models.org_member import OrgMember
 from models.organization import Organization
 
 TEST_ENC_KEY = "a" * 64
@@ -220,3 +221,35 @@ async def test_secondary_org_api_key_authenticates_and_updates_last_used(db_sess
     )
     key_row = key_row_result.scalar_one()
     assert key_row.last_used_at is not None
+
+
+@pytest.mark.asyncio
+async def test_request_actor_resolves_role_from_verified_email_header(db_session: AsyncSession) -> None:
+    raw_key, hashed, prefix = generate_api_key()
+    org = Organization(
+        id=uuid.uuid4(),
+        name="Auth Org 6",
+        api_key_hash=hashed,
+        api_key_prefix=prefix,
+        plan="growth",
+        jwt_secret_enc=encrypt_aes_gcm(generate_org_jwt_secret(), TEST_ENC_KEY),
+        delegation_count=0,
+    )
+    db_session.add(org)
+    await db_session.flush()
+    db_session.add(
+        OrgMember(
+            org_id=org.id,
+            email="engineer@example.com",
+            role="engineer",
+        )
+    )
+    await db_session.commit()
+
+    actor = await get_request_actor(
+        org=org,
+        db=db_session,
+        x_user_email="engineer@example.com",
+    )
+    assert actor.email == "engineer@example.com"
+    assert actor.role == "engineer"

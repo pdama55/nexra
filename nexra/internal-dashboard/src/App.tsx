@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Sidebar } from './components/Shell/Sidebar';
 import { TimeRangeSelector } from './components/Shell/TimeRangeSelector';
+import { GlobalSearch } from './components/Shell/GlobalSearch';
+import { RefreshAge } from './components/Shell/RefreshAge';
 import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
 import { useTimeRange } from './hooks/useTimeRange';
 
@@ -41,9 +43,14 @@ function AppContent() {
       <main className="main-content">
         <div style={{
           display: 'flex',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           marginBottom: 'var(--space-lg)',
         }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <GlobalSearch />
+            <RefreshAge />
+          </div>
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
         </div>
         <RouteErrorBoundary>

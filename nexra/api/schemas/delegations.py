@@ -11,6 +11,12 @@ class DelegateRequest(BaseModel):
     timeout_ms: int = Field(30000, ge=1000, le=120000, description="Webhook timeout in ms")
     callback_url: str | None = Field(None, description="Async callback URL (null=sync)")
     include_cross_org: bool = Field(False, description="Allow cross-org callee resolution")
+    workflow: str | None = Field(
+        None,
+        min_length=1,
+        max_length=120,
+        description="Optional workflow grouping key; defaults to 'unclassified'",
+    )
     parent_delegation_id: str | None = Field(
         None, description="Optional parent delegation ID for nested delegation chains"
     )

@@ -62,10 +62,12 @@ def test_required_dashboard_paths_and_methods_present() -> None:
         "/v1/policies/{policy_id}": "get",
         "/v1/policies/{policy_id}/versions": "get",
         "/v1/spend/summary": "get",
+        "/v1/spend/summary/export": "get",
         "/v1/agents/{agent_ref}/trust": "get",
         "/v1/orgs/session": "get",
         "/v1/orgs/api-keys": "get",
         "/v1/orgs/members": "get",
+        "/v1/compliance/export/package": "get",
     }
     for path, method in required.items():
         assert path in paths, f"Missing required API path in OpenAPI: {path}"
@@ -147,6 +149,7 @@ def test_delegations_list_query_contract_includes_dashboard_filters() -> None:
         "caller_agent_id",
         "callee_agent_id",
         "policy_decision",
+        "workflow",
         "date_from",
         "date_to",
         "cost_min",
@@ -167,6 +170,7 @@ def test_audit_log_query_contract_includes_dashboard_filters() -> None:
         "actor_agent_id",
         "target_agent_id",
         "policy_id",
+        "policy_decision",
         "event_type",
         "date_from",
         "date_to",
@@ -187,3 +191,19 @@ def test_spend_summary_query_contract_includes_window_and_breakdown() -> None:
     required = {"agent_id", "window", "breakdown"}
     missing = required - names
     assert not missing, f"/v1/spend/summary missing query params: {sorted(missing)}"
+
+
+def test_spend_summary_export_query_contract_includes_window_and_breakdown() -> None:
+    spec = _openapi()
+    names = _parameter_names(spec, "/v1/spend/summary/export", "get")
+    required = {"agent_id", "window", "breakdown"}
+    missing = required - names
+    assert not missing, f"/v1/spend/summary/export missing query params: {sorted(missing)}"
+
+
+def test_compliance_package_query_contract_present() -> None:
+    spec = _openapi()
+    names = _parameter_names(spec, "/v1/compliance/export/package", "get")
+    required = {"set", "date_from", "date_to"}
+    missing = required - names
+    assert not missing, f"/v1/compliance/export/package missing query params: {sorted(missing)}"

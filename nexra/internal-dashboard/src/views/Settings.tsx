@@ -3,15 +3,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiDelete, apiGet, apiPatch, apiPost } from '../api/client';
 import { EmptyState } from '../components/common/EmptyState';
+import { RefreshAge } from '../components/Shell/RefreshAge';
+import { useSession } from '../hooks/useSession';
+import { hasPermission } from '../utils/rbac';
 
 type SettingsTab = 'organization' | 'siem' | 'billing';
-type ExtendedSettingsTab = SettingsTab | 'apiKeys' | 'team';
+type ExtendedSettingsTab = SettingsTab | 'apiKeys' | 'team' | 'webhooks';
 
 interface OrgSettings {
   org_id: string;
   name: string;
   plan: string;
   approval_url: string | null;
+  notification_url: string | null;
   stripe_connect_account_id: string | null;
   created_at: string;
 }
@@ -25,9 +29,19 @@ interface SIEMSettings {
   cursor?: string | null;
 }
 
+interface OrgWebhookSettings {
+  approval_url: string | null;
+  notification_url: string | null;
+}
+
 export function Settings() {
   const [tab, setTab] = useState<ExtendedSettingsTab>('organization');
   const queryClient = useQueryClient();
+  const session = useSession();
+  const role = session.data?.role ?? 'viewer';
+  const canManageKeys = hasPermission(role, 'manageApiKeys');
+  const canManageTeam = hasPermission(role, 'manageTeam');
+  const canConfigureWebhooks = hasPermission(role, 'configureWebhooks');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('viewer');
 
@@ -64,6 +78,10 @@ export function Settings() {
     queryKey: ['org-members'],
     queryFn: () => apiGet('/orgs/members'),
   });
+  const webhookSettingsQuery = useQuery<OrgWebhookSettings>({
+    queryKey: ['org-webhooks'],
+    queryFn: () => apiGet('/orgs/webhooks'),
+  });
 
   const [orgNameDraft, setOrgNameDraft] = useState<string | null>(null);
   const [approvalUrlDraft, setApprovalUrlDraft] = useState<string | null>(null);
@@ -72,6 +90,9 @@ export function Settings() {
   const [siemApiKey, setSiemApiKey] = useState('');
   const [siemEnabledDraft, setSiemEnabledDraft] = useState<boolean | null>(null);
   const [siemEventTypesDraft, setSiemEventTypesDraft] = useState<string | null>(null);
+  const [approvalWebhookDraft, setApprovalWebhookDraft] = useState<string | null>(null);
+  const [notificationWebhookDraft, setNotificationWebhookDraft] = useState<string | null>(null);
+  const [webhookTestResult, setWebhookTestResult] = useState<string | null>(null);
 
   const orgName = orgNameDraft ?? orgQuery.data?.name ?? '';
   const approvalUrl = approvalUrlDraft ?? orgQuery.data?.approval_url ?? '';
@@ -79,6 +100,8 @@ export function Settings() {
   const siemEndpoint = siemEndpointDraft ?? siemQuery.data?.endpoint ?? '';
   const siemEnabled = siemEnabledDraft ?? Boolean(siemQuery.data?.enabled ?? true);
   const siemEventTypes = siemEventTypesDraft ?? (siemQuery.data?.event_types ?? []).join(',');
+  const approvalWebhook = approvalWebhookDraft ?? webhookSettingsQuery.data?.approval_url ?? '';
+  const notificationWebhook = notificationWebhookDraft ?? webhookSettingsQuery.data?.notification_url ?? '';
 
   const updateOrgMutation = useMutation({
     mutationFn: () => apiPatch('/orgs/me', { name: orgName, approval_url: approvalUrl || null }),
@@ -153,12 +176,33 @@ export function Settings() {
       queryClient.invalidateQueries({ queryKey: ['org-members'] });
     },
   });
+  const updateWebhookMutation = useMutation({
+    mutationFn: () => apiPatch('/orgs/webhooks', {
+      approval_url: approvalWebhook || null,
+      notification_url: notificationWebhook || null,
+    }),
+    onSuccess: () => {
+      setApprovalWebhookDraft(null);
+      setNotificationWebhookDraft(null);
+      queryClient.invalidateQueries({ queryKey: ['org-webhooks'] });
+    },
+  });
+  const testWebhookMutation = useMutation({
+    mutationFn: (target: 'approval' | 'notification') => apiPost<{ ok: boolean; status_code: number | null; error: string | null }>('/orgs/webhooks/test', { target }),
+    onSuccess: (data, target) => {
+      setWebhookTestResult(`${target}: ${data.ok ? 'ok' : 'failed'}${data.status_code ? ` (status ${data.status_code})` : ''}${data.error ? ` - ${data.error}` : ''}`);
+    },
+    onError: () => {
+      setWebhookTestResult('Webhook test failed');
+    },
+  });
 
   const tabs = useMemo<Array<{ key: ExtendedSettingsTab; label: string }>>(
     () => [
       { key: 'organization', label: 'Organization' },
       { key: 'apiKeys', label: 'API Keys' },
       { key: 'team', label: 'Team' },
+      { key: 'webhooks', label: 'Webhooks' },
       { key: 'siem', label: 'SIEM' },
       { key: 'billing', label: 'Billing' },
     ],
@@ -169,6 +213,7 @@ export function Settings() {
     <div>
       <div className="page-header">
         <h1 className="page-title">Settings</h1>
+        <RefreshAge queryKeys={[['org-settings'], ['org-api-keys'], ['org-members'], ['org-webhooks']]} />
       </div>
 
       <div className="tabs">
@@ -259,7 +304,7 @@ export function Settings() {
                 if (!name) return;
                 createApiKeyMutation.mutate(name);
               }}
-              disabled={createApiKeyMutation.isPending}
+              disabled={createApiKeyMutation.isPending || !canManageKeys}
             >
               {createApiKeyMutation.isPending ? 'Creating…' : 'Create API Key'}
             </button>
@@ -289,7 +334,7 @@ export function Settings() {
                           <button
                             className="btn btn-danger btn-sm"
                             onClick={() => revokeApiKeyMutation.mutate(item.id)}
-                            disabled={revokeApiKeyMutation.isPending}
+                            disabled={revokeApiKeyMutation.isPending || !canManageKeys}
                           >
                             Revoke
                           </button>
@@ -323,7 +368,7 @@ export function Settings() {
             <button
               className="btn btn-primary"
               onClick={() => inviteMemberMutation.mutate()}
-              disabled={inviteMemberMutation.isPending || !inviteEmail}
+              disabled={inviteMemberMutation.isPending || !inviteEmail || !canManageTeam}
             >
               {inviteMemberMutation.isPending ? 'Inviting…' : 'Invite'}
             </button>
@@ -348,6 +393,7 @@ export function Settings() {
                         <select
                           value={member.role}
                           onChange={(e) => updateMemberMutation.mutate({ id: member.id, role: e.target.value })}
+                          disabled={!canManageTeam}
                         >
                           <option value="viewer">viewer</option>
                           <option value="compliance">compliance</option>
@@ -361,7 +407,7 @@ export function Settings() {
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => deleteMemberMutation.mutate(member.id)}
-                          disabled={deleteMemberMutation.isPending}
+                          disabled={deleteMemberMutation.isPending || !canManageTeam}
                         >
                           Remove
                         </button>
@@ -370,6 +416,56 @@ export function Settings() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'webhooks' && (
+        <div className="card">
+          <div className="section-heading">Webhook Governance</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '8px', fontSize: '13px' }}>
+            <div style={{ color: 'var(--text-tertiary)' }}>Approval Endpoint</div>
+            <input
+              value={approvalWebhook}
+              onChange={(e) => setApprovalWebhookDraft(e.target.value)}
+              placeholder="https://example.com/hitl-approval"
+              disabled={!canConfigureWebhooks}
+            />
+            <div style={{ color: 'var(--text-tertiary)' }}>Notification Endpoint</div>
+            <input
+              value={notificationWebhook}
+              onChange={(e) => setNotificationWebhookDraft(e.target.value)}
+              placeholder="https://example.com/ops-notify"
+              disabled={!canConfigureWebhooks}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-primary"
+              onClick={() => updateWebhookMutation.mutate()}
+              disabled={updateWebhookMutation.isPending || !canConfigureWebhooks}
+            >
+              {updateWebhookMutation.isPending ? 'Saving…' : 'Save Webhooks'}
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => testWebhookMutation.mutate('approval')}
+              disabled={testWebhookMutation.isPending || !canConfigureWebhooks}
+            >
+              Test Approval Ping
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => testWebhookMutation.mutate('notification')}
+              disabled={testWebhookMutation.isPending || !canConfigureWebhooks}
+            >
+              Test Notification Ping
+            </button>
+          </div>
+          {webhookTestResult && (
+            <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              {webhookTestResult}
             </div>
           )}
         </div>

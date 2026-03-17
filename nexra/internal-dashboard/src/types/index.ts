@@ -21,6 +21,7 @@ export interface Agent {
   input_schema: Record<string, unknown>;
   output_schema: Record<string, unknown>;
   webhook_url: string;
+  team: string;
   pricing: { per_call_usd: number };
   sla: { p99_latency_ms: number; availability: number };
   is_public: boolean;
@@ -81,6 +82,7 @@ export interface Delegation {
   latency_ms: number | null;
   llm_tokens: number | null;
   callback_url: string | null;
+  workflow?: string;
   delegation_depth?: number;
   approval_deadline?: string | null;
   created_at: string;

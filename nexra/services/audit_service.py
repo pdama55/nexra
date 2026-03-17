@@ -53,6 +53,7 @@ class AuditService:
         target_agent_id: str | None = None,
         event_type: str | None = None,
         policy_id: str | None = None,
+        policy_decision: str | None = None,
         date_from: datetime | None = None,
         date_to: datetime | None = None,
         cost_min: float | None = None,
@@ -82,6 +83,13 @@ class AuditService:
                 q = q.where(AuditLog.event_type == event_type)
         if policy_id:
             q = q.where(AuditLog.details["policy_id"].astext == str(policy_id))
+        if policy_decision:
+            q = q.where(
+                or_(
+                    AuditLog.details["decision"].astext == policy_decision,
+                    AuditLog.details["policy_decision"].astext == policy_decision,
+                )
+            )
         if date_from:
             q = q.where(AuditLog.created_at >= date_from)
         if date_to:

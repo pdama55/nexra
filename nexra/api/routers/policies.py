@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_authenticated_org, get_redis
+from api.dependencies import RequestActor, get_authenticated_org, get_redis, require_roles
 from api.schemas.common import DataResponse, MetaResponse
 from api.schemas.policies import (
     PolicyCreateRequest,
@@ -51,6 +51,7 @@ async def create_policy(
     request: Request,
     body: PolicyCreateRequest,
     org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin", "engineer")),
     db: AsyncSession = Depends(get_db),
     redis_client: aioredis.Redis = Depends(get_redis),
 ):
@@ -190,6 +191,7 @@ async def update_policy(
     policy_id: str,
     body: PolicyUpdateRequest,
     org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin", "engineer")),
     db: AsyncSession = Depends(get_db),
     redis_client: aioredis.Redis = Depends(get_redis),
 ):
@@ -248,6 +250,7 @@ async def disable_policy(
     request: Request,
     policy_id: str,
     org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin")),
     db: AsyncSession = Depends(get_db),
     redis_client: aioredis.Redis = Depends(get_redis),
 ):

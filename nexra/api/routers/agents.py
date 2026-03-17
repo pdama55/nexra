@@ -8,7 +8,7 @@ from openai import AsyncOpenAI
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_authenticated_org
+from api.dependencies import RequestActor, get_authenticated_org, require_roles
 from api.schemas.agents import (
     AgentDetailResponse,
     AgentListItem,
@@ -23,6 +23,7 @@ from db.session import get_db
 from models.organization import Organization
 from models.trust_score_event import TrustScoreEvent
 from services.agent_service import AgentService
+from services.audit_service import AuditService
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -180,6 +181,7 @@ async def list_agents(
                     input_schema=a.input_schema,
                     output_schema=a.output_schema,
                     webhook_url=a.webhook_url,
+                    team=a.team,
                     trust_score=float(a.trust_score),
                     status=a.status,
                     is_public=a.is_public,
@@ -236,6 +238,7 @@ async def get_agent(
             pricing=agent.pricing,
             sla=agent.sla,
             webhook_url=agent.webhook_url,
+            team=agent.team,
             is_public=agent.is_public,
             trust_score=float(agent.trust_score),
             status=agent.status,
@@ -326,12 +329,20 @@ async def quarantine_agent(
     request: Request,
     agent_ref: str,
     org: Organization = Depends(get_authenticated_org),
+    actor: RequestActor = Depends(require_roles("admin", "engineer")),
     db: AsyncSession = Depends(get_db),
 ):
     """Manually quarantine an agent."""
     start = time.perf_counter()
     service = AgentService(db, _get_openai_client())
     agent = await service.update_status(str(org.id), agent_ref, "quarantined")
+    await AuditService(db).append(
+        org_id=str(org.id),
+        event_type="agent_quarantined",
+        actor_agent_id=actor.email,
+        target_agent_id=agent.agent_id,
+        details={"trigger": "manual", "actor_role": actor.role},
+    )
     latency = round((time.perf_counter() - start) * 1000, 2)
     return {
         "data": {"agent_id": agent.agent_id, "status": agent.status},
@@ -347,12 +358,20 @@ async def activate_agent(
     request: Request,
     agent_ref: str,
     org: Organization = Depends(get_authenticated_org),
+    actor: RequestActor = Depends(require_roles("admin", "engineer")),
     db: AsyncSession = Depends(get_db),
 ):
     """Manually activate an agent."""
     start = time.perf_counter()
     service = AgentService(db, _get_openai_client())
     agent = await service.update_status(str(org.id), agent_ref, "active")
+    await AuditService(db).append(
+        org_id=str(org.id),
+        event_type="agent_activated",
+        actor_agent_id=actor.email,
+        target_agent_id=agent.agent_id,
+        details={"trigger": "manual", "actor_role": actor.role},
+    )
     latency = round((time.perf_counter() - start) * 1000, 2)
     return {
         "data": {"agent_id": agent.agent_id, "status": agent.status},

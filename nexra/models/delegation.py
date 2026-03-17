@@ -59,6 +59,7 @@ class Delegation(UUIDMixin, Base):
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     llm_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     callback_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    workflow: Mapped[str] = mapped_column(Text, nullable=False, server_default="unclassified")
     delegation_depth: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
     )

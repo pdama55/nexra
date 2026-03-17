@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_authenticated_org
+from api.dependencies import RequestActor, get_authenticated_org, require_roles
 from api.schemas.common import DataResponse, MetaResponse
 from core.errors import NexraError, INVALID_REQUEST
 from db.session import get_db
@@ -56,4 +56,26 @@ async def export_audit_csv(
         iter([csv_data]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=compliance_audit.csv"},
+    )
+
+
+@router.get("/export/package")
+async def export_compliance_package(
+    request: Request,
+    set: str = Query("soc2_core"),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
+    org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin", "compliance")),
+    db: AsyncSession = Depends(get_db),
+):
+    if set != "soc2_core":
+        raise NexraError(400, INVALID_REQUEST, "set must be soc2_core")
+    service = ComplianceService(db)
+    archive_bytes = await service.generate_soc2_core_package(str(org.id), date_from, date_to)
+    filename = f"nexra-{set}-{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}.zip"
+    return StreamingResponse(
+        iter([archive_bytes]),
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )

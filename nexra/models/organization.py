@@ -20,6 +20,7 @@ class Organization(UUIDMixin, TimestampMixin, Base):
         Text, nullable=False, server_default="starter"
     )
     approval_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notification_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     jwt_secret_enc: Mapped[str] = mapped_column(Text, nullable=False)
     delegation_count: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"

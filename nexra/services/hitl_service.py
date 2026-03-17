@@ -65,7 +65,13 @@ class HiTLService:
 
         return payload
 
-    async def approve(self, delegation_id: str, org_id: str, approver: str) -> Delegation:
+    async def approve(
+        self,
+        delegation_id: str,
+        org_id: str,
+        approver_email: str,
+        approver_role: str,
+    ) -> Delegation:
         result = await self.db.execute(
             select(Delegation).where(
                 Delegation.id == delegation_id,
@@ -84,13 +90,20 @@ class HiTLService:
         audit = AuditService(self.db)
         await audit.append(
             org_id=org_id, event_type="hil_approved",
-            actor_agent_id=approver, target_agent_id=delegation.callee_agent_id,
-            details={"approver": approver},
+            actor_agent_id=approver_email, target_agent_id=delegation.callee_agent_id,
+            details={"approver_email": approver_email, "approver_role": approver_role},
             delegation_id=delegation_id,
         )
         return delegation
 
-    async def reject(self, delegation_id: str, org_id: str, rejector: str, reason: str = "") -> Delegation:
+    async def reject(
+        self,
+        delegation_id: str,
+        org_id: str,
+        rejector_email: str,
+        rejector_role: str,
+        reason: str = "",
+    ) -> Delegation:
         result = await self.db.execute(
             select(Delegation).where(
                 Delegation.id == delegation_id,
@@ -113,8 +126,13 @@ class HiTLService:
         audit = AuditService(self.db)
         await audit.append(
             org_id=org_id, event_type="delegation_blocked",
-            actor_agent_id=rejector, target_agent_id=delegation.callee_agent_id,
-            details={"rejector": rejector, "reason": reason, "trigger": "hil_rejected"},
+            actor_agent_id=rejector_email, target_agent_id=delegation.callee_agent_id,
+            details={
+                "rejector_email": rejector_email,
+                "rejector_role": rejector_role,
+                "reason": reason,
+                "trigger": "hil_rejected",
+            },
             delegation_id=delegation_id,
         )
         return delegation

@@ -1454,12 +1454,24 @@ p { color: var(--text-primary); }
 
 .surface-card .chip {
   margin-top: auto;
+  display: inline-block;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.4;
   background: rgba(255, 255, 255, 0.06);
   border: 0.0625rem solid rgba(255, 255, 255, 0.12);
   border-radius: 0.125rem;
   font-size: 0.68em;
   letter-spacing: 0.08em;
   padding: 0.1875rem 0.5rem;
+}
+
+.surface-card p.chip {
+  display: block;
+  text-transform: none;
+  letter-spacing: 0.02em;
 }
 
 .spend-bars {
@@ -4000,6 +4012,12 @@ body::after {
   color: rgba(255, 255, 255, 0.5);
 }
 
+.hero-subhead.layer-sub {
+  font-weight: 400;
+  overflow-wrap: normal;
+  opacity: 1;
+}
+
 .stack-layer-top .layer-main,
 .stack-layer-core .layer-main,
 .stack-layer-bottom .layer-main {
@@ -4178,7 +4196,7 @@ body::after {
           <span class="line" data-line>THE CONTROL PLANE</span>
           <span class="line" data-line>FOR AI AGENT NETWORKS</span>
         </h1>
-        <p class="hero-subhead">A2A and MCP made agent communication possible. They did not add policy, spend controls, or an audit trail.<br><br>Nexra lets agents discover, evaluate, and delegate work to other agents under scoped permissions, spend caps, circuit breakers, and immutable audit logs.</p>
+        <p class="hero-subhead layer-sub">Agents publish capabilities to Nexra's registry. Other agents discover and hire them at runtime — inside your org or across any team on the network. Nexra enforces policies, budgets, and an immutable audit trail on every interaction.</p>
         <div class="hero-waitlist">
           <form id="waitlist-form-hero" class="footer-waitlist-form waitlist-form" data-source="hero" onsubmit="return handleWaitlist(event, this)" novalidate>
             <label class="sr-only" for="waitlist-email-hero">Work email</label>

@@ -35,11 +35,14 @@ export class NexraApiError extends Error {
 
 function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem('nexra_api_key');
-  if (!token) return { 'Content-Type': 'application/json' };
-  return {
+  const email = localStorage.getItem('nexra_user_email');
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
   };
+  if (email) headers['X-User-Email'] = email;
+  if (!token) return headers;
+  headers.Authorization = `Bearer ${token}`;
+  return headers;
 }
 
 export async function apiGet<T>(path: string, params?: Record<string, string | number | boolean | undefined>): Promise<T> {

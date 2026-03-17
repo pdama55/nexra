@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_authenticated_org
+from api.dependencies import RequestActor, get_authenticated_org, require_roles
 from api.schemas.common import DataResponse, MetaResponse
 from db.session import get_db
 from models.organization import Organization
@@ -29,6 +29,7 @@ async def set_siem_config(
     request: Request,
     body: SIEMConfigRequest,
     org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin")),
     db: AsyncSession = Depends(get_db),
 ):
     """Configure SIEM export for the organization."""

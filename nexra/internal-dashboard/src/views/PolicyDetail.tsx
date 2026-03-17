@@ -29,6 +29,10 @@ interface PolicyEvalEvent {
 export function PolicyDetail() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState(0);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editDescription, setEditDescription] = useState('');
+  const [editPriority, setEditPriority] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const session = useSession();
   const canEdit = hasPermission(session.data?.role ?? 'viewer', 'createPolicy');
@@ -60,19 +64,35 @@ export function PolicyDetail() {
   const updateMutation = useMutation({
     mutationFn: (payload: { description: string; priority: number }) => apiPut(`/policies/${id}`, payload),
     onSuccess: () => {
+      setEditOpen(false);
+      setEditError(null);
       queryClient.invalidateQueries({ queryKey: ['policy', id] });
       queryClient.invalidateQueries({ queryKey: ['policy-versions', id] });
       queryClient.invalidateQueries({ queryKey: ['policies'] });
     },
+    onError: () => {
+      setEditError('Update failed. Check values and retry.');
+    },
   });
 
-  function editPolicy(): void {
+  function openEditPolicy(): void {
     if (!policy) return;
-    const description = window.prompt('Description', policy.description ?? '') ?? policy.description ?? '';
-    const priorityInput = window.prompt('Priority', String(policy.priority)) ?? String(policy.priority);
-    const priority = Number(priorityInput);
-    if (!Number.isFinite(priority) || priority < 1) return;
-    updateMutation.mutate({ description, priority });
+    setEditDescription(policy.description ?? '');
+    setEditPriority(String(policy.priority));
+    setEditError(null);
+    setEditOpen(true);
+  }
+
+  function submitPolicyEdit(): void {
+    const parsedPriority = Number(editPriority);
+    if (!Number.isFinite(parsedPriority) || parsedPriority < 1) {
+      setEditError('Priority must be a positive number.');
+      return;
+    }
+    updateMutation.mutate({
+      description: editDescription.trim(),
+      priority: parsedPriority,
+    });
   }
 
   const policy = payload?.current;
@@ -96,11 +116,53 @@ export function PolicyDetail() {
           )}
         </div>
         {canEdit && (
-          <button className="btn btn-primary" onClick={editPolicy} disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? 'Saving…' : 'Edit'}
+          <button className="btn btn-primary" onClick={openEditPolicy} disabled={updateMutation.isPending}>
+            Edit
           </button>
         )}
       </div>
+
+      {editOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.55)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1200,
+          }}
+          onClick={() => setEditOpen(false)}
+        >
+          <div className="card" style={{ width: 'min(520px, 92vw)' }} onClick={(event) => event.stopPropagation()}>
+            <div className="section-heading">Edit Policy</div>
+            <div style={{ display: 'grid', gap: '10px' }}>
+              <textarea
+                value={editDescription}
+                onChange={(event) => setEditDescription(event.target.value)}
+                rows={4}
+                placeholder="Description"
+              />
+              <input
+                value={editPriority}
+                onChange={(event) => setEditPriority(event.target.value)}
+                inputMode="numeric"
+                placeholder="Priority"
+              />
+            </div>
+            {editError && (
+              <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--status-quarantined)' }}>{editError}</div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '14px' }}>
+              <button className="btn btn-secondary" onClick={() => setEditOpen(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={submitPolicyEdit} disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="tabs">
         {tabs.map((tab, i) => (

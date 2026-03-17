@@ -137,6 +137,7 @@ class DelegationService:
             budget_cap_usd=request.budget_cap_usd,
             estimated_cost_usd=estimated_cost,
             callback_url=request.callback_url,
+            workflow=(request.workflow or "unclassified").strip() or "unclassified",
             delegation_depth=depth,
             parent_delegation_id=parent_id,
             status="pending",
@@ -206,6 +207,7 @@ class DelegationService:
             target_agent_id=callee.agent_id,
             details={
                 "decision": decision.decision,
+                "policy_decision": decision.decision,
                 "policy_id": decision.policy_id,
                 "policy_version": decision.policy_version,
                 "reason": decision.reason,
@@ -232,6 +234,7 @@ class DelegationService:
                     "reason": decision.reason,
                     "policy_id": decision.policy_id,
                     "policy_version": decision.policy_version,
+                    "policy_decision": decision.decision,
                 },
                 delegation_id=str(delegation.id),
             )
@@ -268,6 +271,7 @@ class DelegationService:
                     "policy_version": decision.policy_version,
                     "estimated_cost_usd": estimated_cost,
                     "approval_deadline": approval["approval_deadline"],
+                    "workflow": delegation.workflow,
                 },
                 delegation_id=str(delegation.id),
             )
@@ -297,11 +301,17 @@ class DelegationService:
         self,
         org: Organization,
         delegation_id: str,
-        approver: str,
+        approver_email: str,
+        approver_role: str,
     ) -> DelegationResponse:
         """Approve a paused delegation and immediately resume execution."""
         settings = get_settings()
-        delegation = await self.hitl_service.approve(delegation_id, str(org.id), approver)
+        delegation = await self.hitl_service.approve(
+            delegation_id,
+            str(org.id),
+            approver_email=approver_email,
+            approver_role=approver_role,
+        )
 
         caller_result = await self.db.execute(
             select(Agent).where(
@@ -406,6 +416,7 @@ class DelegationService:
             details={
                 "task_hash": delegation.task_hash,
                 "budget_cap_usd": float(delegation.budget_cap_usd or 0),
+                "workflow": delegation.workflow,
             },
             delegation_id=str(delegation.id),
         )

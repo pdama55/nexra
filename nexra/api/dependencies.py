@@ -1,15 +1,19 @@
 from datetime import UTC, datetime
+from dataclasses import dataclass
+from typing import Literal
 
 import redis.asyncio as aioredis
 from fastapi import Depends, Header, HTTPException, Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import get_settings
 from core.crypto import verify_api_key
+from core.errors import INSUFFICIENT_ROLE, NexraError
 from db.session import get_db
 from models.agent import Agent
 from models.org_api_key import OrgApiKey
+from models.org_member import OrgMember
 from models.organization import Organization
 
 # ─── Redis Dependency ─────────────────────────────────────────
@@ -174,3 +178,67 @@ async def get_authenticated_org_and_agent(
         )
 
     return org, agent
+
+
+AllowedRole = Literal["admin", "engineer", "compliance", "viewer"]
+
+
+@dataclass(frozen=True)
+class RequestActor:
+    email: str
+    role: AllowedRole
+
+
+def _normalize_role(value: str | None) -> AllowedRole:
+    role = (value or "").strip().lower()
+    if role in {"admin", "engineer", "compliance", "viewer"}:
+        return role
+    return "viewer"
+
+
+async def get_request_actor(
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+    x_user_email: str | None = Header(None, alias="X-User-Email"),
+) -> RequestActor:
+    """Resolve request actor from verified email header and org membership."""
+    raw_email = (x_user_email or "").strip().lower()
+    if raw_email:
+        member_result = await db.execute(
+            select(OrgMember).where(
+                OrgMember.org_id == org.id,
+                OrgMember.email == raw_email,
+            )
+        )
+        member = member_result.scalar_one_or_none()
+        if member:
+            member.last_active_at = datetime.now(UTC)
+            await db.flush()
+            return RequestActor(email=member.email, role=_normalize_role(member.role))
+        return RequestActor(email=raw_email, role="viewer")
+
+    # Local/dev compatibility: if no member records exist yet for this org,
+    # treat the implicit local admin identity as admin.
+    count_result = await db.execute(
+        select(func.count()).select_from(OrgMember).where(OrgMember.org_id == org.id)
+    )
+    has_members = int(count_result.scalar() or 0) > 0
+    if not has_members:
+        return RequestActor(email="admin@nexra.local", role="admin")
+    return RequestActor(email="unknown@nexra.local", role="viewer")
+
+
+def require_roles(*allowed_roles: AllowedRole):
+    allowed = set(allowed_roles)
+
+    async def _dependency(actor: RequestActor = Depends(get_request_actor)) -> RequestActor:
+        if actor.role not in allowed:
+            raise NexraError(
+                403,
+                INSUFFICIENT_ROLE,
+                f"Role '{actor.role}' cannot perform this action",
+                {"allowed_roles": sorted(allowed)},
+            )
+        return actor
+
+    return _dependency

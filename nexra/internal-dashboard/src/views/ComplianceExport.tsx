@@ -82,6 +82,34 @@ export function ComplianceExport() {
     }
   }
 
+  async function exportSoc2Package(): Promise<void> {
+    if (!dateFrom || !dateTo) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const query = new URLSearchParams({
+        set: 'soc2_core',
+        date_from: `${dateFrom}T00:00:00Z`,
+        date_to: `${dateTo}T23:59:59Z`,
+      });
+      const resp = await fetch(`${getApiUrl('/compliance/export/package')}?${query.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('nexra_api_key') ?? ''}`,
+          'X-User-Email': localStorage.getItem('nexra_user_email') ?? 'admin@nexra.local',
+        },
+      });
+      if (!resp.ok) {
+        throw new Error(`SOC2 package export failed with ${resp.status}`);
+      }
+      const zipBlob = await resp.blob();
+      downloadBlob('nexra-soc2-core-package.zip', zipBlob);
+    } catch {
+      setError('SOC2 evidence package export failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -131,6 +159,13 @@ export function ComplianceExport() {
             disabled={loading || !dateFrom || !dateTo}
           >
             Export Audit CSV
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={() => void exportSoc2Package()}
+            disabled={loading || !dateFrom || !dateTo}
+          >
+            Export SOC2 Package (ZIP)
           </button>
         </div>
         {error && (

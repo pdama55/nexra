@@ -1,12 +1,18 @@
 import time
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Header, Request
+import httpx
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_authenticated_org
+from api.dependencies import (
+    RequestActor,
+    get_authenticated_org,
+    get_request_actor,
+    require_roles,
+)
 from api.schemas.common import DataResponse, MetaResponse
 from core.config import get_settings
 from core.crypto import encrypt_aes_gcm, generate_api_key, generate_org_jwt_secret
@@ -36,6 +42,7 @@ class OrgSettingsResponse(BaseModel):
     name: str
     plan: str
     approval_url: str | None
+    notification_url: str | None
     stripe_connect_account_id: str | None
     created_at: str
 
@@ -43,6 +50,7 @@ class OrgSettingsResponse(BaseModel):
 class OrgSettingsUpdateRequest(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=200)
     approval_url: str | None = None
+    notification_url: str | None = None
 
 
 class OrgSessionResponse(BaseModel):
@@ -64,6 +72,15 @@ class OrgMemberCreateRequest(BaseModel):
 
 class OrgMemberUpdateRequest(BaseModel):
     role: str = Field(..., description="admin|engineer|compliance|viewer")
+
+
+class OrgWebhookSettingsRequest(BaseModel):
+    approval_url: str | None = None
+    notification_url: str | None = None
+
+
+class OrgWebhookTestRequest(BaseModel):
+    target: str = Field(..., description="approval|notification")
 
 
 @router.post("/register", status_code=201, response_model=DataResponse[dict])
@@ -137,6 +154,7 @@ async def get_org_settings(
             name=org.name,
             plan=org.plan,
             approval_url=org.approval_url,
+            notification_url=org.notification_url,
             stripe_connect_account_id=org.stripe_connect_account_id,
             created_at=org.created_at.isoformat(),
         ).model_dump(),
@@ -152,12 +170,15 @@ async def update_org_settings(
     request: Request,
     body: OrgSettingsUpdateRequest,
     org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin")),
     db: AsyncSession = Depends(get_db),
 ):
     if body.name is not None:
         org.name = body.name
     if body.approval_url is not None:
         org.approval_url = body.approval_url
+    if body.notification_url is not None:
+        org.notification_url = body.notification_url
 
     await db.commit()
     await db.refresh(org)
@@ -166,6 +187,7 @@ async def update_org_settings(
             "org_id": str(org.id),
             "name": org.name,
             "approval_url": org.approval_url,
+            "notification_url": org.notification_url,
         },
         "meta": MetaResponse(
             request_id=getattr(request.state, "request_id", None),
@@ -177,32 +199,15 @@ async def update_org_settings(
 async def get_org_session(
     request: Request,
     org: Organization = Depends(get_authenticated_org),
-    db: AsyncSession = Depends(get_db),
-    x_user_role: str | None = Header(None, alias="X-User-Role"),
-    x_user_email: str | None = Header(None, alias="X-User-Email"),
+    actor: RequestActor = Depends(get_request_actor),
 ):
-    role = (x_user_role or "").strip().lower()
-    if role not in {"admin", "engineer", "compliance", "viewer"}:
-        role = ""
-    email = (x_user_email or "admin@nexra.local").strip().lower() or "admin@nexra.local"
-    if role == "":
-        member_result = await db.execute(
-            select(OrgMember).where(
-                OrgMember.org_id == org.id,
-                OrgMember.email == email,
-            )
-        )
-        member = member_result.scalar_one_or_none()
-        role = member.role if member else "viewer"
-    if role not in {"admin", "engineer", "compliance", "viewer"}:
-        role = "viewer"
     return {
         "data": OrgSessionResponse(
             org_id=str(org.id),
             org_name=org.name,
             plan=org.plan,
-            role=role,
-            email=email,
+            role=actor.role,
+            email=actor.email,
         ).model_dump(),
         "meta": MetaResponse(
             request_id=getattr(request.state, "request_id", None),
@@ -245,6 +250,7 @@ async def create_api_key(
     request: Request,
     body: OrgApiKeyCreateRequest,
     org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin")),
     db: AsyncSession = Depends(get_db),
 ):
     raw_key, hashed_key, prefix = generate_api_key()
@@ -276,6 +282,7 @@ async def revoke_api_key(
     request: Request,
     key_id: str,
     org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin")),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -327,6 +334,7 @@ async def create_member(
     request: Request,
     body: OrgMemberCreateRequest,
     org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin")),
     db: AsyncSession = Depends(get_db),
 ):
     role = body.role.lower().strip()
@@ -357,6 +365,7 @@ async def update_member(
     member_id: str,
     body: OrgMemberUpdateRequest,
     org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin")),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -384,6 +393,7 @@ async def delete_member(
     request: Request,
     member_id: str,
     org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin")),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -401,3 +411,81 @@ async def delete_member(
         "data": {"id": member_id, "deleted": True},
         "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
     }
+
+
+@router.get("/webhooks", response_model=DataResponse[dict])
+async def get_webhook_settings(
+    request: Request,
+    org: Organization = Depends(get_authenticated_org),
+):
+    return {
+        "data": {
+            "approval_url": org.approval_url,
+            "notification_url": org.notification_url,
+        },
+        "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
+    }
+
+
+@router.patch("/webhooks", response_model=DataResponse[dict])
+async def update_webhook_settings(
+    request: Request,
+    body: OrgWebhookSettingsRequest,
+    org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    if body.approval_url is not None:
+        org.approval_url = body.approval_url
+    if body.notification_url is not None:
+        org.notification_url = body.notification_url
+    await db.commit()
+    return {
+        "data": {
+            "approval_url": org.approval_url,
+            "notification_url": org.notification_url,
+        },
+        "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
+    }
+
+
+@router.post("/webhooks/test", response_model=DataResponse[dict])
+async def test_webhook_settings(
+    request: Request,
+    body: OrgWebhookTestRequest,
+    org: Organization = Depends(get_authenticated_org),
+    _actor: RequestActor = Depends(require_roles("admin")),
+):
+    target = body.target.strip().lower()
+    if target not in {"approval", "notification"}:
+        target = "approval"
+    url = org.approval_url if target == "approval" else org.notification_url
+    if not url:
+        return {
+            "data": {"target": target, "ok": False, "status_code": None, "error": "URL_NOT_CONFIGURED"},
+            "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
+        }
+
+    payload = {
+        "event": "webhook_test_ping",
+        "target": target,
+        "org_id": str(org.id),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(url, json=payload)
+        return {
+            "data": {
+                "target": target,
+                "ok": bool(resp.is_success),
+                "status_code": resp.status_code,
+                "error": None if resp.is_success else "NON_2XX_RESPONSE",
+            },
+            "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
+        }
+    except Exception as exc:
+        return {
+            "data": {"target": target, "ok": False, "status_code": None, "error": str(exc)},
+            "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
+        }

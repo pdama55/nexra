@@ -220,7 +220,7 @@ async def test_audit_log_query_supports_new_filters(db_session: AsyncSession) ->
         event_type="policy_evaluated",
         actor_agent_id="actor-a",
         target_agent_id="target-a",
-        details={"policy_id": "policy-1"},
+        details={"policy_id": "policy-1", "decision": "allow", "policy_decision": "allow"},
         cost_usd=0.55,
     )
     await service.append(
@@ -228,7 +228,7 @@ async def test_audit_log_query_supports_new_filters(db_session: AsyncSession) ->
         event_type="policy_evaluated",
         actor_agent_id="actor-b",
         target_agent_id="target-b",
-        details={"policy_id": "policy-2"},
+        details={"policy_id": "policy-2", "decision": "block", "policy_decision": "block"},
         cost_usd=0.95,
     )
 
@@ -239,6 +239,7 @@ async def test_audit_log_query_supports_new_filters(db_session: AsyncSession) ->
         target_agent_id="target-a",
         event_type="policy_evaluated",
         policy_id="policy-1",
+        policy_decision="allow",
         date_from=None,
         date_to=None,
         cost_min=0.5,
@@ -262,6 +263,25 @@ async def test_audit_log_query_supports_new_filters(db_session: AsyncSession) ->
 async def test_spend_summary_uses_real_spend_timeseries(db_session: AsyncSession) -> None:
     org = await _create_org(db_session, "Spend Summary Org")
     now = datetime.now(UTC)
+    db_session.add(
+        Agent(
+            org_id=org.id,
+            agent_id="spender",
+            name="Spender",
+            description="Spender agent",
+            capability_type="analysis",
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
+            webhook_url="https://example.com/spender",
+            webhook_secret="s" * 32,
+            pricing={"per_call_usd": 0.1},
+            sla={"p99_latency_ms": 1000, "availability": 0.99},
+            is_public=False,
+            trust_score=Decimal("0.900"),
+            status="active",
+            team="platform",
+        )
+    )
     db_session.add_all(
         [
             Delegation(
@@ -274,6 +294,7 @@ async def test_spend_summary_uses_real_spend_timeseries(db_session: AsyncSession
                 context_scope=["finance"],
                 policy_decision="allow",
                 status="completed",
+                workflow="pipeline-a",
                 actual_cost_usd=Decimal("1.2500"),
                 created_at=now - timedelta(hours=2),
                 completed_at=now - timedelta(hours=2),
@@ -288,6 +309,7 @@ async def test_spend_summary_uses_real_spend_timeseries(db_session: AsyncSession
                 context_scope=["finance"],
                 policy_decision="allow",
                 status="completed",
+                workflow="pipeline-b",
                 actual_cost_usd=Decimal("2.0000"),
                 created_at=now - timedelta(days=3),
                 completed_at=now - timedelta(days=3),
@@ -317,6 +339,26 @@ async def test_spend_summary_uses_real_spend_timeseries(db_session: AsyncSession
         db=db_session,
     )
     assert totals_response["data"]["totals"]["delegation_count"] == 1
+
+    team_response = await spend_summary(
+        _req(),
+        agent_id=None,
+        window="last_24h",
+        breakdown="team",
+        org=org,
+        db=db_session,
+    )
+    assert team_response["data"]["team_breakdown"][0]["team"] == "platform"
+
+    workflow_response = await spend_summary(
+        _req(),
+        agent_id=None,
+        window="last_24h",
+        breakdown="workflow",
+        org=org,
+        db=db_session,
+    )
+    assert workflow_response["data"]["workflow_breakdown"][0]["workflow"] == "pipeline-a"
 
 
 @pytest.mark.asyncio

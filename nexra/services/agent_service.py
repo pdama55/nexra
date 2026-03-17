@@ -30,6 +30,11 @@ class AgentService:
         self.db = db
         self.openai = openai_client
 
+    @staticmethod
+    def _normalize_team(team: str | None) -> str:
+        value = (team or "").strip()
+        return value if value else "unassigned"
+
     async def register(self, org_id: str, data: AgentRegisterRequest) -> Agent:
         """Register or re-register an agent capability.
 
@@ -55,6 +60,7 @@ class AgentService:
             existing.output_schema = data.output_schema
             existing.webhook_url = data.webhook_url
             existing.webhook_secret = data.webhook_secret
+            existing.team = self._normalize_team(data.team)
             existing.pricing = data.pricing.model_dump()
             existing.sla = data.sla.model_dump()
             existing.embedding = embedding
@@ -72,6 +78,7 @@ class AgentService:
                 output_schema=data.output_schema,
                 webhook_url=data.webhook_url,
                 webhook_secret=data.webhook_secret,
+                team=self._normalize_team(data.team),
                 pricing=data.pricing.model_dump(),
                 sla=data.sla.model_dump(),
                 embedding=embedding,

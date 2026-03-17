@@ -34,6 +34,7 @@ class Agent(UUIDMixin, TimestampMixin, Base):
     output_schema: Mapped[dict] = mapped_column(JSONB, nullable=False)
     webhook_url: Mapped[str] = mapped_column(Text, nullable=False)
     webhook_secret: Mapped[str] = mapped_column(Text, nullable=False)
+    team: Mapped[str] = mapped_column(Text, nullable=False, server_default="unassigned")
     pricing: Mapped[dict] = mapped_column(JSONB, nullable=False)
     sla: Mapped[dict] = mapped_column(JSONB, nullable=False)
     is_public: Mapped[bool] = mapped_column(

@@ -32,6 +32,7 @@ class AgentRegisterRequest(BaseModel):
     sla: SLASchema
     webhook_url: str
     webhook_secret: str = Field(..., min_length=32)
+    team: str | None = Field(None, min_length=1, max_length=120)
     is_public: bool = Field(False)
 
     @field_validator("agent_id")
@@ -89,6 +90,7 @@ class AgentDetailResponse(BaseModel):
     pricing: dict
     sla: dict
     webhook_url: str
+    team: str
     is_public: bool
     trust_score: float
     status: str
@@ -107,6 +109,7 @@ class AgentListItem(BaseModel):
     input_schema: dict
     output_schema: dict
     webhook_url: str
+    team: str
     trust_score: float
     status: str
     is_public: bool
