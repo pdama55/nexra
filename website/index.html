@@ -4124,6 +4124,339 @@ body::after {
   }
 }
 
+/* Mobile/tablet simple landing authority */
+@media (max-width: 64rem) {
+  body::after,
+  .cursor-dot,
+  .ticker,
+  .hero-watermark,
+  .hero-right,
+  .why-now-diagram,
+  .code-block,
+  .code-sequence,
+  .code-output,
+  .session-shell,
+  .integrations-shell,
+  .spend-bars,
+  .footer-watermark,
+  #stack,
+  #quickstart,
+  #how,
+  #surfaces,
+  #icp,
+  #stakeholders,
+  #roi,
+  #integrations {
+    display: none !important;
+  }
+
+  .reveal,
+  .reveal.visible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .container {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
+
+  .section,
+  .section-hero,
+  .section-elevated,
+  .section-neutral,
+  .section--deep,
+  .section--lifted,
+  .section--neutral,
+  .section--lifted-alt {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+
+  .hero {
+    min-height: auto;
+    display: block;
+    padding-top: 5.75rem;
+    padding-bottom: 3rem;
+  }
+
+  .hero-inner {
+    display: block;
+    grid-template-columns: 1fr !important;
+    gap: 0;
+  }
+
+  .hero-left {
+    max-width: none;
+    padding-top: 0;
+  }
+
+  .hero-eyebrow {
+    margin-bottom: 0.55rem;
+    font-size: 0.64rem;
+    letter-spacing: 0.11em;
+    opacity: 0.72;
+  }
+
+  .hero-headline {
+    max-width: none;
+    font-size: clamp(2.25rem, 5.8vw, 3.1rem);
+    line-height: 1.06;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    margin-bottom: 0;
+  }
+
+  .hero-headline .line {
+    white-space: normal;
+    overflow: visible;
+  }
+
+  .hero-subhead,
+  .hero-subhead.layer-sub {
+    max-width: 46ch;
+    min-height: 0;
+    margin-top: 1.1rem;
+    font-size: 1.04rem;
+    line-height: 1.62;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: normal;
+    color: rgba(255, 255, 255, 0.76);
+    overflow-wrap: anywhere;
+  }
+
+  .hero-waitlist {
+    margin-top: 1.2rem;
+    width: 100%;
+    max-width: 30rem;
+  }
+
+  .section-label {
+    margin-bottom: 0.58rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.11em;
+  }
+
+  .section-title {
+    font-size: clamp(1.6rem, 4vw, 2.25rem);
+    line-height: 1.18;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .section-subtitle {
+    max-width: 62ch;
+    margin-top: 0.7rem;
+    font-size: 1rem;
+    line-height: 1.58;
+  }
+
+  .stack-grid,
+  .stack-compare-grid,
+  .why-row,
+  .integration-row.top,
+  .integration-row.bottom,
+  .bottom-inner {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem;
+  }
+
+  .stack-compare-card {
+    padding: 1.15rem;
+  }
+
+  .stack-compare-list li,
+  .why-desc,
+  .session-note,
+  .code-intro,
+  .footer-sub {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .stack-closing {
+    margin-top: 1.9rem;
+    gap: 0.5rem;
+  }
+
+  .stack-closing-line-1 {
+    font-size: clamp(1.24rem, 3.6vw, 1.62rem);
+    line-height: 1.22;
+    letter-spacing: 0;
+  }
+
+  .stack-closing-line-2 {
+    font-size: clamp(1.06rem, 3.2vw, 1.28rem);
+    line-height: 1.34;
+    letter-spacing: 0;
+  }
+
+  .footer-headline {
+    font-size: clamp(1.5rem, 4.5vw, 2.2rem);
+    line-height: 1.18;
+  }
+
+  .footer-actions {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+
+  .waitlist-form,
+  .hero-waitlist-form,
+  .footer-waitlist-form {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 30rem;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+
+  .waitlist-input,
+  .hero-waitlist-input,
+  .footer-waitlist-form .waitlist-input {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    min-height: 2.75rem;
+    height: 2.75rem;
+    padding: 0 0.9rem;
+    border: 0.0625rem solid rgba(194, 202, 212, 0.28);
+    border-right: 0.0625rem solid rgba(194, 202, 212, 0.28);
+    border-radius: 0.55rem;
+    background: rgba(19, 26, 36, 0.75);
+    color: #ffffff;
+    font-size: 0.95rem;
+    line-height: 1.2;
+  }
+
+  .btn-primary,
+  .waitlist-btn,
+  .hero-btn-primary,
+  .hero-waitlist-btn,
+  .nav-cta {
+    min-height: 2.75rem;
+    height: 2.75rem;
+    padding: 0 1rem;
+    border-radius: 0.55rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  .hero .footer-waitlist-form .waitlist-btn,
+  .hero .waitlist-btn {
+    min-height: 2.75rem;
+    height: 2.75rem;
+    border: none;
+    border-left: none;
+    border-radius: 0.55rem;
+    padding: 0 1rem;
+    font-size: 0.86rem;
+  }
+
+  .nav-shell {
+    min-height: 4.25rem;
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
+
+  .nav-center {
+    display: none;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+  }
+
+  .nav-right {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 32.5rem) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .section,
+  .section-hero,
+  .section-elevated,
+  .section-neutral,
+  .section--deep,
+  .section--lifted,
+  .section--neutral,
+  .section--lifted-alt {
+    padding-top: 3.2rem;
+    padding-bottom: 3.2rem;
+  }
+
+  .hero {
+    padding-top: 5.25rem;
+    padding-bottom: 2.2rem;
+  }
+
+  .hero-headline {
+    font-size: clamp(1.78rem, 9.2vw, 2.2rem);
+  }
+
+  .hero-subhead,
+  .hero-subhead.layer-sub {
+    font-size: 0.98rem;
+    line-height: 1.55;
+  }
+
+  .waitlist-form,
+  .hero-waitlist-form,
+  .footer-waitlist-form {
+    flex-direction: column;
+    align-items: stretch;
+    max-width: none;
+    gap: 0.45rem;
+  }
+
+  .waitlist-input,
+  .hero-waitlist-input,
+  .footer-waitlist-form .waitlist-input {
+    width: 100%;
+  }
+
+  .btn-primary,
+  .waitlist-btn,
+  .hero-btn-primary,
+  .hero-waitlist-btn {
+    width: 100%;
+  }
+
+  .hero .footer-waitlist-form .waitlist-btn,
+  .hero .waitlist-btn {
+    width: 100%;
+  }
+
+  .nav-shell {
+    padding-left: 1.1rem;
+    padding-right: 1.1rem;
+  }
+
+  .nav-cta {
+    height: 2.75rem;
+    min-height: 2.75rem;
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+    font-size: 0.8rem;
+  }
+}
+
 .cursor-dot {
   position: fixed;
   top: 0;
@@ -4296,10 +4629,6 @@ body::after {
       </article>
     </div>
 
-    <div class="stack-closing reveal">
-      <span class="stack-closing-line-1">Nexra solves both.</span>
-      <span class="stack-closing-line-2">One control plane. No migration.</span>
-    </div>
   </div>
 </section>
 <section class="section section-elevated section--lifted-alt why" id="why">
