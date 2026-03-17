@@ -3549,7 +3549,7 @@ body::after {
 
 .hero .waitlist-input {
   flex: 1;
-  min-height: 2.875rem;
+  min-height: 2.7rem;
   padding: 0 1rem;
   border: 0.0625rem solid rgba(255, 255, 255, 0.15);
   border-right: none;
@@ -3561,7 +3561,7 @@ body::after {
 }
 
 .hero .waitlist-btn {
-  min-height: 2.875rem;
+  min-height: 2.7rem;
   padding: 0 1.2rem;
   border: 0.0625rem solid rgba(255, 255, 255, 0.16);
   border-radius: 0 0.35rem 0.35rem 0;
@@ -4029,6 +4029,25 @@ body::after {
   border-left: none;
 }
 
+.hero .footer-waitlist-form .waitlist-btn,
+.hero .waitlist-btn {
+  min-height: 2.7rem;
+  border: none;
+  border-left: 0.0625rem solid rgba(0, 0, 0, 0.12);
+  border-radius: 0 0.5rem 0.5rem 0;
+  padding: 0.65rem 1.35rem;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+  background: #ffffff;
+  color: #000000;
+}
+
+.hero .footer-waitlist-form,
+.hero .waitlist-form {
+  padding: 0.1875rem;
+}
+
 .hero-waitlist-btn:hover,
 .footer-waitlist-form .waitlist-btn:hover,
 .waitlist-btn:hover {
@@ -4398,8 +4417,10 @@ body::after {
         </h1>
         <p class="hero-subhead">A2A and MCP made agent communication possible. They did not add policy, spend controls, or an audit trail.<br><br>Runtime discovery and delegation for multi-agent systems.<br>Policy enforcement, spend caps, scoped tokens, circuit breakers, and immutable audit trails built in.</p>
         <div class="hero-waitlist">
-          <form class="footer-waitlist-form waitlist-form" onsubmit="return handleWaitlist(event, this)">
-            <input type="email" class="waitlist-input" placeholder="you@company.com" required>
+          <form id="waitlist-form-hero" class="footer-waitlist-form waitlist-form" data-source="hero" onsubmit="return handleWaitlist(event, this)" novalidate>
+            <label class="sr-only" for="waitlist-email-hero">Work email</label>
+            <input id="waitlist-email-hero" type="email" class="waitlist-input" placeholder="you@company.com" autocomplete="email" required>
+            <input type="text" name="website" class="waitlist-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
             <button type="submit" class="waitlist-btn btn-primary">Join waitlist</button>
           </form>
         </div>
@@ -4429,7 +4450,6 @@ body::after {
     </div>
   </div>
 </section>
-
 <div class="ticker">
   <div class="ticker-track" id="ticker-track">
     <span class="ticker-item">Capability registry</span>
@@ -4501,7 +4521,80 @@ body::after {
     </div>
   </div>
 </section>
+<section class="section section-elevated section--lifted-alt why" id="why">
+  <div class="container">
+    <span class="section-label reveal">Why Nexra wins</span>
 
+    <div class="why-row" data-row-delay="0">
+      <span class="why-num">01</span>
+      <h3 class="why-title">Framework agnostic</h3>
+      <p class="why-desc">Works with any agent that can receive a signed HTTPS webhook. LangGraph, CrewAI, Bedrock, A2A, or custom Python. No migration. No lock-in. Add Nexra to your existing stack in under an hour.</p>
+    </div>
+
+    <div class="why-row" data-row-delay="100">
+      <span class="why-num">02</span>
+      <h3 class="why-title">Compliance-first</h3>
+      <p class="why-desc">Immutable audit trail built for regulators. YAML-defined policies evaluated on every delegation. Spend caps enforced before the webhook fires. SOC 2, GDPR, and HIPAA compliance export-ready.</p>
+    </div>
+
+    <div class="why-row" data-row-delay="200">
+      <span class="why-num">03</span>
+      <h3 class="why-title">Ships in hours</h3>
+      <p class="why-desc">pip install nexra. Three lines to register an agent. One call to discover and delegate. Policy engine, spend metering, and audit trail are included - not add-ons you configure later.</p>
+    </div>
+
+    <div class="why-row" data-row-delay="300">
+      <span class="why-num">04</span>
+      <h3 class="why-title">Built for production</h3>
+      <p class="why-desc">FastAPI async workers. PostgreSQL + pgvector for semantic capability search. Redis token store. Celery task queue. Append-only audit logs. HMAC-SHA256 signed webhooks. Stripe usage metering. This is not a demo - it is production infrastructure.</p>
+    </div>
+  </div>
+</section>
+<section class="section section-neutral section--neutral code-section" id="quickstart">
+  <div class="container">
+    <span class="code-eyebrow reveal">Three lines to connect your first agent</span>
+    <p class="code-intro reveal">Any agent that can receive a signed HTTPS webhook is compatible. No SDK required on the callee side.</p>
+
+    <div class="code-block reveal" id="code-block">
+      <span class="code-tab">Quickstart</span>
+      <pre id="code-pre"><span class="code-line"><span class="c-comment"># Install the SDK</span></span>
+<span class="code-line"><span class="c-fn">pip install</span> <span class="c-str">nexra</span></span>
+<span class="code-line"></span>
+<span class="code-line"><span class="c-comment"># Initialize client</span></span>
+<span class="code-line"><span class="c-key">from</span> <span class="c-str">nexra</span> <span class="c-key">import</span> <span class="c-str">NexraClient</span></span>
+<span class="code-line"><span class="c-fn">client</span> <span class="c-key">=</span> <span class="c-str">NexraClient</span>(<span class="c-key">api_key=</span><span class="c-val">"nx_live_..."</span>)</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="c-comment"># Register an agent</span></span>
+<span class="code-line"><span class="c-fn">client.register</span>(</span>
+<span class="code-line">    <span class="c-key">agent_id=</span><span class="c-val">"research-agent-v2"</span>,</span>
+<span class="code-line">    <span class="c-key">capability_type=</span><span class="c-val">"research"</span>,</span>
+<span class="code-line">    <span class="c-key">webhook_url=</span><span class="c-val">"https://your-agent.com/execute"</span>,</span>
+<span class="code-line">    <span class="c-key">pricing=</span>{<span class="c-val">"per_call_usd"</span>: <span class="c-val">0.15</span>},</span>
+<span class="code-line">    <span class="c-key">sla_ms=</span><span class="c-val">3000</span></span>
+<span class="code-line">)</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="c-comment"># Discover + delegate in one call</span></span>
+<span class="code-line"><span class="c-fn">result</span> <span class="c-key">=</span> <span class="c-key">await</span> <span class="c-fn">client.hire</span>(</span>
+<span class="code-line">    <span class="c-key">capability=</span><span class="c-val">"research"</span>,</span>
+<span class="code-line">    <span class="c-key">task=</span>{<span class="c-val">"company"</span>: <span class="c-val">"Acme Corp"</span>},</span>
+<span class="code-line">    <span class="c-key">budget_cap=</span><span class="c-val">0.25</span></span>
+<span class="code-line">)</span></pre>
+    </div>
+
+    <div class="code-sequence reveal" aria-hidden="true"></div>
+
+    <div class="code-output reveal">
+      <div class="code-output-label">Example output</div>
+      <pre># Returns:
+{
+  "delegation_id": "del_7f3a2b9c",
+  "result": { "summary": "Acme Corp is a...", "sources": [...] },
+  "cost_usd": 0.14,
+  "audit_event": 4471
+}</pre>
+    </div>
+  </div>
+</section>
 <section class="section section-neutral section--neutral how-session" id="how">
   <div class="container">
     <span class="section-label reveal">How it works</span>
@@ -4560,79 +4653,6 @@ body::after {
     <p class="session-note reveal">Every delegation produces a complete, immutable record. No exceptions. No gaps.</p>
   </div>
 </section>
-
-<section class="section section-neutral section--neutral code-section" id="quickstart">
-  <div class="container">
-    <span class="code-eyebrow reveal">Three lines to connect your first agent</span>
-    <p class="code-intro reveal">Any agent that can receive a signed HTTPS webhook is compatible. No SDK required on the callee side.</p>
-
-    <div class="code-block reveal" id="code-block">
-      <span class="code-tab">Quickstart</span>
-      <pre id="code-pre"><span class="code-line"><span class="c-comment"># Install the SDK</span></span>
-<span class="code-line"><span class="c-fn">pip install</span> <span class="c-str">nexra</span></span>
-<span class="code-line"></span>
-<span class="code-line"><span class="c-comment"># Initialize client</span></span>
-<span class="code-line"><span class="c-key">from</span> <span class="c-str">nexra</span> <span class="c-key">import</span> <span class="c-str">NexraClient</span></span>
-<span class="code-line"><span class="c-fn">client</span> <span class="c-key">=</span> <span class="c-str">NexraClient</span>(<span class="c-key">api_key=</span><span class="c-val">"nx_live_..."</span>)</span>
-<span class="code-line"></span>
-<span class="code-line"><span class="c-comment"># Register an agent</span></span>
-<span class="code-line"><span class="c-fn">client.register</span>(</span>
-<span class="code-line">    <span class="c-key">agent_id=</span><span class="c-val">"research-agent-v2"</span>,</span>
-<span class="code-line">    <span class="c-key">capability_type=</span><span class="c-val">"research"</span>,</span>
-<span class="code-line">    <span class="c-key">webhook_url=</span><span class="c-val">"https://your-agent.com/execute"</span>,</span>
-<span class="code-line">    <span class="c-key">pricing=</span>{<span class="c-val">"per_call_usd"</span>: <span class="c-val">0.15</span>},</span>
-<span class="code-line">    <span class="c-key">sla_ms=</span><span class="c-val">3000</span></span>
-<span class="code-line">)</span>
-<span class="code-line"></span>
-<span class="code-line"><span class="c-comment"># Discover + delegate in one call</span></span>
-<span class="code-line"><span class="c-fn">result</span> <span class="c-key">=</span> <span class="c-key">await</span> <span class="c-fn">client.hire</span>(</span>
-<span class="code-line">    <span class="c-key">capability=</span><span class="c-val">"research"</span>,</span>
-<span class="code-line">    <span class="c-key">task=</span>{<span class="c-val">"company"</span>: <span class="c-val">"Acme Corp"</span>},</span>
-<span class="code-line">    <span class="c-key">budget_cap=</span><span class="c-val">0.25</span></span>
-<span class="code-line">)</span></pre>
-    </div>
-
-    <div class="code-sequence reveal" aria-hidden="true"></div>
-
-    <div class="code-output reveal">
-      <div class="code-output-label">Example output</div>
-      <pre># Returns:
-{
-  "delegation_id": "del_7f3a2b9c",
-  "result": { "summary": "Acme Corp is a...", "sources": [...] },
-  "cost_usd": 0.14,
-  "audit_event": 4471
-}</pre>
-    </div>
-  </div>
-</section>
-
-<section class="section section-elevated section--lifted icp" id="icp">
-  <div class="container">
-    <span class="section-label reveal">The ICP</span>
-    <h2 class="section-title reveal">Built for teams running agents in production.</h2>
-    <p class="section-subtitle reveal">If you have 5 or more agents deployed and your engineers are spending more time wiring them together than improving them - Nexra is built for you.</p>
-
-    <div class="icp-grid">
-      <article class="icp-card reveal">
-        <span class="icp-icon">LG</span>
-        <h3 class="icp-title">LangGraph teams</h3>
-        <p>Multi-step agent workflows that need spend controls and compliance-ready audit trails before your legal team will sign off on production deployment.</p>
-      </article>
-      <article class="icp-card reveal">
-        <span class="icp-icon">CA</span>
-        <h3 class="icp-title">CrewAI pipelines</h3>
-        <p>Multi-agent systems where specialized agents need to discover and hire each other at runtime without hardcoded integrations that break every deploy.</p>
-      </article>
-      <article class="icp-card reveal">
-        <span class="icp-icon">ENT</span>
-        <h3 class="icp-title">Enterprise AI teams</h3>
-        <p>Deploying agents at scale and blocked by security or compliance because there is no authorization model, governance layer, or audit record.</p>
-      </article>
-    </div>
-  </div>
-</section>
-
 <section class="section section-hero section--deep surfaces" id="surfaces">
   <div class="container">
     <span class="section-label reveal">Product surfaces</span>
@@ -4718,7 +4738,31 @@ budget:      $0.08
     </div>
   </div>
 </section>
+<section class="section section-elevated section--lifted icp" id="icp">
+  <div class="container">
+    <span class="section-label reveal">The ICP</span>
+    <h2 class="section-title reveal">Built for teams running agents in production.</h2>
+    <p class="section-subtitle reveal">If you have 5 or more agents deployed and your engineers are spending more time wiring them together than improving them - Nexra is built for you.</p>
 
+    <div class="icp-grid">
+      <article class="icp-card reveal">
+        <span class="icp-icon">LG</span>
+        <h3 class="icp-title">LangGraph teams</h3>
+        <p>Multi-step agent workflows that need spend controls and compliance-ready audit trails before your legal team will sign off on production deployment.</p>
+      </article>
+      <article class="icp-card reveal">
+        <span class="icp-icon">CA</span>
+        <h3 class="icp-title">CrewAI pipelines</h3>
+        <p>Multi-agent systems where specialized agents need to discover and hire each other at runtime without hardcoded integrations that break every deploy.</p>
+      </article>
+      <article class="icp-card reveal">
+        <span class="icp-icon">ENT</span>
+        <h3 class="icp-title">Enterprise AI teams</h3>
+        <p>Deploying agents at scale and blocked by security or compliance because there is no authorization model, governance layer, or audit record.</p>
+      </article>
+    </div>
+  </div>
+</section>
 <section class="section section-neutral section--neutral stakeholder-tabs" id="stakeholders">
   <div class="container">
     <span class="section-label reveal">Stakeholders</span>
@@ -4732,37 +4776,6 @@ budget:      $0.08
     <div class="stakeholder-panel reveal" id="stakeholder-panel"></div>
   </div>
 </section>
-
-<section class="section section-elevated section--lifted-alt why" id="why">
-  <div class="container">
-    <span class="section-label reveal">Why Nexra wins</span>
-
-    <div class="why-row" data-row-delay="0">
-      <span class="why-num">01</span>
-      <h3 class="why-title">Framework agnostic</h3>
-      <p class="why-desc">Works with any agent that can receive a signed HTTPS webhook. LangGraph, CrewAI, Bedrock, A2A, or custom Python. No migration. No lock-in. Add Nexra to your existing stack in under an hour.</p>
-    </div>
-
-    <div class="why-row" data-row-delay="100">
-      <span class="why-num">02</span>
-      <h3 class="why-title">Compliance-first</h3>
-      <p class="why-desc">Immutable audit trail built for regulators. YAML-defined policies evaluated on every delegation. Spend caps enforced before the webhook fires. SOC 2, GDPR, and HIPAA compliance export-ready.</p>
-    </div>
-
-    <div class="why-row" data-row-delay="200">
-      <span class="why-num">03</span>
-      <h3 class="why-title">Ships in hours</h3>
-      <p class="why-desc">pip install nexra. Three lines to register an agent. One call to discover and delegate. Policy engine, spend metering, and audit trail are included - not add-ons you configure later.</p>
-    </div>
-
-    <div class="why-row" data-row-delay="300">
-      <span class="why-num">04</span>
-      <h3 class="why-title">Built for production</h3>
-      <p class="why-desc">FastAPI async workers. PostgreSQL + pgvector for semantic capability search. Redis token store. Celery task queue. Append-only audit logs. HMAC-SHA256 signed webhooks. Stripe usage metering. This is not a demo - it is production infrastructure.</p>
-    </div>
-  </div>
-</section>
-
 <section class="section section-elevated section--lifted roi" id="roi">
   <div class="container">
     <span class="section-label reveal">The cost of not having Nexra</span>
@@ -4789,7 +4802,6 @@ budget:      $0.08
     </div>
   </div>
 </section>
-
 <section class="section section-hero section--deep footer-cta" id="footer-cta">
   <div class="footer-watermark">NETWORK</div>
   <div class="container">
@@ -4803,11 +4815,9 @@ budget:      $0.08
         <button type="submit" class="waitlist-btn btn-primary">Join waitlist</button>
       </form>
       <p class="waitlist-message" aria-live="polite"></p>
-      <a href="mailto:parth@usenexra.com?subject=Request%20demo" class="footer-demo-link footer-cta-secondary">Request demo</a>
     </div>
   </div>
 </section>
-
 <footer class="bottom-bar">
   <div class="container">
     <div class="bottom-inner">
