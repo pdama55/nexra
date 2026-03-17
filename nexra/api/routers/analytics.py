@@ -1,11 +1,11 @@
 import time
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +15,7 @@ from core.errors import INVALID_REQUEST, NexraError
 from db.session import get_db
 from models.agent import Agent
 from models.agent_budget import AgentBudget
+from models.delegation import Delegation
 from models.organization import Organization
 from services.budget_service import BudgetService
 
@@ -22,7 +23,7 @@ router = APIRouter(tags=["analytics"])
 
 
 def _window_start(window: str) -> datetime:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if window == "last_hour":
         return now - timedelta(hours=1)
     if window == "last_24h":
@@ -132,17 +133,126 @@ async def usage_stats(
 async def spend_summary(
     request: Request,
     agent_id: str | None = Query(None),
+    window: str = Query("last_24h"),
+    breakdown: str = Query("all", description="all|summary|agent|timeseries|totals"),
     org: Organization = Depends(get_authenticated_org),
     db: AsyncSession = Depends(get_db),
 ):
     """CFO-facing spend summary by agent and period."""
     start = time.perf_counter()
+    if breakdown not in {"all", "summary", "agent", "timeseries", "totals"}:
+        raise NexraError(400, INVALID_REQUEST, "breakdown must be one of: all,summary,agent,timeseries,totals")
+
     service = BudgetService(db)
-    summary = await service.get_summary(str(org.id), agent_id)
+    org_id = str(org.id)
+    summary_rows = await service.get_summary(org_id, agent_id)
+
+    window_start = _window_start(window)
+    bucket = "day" if window in ("last_7d", "last_30d") else "hour"
+
+    totals_stmt = select(
+        func.coalesce(func.sum(Delegation.actual_cost_usd), 0),
+        func.count(Delegation.id),
+        func.coalesce(func.avg(Delegation.actual_cost_usd), 0),
+    ).where(
+        Delegation.caller_org_id == org.id,
+        Delegation.created_at >= window_start,
+        Delegation.status == "completed",
+    )
+    if agent_id:
+        totals_stmt = totals_stmt.where(Delegation.caller_agent_id == agent_id)
+
+    totals_result = await db.execute(totals_stmt)
+    total_spend_raw, delegation_count_raw, avg_cost_raw = totals_result.one()
+
+    series_sql = text(f"""
+        SELECT
+            date_trunc('{bucket}', created_at) AS ts,
+            COALESCE(SUM(actual_cost_usd), 0) AS spend_usd,
+            COUNT(*) AS delegation_count
+        FROM delegations
+        WHERE caller_org_id = CAST(:org_id AS uuid)
+          AND created_at >= :window_start
+          AND status = 'completed'
+          { "AND caller_agent_id = :agent_id" if agent_id else "" }
+        GROUP BY ts
+        ORDER BY ts ASC
+    """)
+    series_result = await db.execute(
+        series_sql,
+        {
+            "org_id": org_id,
+            "window_start": window_start,
+            **({"agent_id": agent_id} if agent_id else {}),
+        },
+    )
+    timeseries = [
+        {
+            "timestamp": row.ts.isoformat(),
+            "spend_usd": float(row.spend_usd or 0),
+            "delegation_count": int(row.delegation_count or 0),
+        }
+        for row in series_result.fetchall()
+    ]
+
+    agent_stmt = select(
+        Delegation.caller_agent_id,
+        func.count(Delegation.id).label("delegation_count"),
+        func.coalesce(func.sum(Delegation.actual_cost_usd), 0).label("total_spend_usd"),
+        func.coalesce(func.avg(Delegation.actual_cost_usd), 0).label("avg_cost_usd"),
+    ).where(
+        Delegation.caller_org_id == org.id,
+        Delegation.created_at >= window_start,
+        Delegation.status == "completed",
+    ).group_by(Delegation.caller_agent_id).order_by(text("total_spend_usd DESC"))
+    if agent_id:
+        agent_stmt = agent_stmt.where(Delegation.caller_agent_id == agent_id)
+    agent_result = await db.execute(agent_stmt)
+    agent_breakdown = [
+        {
+            "agent_id": row.caller_agent_id,
+            "delegation_count": int(row.delegation_count or 0),
+            "total_spend_usd": float(row.total_spend_usd or 0),
+            "avg_cost_usd": float(row.avg_cost_usd or 0),
+        }
+        for row in agent_result.fetchall()
+    ]
+
+    total_cap = sum(float(item.get("cap_usd", 0)) for item in summary_rows)
+    total_budget_spent = sum(float(item.get("spent_usd", 0)) for item in summary_rows)
+    highest = agent_breakdown[0] if agent_breakdown else None
+
+    totals = {
+        "total_spend_usd": float(total_spend_raw or 0),
+        "delegation_count": int(delegation_count_raw or 0),
+        "avg_cost_per_delegation": float(avg_cost_raw or 0),
+        "highest_spend_agent": (
+            {"agent_id": highest["agent_id"], "spend_usd": highest["total_spend_usd"]}
+            if highest
+            else None
+        ),
+        "budget_utilization": (total_budget_spent / total_cap) if total_cap > 0 else 0.0,
+    }
+
+    data: dict[str, Any] = {
+        "summary": summary_rows,
+        "totals": totals,
+        "agent_breakdown": agent_breakdown,
+        "timeseries": timeseries,
+    }
+    if breakdown == "summary":
+        data = {"summary": summary_rows}
+    elif breakdown == "agent":
+        data = {"agent_breakdown": agent_breakdown}
+    elif breakdown == "timeseries":
+        data = {"timeseries": timeseries}
+    elif breakdown == "totals":
+        data = {"totals": totals}
+
     latency = round((time.perf_counter() - start) * 1000, 2)
 
     return {
-        "data": {"summary": summary},
+        "data": data,
         "meta": MetaResponse(
             request_id=getattr(request.state, "request_id", None),
             latency_ms=latency,

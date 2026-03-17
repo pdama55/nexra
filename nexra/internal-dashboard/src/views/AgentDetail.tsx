@@ -1,11 +1,13 @@
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { apiGet } from '../api/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiGet, apiPost } from '../api/client';
 import { StatusPill } from '../components/common/StatusPill';
 import { EmptyState } from '../components/common/EmptyState';
 import { formatUsd, formatRelativeTime } from '../utils/formatters';
 import type { TimeRange, Agent, AuditEntry, Delegation, TrustBreakdown } from '../types';
 import { useState } from 'react';
+import { useSession } from '../hooks/useSession';
+import { hasPermission } from '../utils/rbac';
 
 interface Props {
   timeRange: TimeRange;
@@ -14,6 +16,9 @@ interface Props {
 export function AgentDetail({ timeRange }: Props) {
   const { agentId } = useParams<{ agentId: string }>();
   const [activeTab, setActiveTab] = useState(0);
+  const queryClient = useQueryClient();
+  const session = useSession();
+  const canQuarantine = hasPermission(session.data?.role ?? 'viewer', 'quarantineAgent');
 
   const { data: agent } = useQuery<Agent>({
     queryKey: ['agent', agentId, timeRange],
@@ -26,17 +31,22 @@ export function AgentDetail({ timeRange }: Props) {
     queryFn: () => apiGet<{
       trust_score: number;
       delegation_count: number;
-      recent_events: Array<{ components: Record<string, number>; created_at: string }>;
+      last_active: string | null;
+      breakdown: {
+        success_rate: number;
+        sla_compliance: number;
+        cost_accuracy: number;
+        policy_violations_inverse: number;
+      };
     }>(`/agents/${agentId}/trust`).then((r) => {
-      const latest = r.recent_events?.[0]?.components ?? {};
       return {
         trust_score: r.trust_score,
-        success_rate: Number(latest.success_rate ?? 0),
-        sla_compliance: Number(latest.latency_score ?? 0),
-        cost_accuracy: Number(latest.budget_adherence ?? 0),
-        policy_violations_inverse: Number(latest.recency ?? 0),
+        success_rate: Number(r.breakdown?.success_rate ?? 0),
+        sla_compliance: Number(r.breakdown?.sla_compliance ?? 0),
+        cost_accuracy: Number(r.breakdown?.cost_accuracy ?? 0),
+        policy_violations_inverse: Number(r.breakdown?.policy_violations_inverse ?? 0),
         delegation_count: r.delegation_count,
-        last_active: r.recent_events?.[0]?.created_at ?? null,
+        last_active: r.last_active,
       };
     }),
     enabled: !!agentId && activeTab === 1,
@@ -52,6 +62,20 @@ export function AgentDetail({ timeRange }: Props) {
     queryKey: ['agent-audit', agentId, timeRange],
     queryFn: () => apiGet<{ entries: AuditEntry[] }>('/audit/log', { agent_id: agentId, limit: 100 }).then((r) => r.entries),
     enabled: !!agentId && activeTab === 3,
+  });
+  const quarantineMutation = useMutation({
+    mutationFn: () => apiPost(`/agents/${agentId}/quarantine`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agent', agentId, timeRange] });
+      queryClient.invalidateQueries({ queryKey: ['agents', timeRange] });
+    },
+  });
+  const activateMutation = useMutation({
+    mutationFn: () => apiPost(`/agents/${agentId}/activate`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agent', agentId, timeRange] });
+      queryClient.invalidateQueries({ queryKey: ['agents', timeRange] });
+    },
   });
 
   if (!agent) {
@@ -72,6 +96,27 @@ export function AgentDetail({ timeRange }: Props) {
             {agent.agent_id}
           </div>
         </div>
+        {canQuarantine && (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {agent.status !== 'quarantined' ? (
+              <button
+                className="btn btn-danger"
+                onClick={() => quarantineMutation.mutate()}
+                disabled={quarantineMutation.isPending}
+              >
+                {quarantineMutation.isPending ? 'Quarantining…' : 'Quarantine'}
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary"
+                onClick={() => activateMutation.mutate()}
+                disabled={activateMutation.isPending}
+              >
+                {activateMutation.isPending ? 'Activating…' : 'Activate'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="tabs">

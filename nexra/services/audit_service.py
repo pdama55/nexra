@@ -49,9 +49,14 @@ class AuditService:
         self,
         org_id: str,
         agent_id: str | None = None,
+        actor_agent_id: str | None = None,
+        target_agent_id: str | None = None,
         event_type: str | None = None,
+        policy_id: str | None = None,
         date_from: datetime | None = None,
         date_to: datetime | None = None,
+        cost_min: float | None = None,
+        cost_max: float | None = None,
         delegation_id: str | None = None,
         cursor: str | None = None,
         limit: int = 50,
@@ -65,16 +70,26 @@ class AuditService:
                     AuditLog.target_agent_id == agent_id,
                 )
             )
+        if actor_agent_id:
+            q = q.where(AuditLog.actor_agent_id == actor_agent_id)
+        if target_agent_id:
+            q = q.where(AuditLog.target_agent_id == target_agent_id)
         if event_type:
             if "," in event_type:
                 types = [t.strip() for t in event_type.split(",") if t.strip()]
                 q = q.where(AuditLog.event_type.in_(types))
             else:
                 q = q.where(AuditLog.event_type == event_type)
+        if policy_id:
+            q = q.where(AuditLog.details["policy_id"].astext == str(policy_id))
         if date_from:
             q = q.where(AuditLog.created_at >= date_from)
         if date_to:
             q = q.where(AuditLog.created_at <= date_to)
+        if cost_min is not None:
+            q = q.where(AuditLog.cost_usd >= cost_min)
+        if cost_max is not None:
+            q = q.where(AuditLog.cost_usd <= cost_max)
         if delegation_id:
             q = q.where(AuditLog.delegation_id == delegation_id)
         if cursor:

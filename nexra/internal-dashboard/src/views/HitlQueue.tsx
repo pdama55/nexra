@@ -3,21 +3,41 @@ import { Link } from 'react-router-dom';
 import { apiGet, apiPost } from '../api/client';
 import { StatusPill } from '../components/common/StatusPill';
 import { EmptyState } from '../components/common/EmptyState';
-import { formatRelativeTime, formatUsd, truncateId } from '../utils/formatters';
-import type { Delegation } from '../types';
-import { useState } from 'react';
+import { formatAbsoluteTime, formatRelativeTime, formatUsd, truncateId } from '../utils/formatters';
+import type { Delegation, AuditEntry } from '../types';
+import { useEffect, useState } from 'react';
+import { useSession } from '../hooks/useSession';
+import { hasPermission } from '../utils/rbac';
 
 export function HitlQueue() {
   const queryClient = useQueryClient();
   const [confirmAction, setConfirmAction] = useState<{ id: string; action: 'approve' | 'reject' } | null>(null);
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
+  const session = useSession();
+  const canApprove = hasPermission(session.data?.role ?? 'viewer', 'approveHitl');
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const { data: pendingDelegations, isLoading } = useQuery<Delegation[]>({
     queryKey: ['hitl-queue'],
     queryFn: () => apiGet<{ items: Delegation[] }>('/delegations', {
       status: 'pending_approval',
-      sort: 'created_at:asc',
+      sort: 'approval_deadline:asc',
       limit: 50,
     }).then(r => r.items),
+    refetchInterval: 30_000,
+  });
+  const { data: expiredApprovals } = useQuery<AuditEntry[]>({
+    queryKey: ['hitl-expired'],
+    queryFn: () => apiGet<{ entries: AuditEntry[] }>('/audit/log', {
+      event_type: 'hil_expired',
+      limit: 100,
+    }).then((r) => r.entries),
     refetchInterval: 30_000,
   });
 
@@ -36,6 +56,16 @@ export function HitlQueue() {
       setConfirmAction(null);
     },
   });
+
+  function formatTimeRemaining(deadline: string | null | undefined, currentTimeMs: number): string {
+    if (!deadline) return '—';
+    const ms = new Date(deadline).getTime() - currentTimeMs;
+    if (ms <= 0) return 'expired';
+    const totalMinutes = Math.floor(ms / 60_000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  }
 
   return (
     <div>
@@ -61,7 +91,7 @@ export function HitlQueue() {
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
                   <Link to={`/delegations/${d.id}`} className="mono" style={{ fontSize: '13px' }}>{truncateId(d.id)}</Link>
-                  <StatusPill status="pending approval" />
+                  <StatusPill status="pending_approval" />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '4px', fontSize: '12px' }}>
                   <div style={{ color: 'var(--text-tertiary)' }}>Caller</div>
@@ -72,29 +102,78 @@ export function HitlQueue() {
                   <div className="mono">{formatUsd(d.estimated_cost_usd)}</div>
                   <div style={{ color: 'var(--text-tertiary)' }}>Requested</div>
                   <div>{formatRelativeTime(d.created_at)}</div>
+                  <div style={{ color: 'var(--text-tertiary)' }}>Deadline</div>
+                  <div className="mono" style={{ color: formatTimeRemaining(d.approval_deadline, nowMs).includes('expired') ? '#9A4A4A' : undefined }}>
+                    {formatTimeRemaining(d.approval_deadline, nowMs)}
+                  </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                <button
-                  className="btn btn-sm"
-                  style={{ background: 'var(--status-active-bg)', color: 'var(--status-active)', border: '1px solid #2A3E2E' }}
-                  onClick={() => setConfirmAction({ id: d.id, action: 'approve' })}
-                  disabled={approveMutation.isPending}
-                >
-                  Approve
-                </button>
-                <button
-                  className="btn btn-sm btn-danger"
-                  onClick={() => setConfirmAction({ id: d.id, action: 'reject' })}
-                  disabled={rejectMutation.isPending}
-                >
-                  Reject
-                </button>
-              </div>
+              {canApprove && (
+                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                  <button
+                    className="btn btn-sm"
+                    style={{ background: 'var(--status-active-bg)', color: 'var(--status-active)', border: '1px solid #2A3E2E' }}
+                    onClick={() => setConfirmAction({ id: d.id, action: 'approve' })}
+                    disabled={approveMutation.isPending}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => setConfirmAction({ id: d.id, action: 'reject' })}
+                    disabled={rejectMutation.isPending}
+                  >
+                    Reject
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
+
+      <div style={{ marginTop: '24px' }}>
+        <div className="section-heading">Expired Approvals</div>
+        {!expiredApprovals || expiredApprovals.length === 0 ? (
+          <div className="card" style={{ padding: '16px', fontSize: '13px', color: 'var(--text-tertiary)' }}>
+            No expired approvals.
+          </div>
+        ) : (
+          <div className="card" style={{ padding: 0, overflow: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Time', 'Delegation', 'Agent', 'Reason'].map((h) => (
+                    <th key={h} className="label" style={{ padding: '10px 12px', textAlign: 'left' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {expiredApprovals.map((entry) => (
+                  <tr key={entry.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      {formatAbsoluteTime(entry.created_at)}
+                    </td>
+                    <td style={{ padding: '8px 12px' }}>
+                      {entry.delegation_id ? (
+                        <Link to={`/delegations/${entry.delegation_id}`} className="mono" style={{ fontSize: '12px' }}>
+                          {truncateId(entry.delegation_id)}
+                        </Link>
+                      ) : '—'}
+                    </td>
+                    <td style={{ padding: '8px 12px' }} className="mono">
+                      {entry.target_agent_id ?? entry.actor_agent_id ?? 'system'}
+                    </td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px' }}>
+                      {String(entry.details?.reason ?? 'approval_ttl_expired')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Confirmation modal */}
       {confirmAction && (

@@ -44,6 +44,11 @@ def _json_response_schema(spec: dict[str, Any], path: str, method: str = "get") 
     return _resolve_schema(content["schema"], spec)
 
 
+def _parameter_names(spec: dict[str, Any], path: str, method: str = "get") -> set[str]:
+    method_obj = spec["paths"][path][method]
+    return {p["name"] for p in method_obj.get("parameters", [])}
+
+
 def test_required_dashboard_paths_and_methods_present() -> None:
     spec = _openapi()
     paths = spec.get("paths", {})
@@ -58,10 +63,29 @@ def test_required_dashboard_paths_and_methods_present() -> None:
         "/v1/policies/{policy_id}/versions": "get",
         "/v1/spend/summary": "get",
         "/v1/agents/{agent_ref}/trust": "get",
+        "/v1/orgs/session": "get",
+        "/v1/orgs/api-keys": "get",
+        "/v1/orgs/members": "get",
     }
     for path, method in required.items():
         assert path in paths, f"Missing required API path in OpenAPI: {path}"
         assert method in paths[path], f"Missing required method {method} for path: {path}"
+
+
+def test_org_admin_path_method_matrix_present() -> None:
+    spec = _openapi()
+    paths = spec.get("paths", {})
+    required_methods = {
+        "/v1/orgs/api-keys": {"get", "post"},
+        "/v1/orgs/api-keys/{key_id}": {"delete"},
+        "/v1/orgs/members": {"get", "post"},
+        "/v1/orgs/members/{member_id}": {"patch", "delete"},
+    }
+    for path, methods in required_methods.items():
+        assert path in paths, f"Missing required org-admin path: {path}"
+        present = set(paths[path].keys())
+        missing = methods - present
+        assert not missing, f"{path} missing required methods: {sorted(missing)}"
 
 
 def test_required_json_endpoints_use_data_meta_envelope() -> None:
@@ -113,3 +137,53 @@ def test_openapi_snapshot_contains_required_paths() -> None:
     assert "/v1/analytics/usage" in paths
     assert "/v1/delegations" in paths
     assert "/v1/delegations/{delegation_id}" in paths
+
+
+def test_delegations_list_query_contract_includes_dashboard_filters() -> None:
+    spec = _openapi()
+    names = _parameter_names(spec, "/v1/delegations", "get")
+    required = {
+        "status",
+        "caller_agent_id",
+        "callee_agent_id",
+        "policy_decision",
+        "date_from",
+        "date_to",
+        "cost_min",
+        "cost_max",
+        "cursor",
+        "limit",
+        "sort",
+    }
+    missing = required - names
+    assert not missing, f"/v1/delegations missing query params: {sorted(missing)}"
+
+
+def test_audit_log_query_contract_includes_dashboard_filters() -> None:
+    spec = _openapi()
+    names = _parameter_names(spec, "/v1/audit/log", "get")
+    required = {
+        "agent_id",
+        "actor_agent_id",
+        "target_agent_id",
+        "policy_id",
+        "event_type",
+        "date_from",
+        "date_to",
+        "cost_min",
+        "cost_max",
+        "delegation_id",
+        "cursor",
+        "limit",
+        "format",
+    }
+    missing = required - names
+    assert not missing, f"/v1/audit/log missing query params: {sorted(missing)}"
+
+
+def test_spend_summary_query_contract_includes_window_and_breakdown() -> None:
+    spec = _openapi()
+    names = _parameter_names(spec, "/v1/spend/summary", "get")
+    required = {"agent_id", "window", "breakdown"}
+    missing = required - names
+    assert not missing, f"/v1/spend/summary missing query params: {sorted(missing)}"

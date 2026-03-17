@@ -14,22 +14,24 @@ interface Props {
 export function DelegationFeed({ timeRange }: Props) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [decisionFilter, setDecisionFilter] = useState<string>('all');
+  const [callerFilter, setCallerFilter] = useState('');
+  const [calleeFilter, setCalleeFilter] = useState('');
   const [liveMode, setLiveMode] = useState(false);
 
   const { data, isLoading } = useQuery<PaginatedResponse<Delegation>>({
-    queryKey: ['delegations', statusFilter, timeRange],
+    queryKey: ['delegations', statusFilter, decisionFilter, callerFilter, calleeFilter, timeRange],
     queryFn: () => apiGet('/delegations', {
       limit: 25,
       sort: 'created_at:desc',
       ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+      ...(decisionFilter !== 'all' ? { policy_decision: decisionFilter } : {}),
+      ...(callerFilter ? { caller_agent_id: callerFilter } : {}),
+      ...(calleeFilter ? { callee_agent_id: calleeFilter } : {}),
     }),
     refetchInterval: liveMode ? 10_000 : false,
   });
 
-  const delegations = (data?.items ?? []).filter(d => {
-    if (decisionFilter !== 'all' && d.policy_decision !== decisionFilter) return false;
-    return true;
-  });
+  const delegations = data?.items ?? [];
 
   return (
     <div>
@@ -56,6 +58,18 @@ export function DelegationFeed({ timeRange }: Props) {
           <option value="block">Block</option>
           <option value="pause">Pause</option>
         </select>
+        <input
+          placeholder="Caller agent ID"
+          value={callerFilter}
+          onChange={(e) => setCallerFilter(e.target.value)}
+          style={{ minWidth: '180px' }}
+        />
+        <input
+          placeholder="Callee agent ID"
+          value={calleeFilter}
+          onChange={(e) => setCalleeFilter(e.target.value)}
+          style={{ minWidth: '180px' }}
+        />
       </div>
 
       {isLoading ? (
@@ -68,10 +82,10 @@ export function DelegationFeed({ timeRange }: Props) {
         />
       ) : (
         <div className="card" style={{ padding: 0, overflow: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1000px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1100px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['Delegation ID', 'Time', 'Caller', 'Callee', 'Status', 'Policy', 'Decision', 'Cost', 'Latency'].map(h => (
+                {['Delegation ID', 'Time', 'Caller', 'Callee', 'Status', 'Policy', 'Decision', 'Cost', 'Latency', 'Depth'].map(h => (
                   <th key={h} className="label" style={{ padding: '10px 12px', textAlign: 'left', position: 'sticky', top: 0, background: 'var(--bg-secondary)' }}>{h}</th>
                 ))}
               </tr>
@@ -106,6 +120,9 @@ export function DelegationFeed({ timeRange }: Props) {
                   <td style={{ padding: '8px 12px' }}>{d.policy_decision ? <StatusPill status={d.policy_decision} /> : '—'}</td>
                   <td className="mono" style={{ padding: '8px 12px', fontSize: '12px' }}>{formatUsd(d.actual_cost_usd)}</td>
                   <td className="mono" style={{ padding: '8px 12px', fontSize: '12px' }}>{formatLatency(d.latency_ms)}</td>
+                  <td className="mono" style={{ padding: '8px 12px', fontSize: '12px', color: (d.delegation_depth ?? 0) > 3 ? '#9A4A4A' : undefined }}>
+                    {d.delegation_depth ?? 0}
+                  </td>
                 </tr>
               ))}
             </tbody>

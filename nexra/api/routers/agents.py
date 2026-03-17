@@ -171,9 +171,15 @@ async def list_agents(
         "data": AgentListResponse(
             agents=[
                 AgentListItem(
+                    id=str(a.id),
+                    org_id=str(a.org_id),
                     agent_id=a.agent_id,
                     name=a.name,
+                    description=a.description,
                     capability_type=a.capability_type,
+                    input_schema=a.input_schema,
+                    output_schema=a.output_schema,
+                    webhook_url=a.webhook_url,
                     trust_score=float(a.trust_score),
                     status=a.status,
                     is_public=a.is_public,
@@ -181,6 +187,7 @@ async def list_agents(
                     pricing=a.pricing,
                     sla=a.sla,
                     created_at=a.created_at,
+                    updated_at=a.updated_at,
                 )
                 for a in agents
             ],
@@ -260,13 +267,32 @@ async def get_agent_trust(
     events_result = await db.execute(
         select(TrustScoreEvent)
         .where(
-            TrustScoreEvent.agent_id == agent_ref,
+            TrustScoreEvent.agent_id == agent.agent_id,
             TrustScoreEvent.org_id == org.id,
         )
         .order_by(TrustScoreEvent.created_at.desc())
-        .limit(10)
+        .limit(100)
     )
-    events = events_result.scalars().all()
+    events = list(events_result.scalars().all())
+    latest_components = events[0].components if events else {}
+
+    breakdown = {
+        "success_rate": float(latest_components.get("success_rate", 0)),
+        "sla_compliance": float(latest_components.get("sla_compliance", 0)),
+        "cost_accuracy": float(latest_components.get("cost_accuracy", 0)),
+        "policy_violations_inverse": float(latest_components.get("policy_violations_inverse", 0)),
+        "policy_violations": int(latest_components.get("policy_violations", 0)),
+        "delegation_count": int(latest_components.get("delegation_count", agent.delegation_count)),
+    }
+    timeseries = [
+        {
+            "score_before": float(e.score_before),
+            "score_after": float(e.score_after),
+            "created_at": e.created_at.isoformat(),
+        }
+        for e in reversed(events)
+    ]
+    last_active = events[0].created_at.isoformat() if events else None
 
     latency = round((time.perf_counter() - start) * 1000, 2)
     return {
@@ -275,6 +301,9 @@ async def get_agent_trust(
             "trust_score": float(agent.trust_score),
             "status": agent.status,
             "delegation_count": agent.delegation_count,
+            "last_active": last_active,
+            "breakdown": breakdown,
+            "timeseries": timeseries,
             "recent_events": [
                 {
                     "score_before": float(e.score_before),

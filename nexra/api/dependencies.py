@@ -1,12 +1,15 @@
+from datetime import UTC, datetime
+
+import redis.asyncio as aioredis
 from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import redis.asyncio as aioredis
 
 from core.config import get_settings
 from core.crypto import verify_api_key
 from db.session import get_db
 from models.agent import Agent
+from models.org_api_key import OrgApiKey
 from models.organization import Organization
 
 # ─── Redis Dependency ─────────────────────────────────────────
@@ -85,12 +88,33 @@ async def get_authenticated_org(
 
     settings = get_settings()
 
-    result = await db.execute(
+    org_result = await db.execute(
         select(Organization).where(Organization.api_key_prefix == prefix)
     )
-    org = result.scalar_one_or_none()
+    org = org_result.scalar_one_or_none()
+    authenticated_org: Organization | None = None
 
-    if not org or not verify_api_key(raw_key, org.api_key_hash):
+    if org and verify_api_key(raw_key, org.api_key_hash):
+        authenticated_org = org
+
+    if authenticated_org is None:
+        key_result = await db.execute(
+            select(OrgApiKey, Organization)
+            .join(Organization, Organization.id == OrgApiKey.org_id)
+            .where(
+                OrgApiKey.key_prefix == prefix,
+                OrgApiKey.revoked_at.is_(None),
+            )
+        )
+        pair = key_result.first()
+        if pair:
+            org_key, matched_org = pair
+            if verify_api_key(raw_key, org_key.key_hash):
+                authenticated_org = matched_org
+                org_key.last_used_at = datetime.now(UTC)
+                await db.flush()
+
+    if authenticated_org is None:
         raise HTTPException(
             status_code=401,
             detail={"error": {"code": "UNAUTHORIZED", "message": "Invalid API key"}},
@@ -98,12 +122,12 @@ async def get_authenticated_org(
 
     rpm = (
         settings.rate_limit_growth_rpm
-        if org.plan in ("growth", "enterprise")
+        if authenticated_org.plan in ("growth", "enterprise")
         else settings.rate_limit_starter_rpm
     )
     await check_rate_limit(redis_client, prefix, rpm)
 
-    return org
+    return authenticated_org
 
 
 async def get_authenticated_org_and_agent(

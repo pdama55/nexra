@@ -19,9 +19,14 @@ router = APIRouter(prefix="/audit", tags=["audit"])
 async def query_audit_log(
     request: Request,
     agent_id: str | None = Query(None),
+    actor_agent_id: str | None = Query(None),
+    target_agent_id: str | None = Query(None),
     event_type: str | None = Query(None),
+    policy_id: str | None = Query(None),
     date_from: datetime | None = Query(None),
     date_to: datetime | None = Query(None),
+    cost_min: float | None = Query(None, ge=0),
+    cost_max: float | None = Query(None, ge=0),
     delegation_id: str | None = Query(None),
     cursor: str | None = Query(None),
     limit: int = Query(50, ge=1, le=100),
@@ -42,8 +47,19 @@ async def query_audit_log(
         )
 
     entries, next_cursor = await service.query(
-        str(org.id), agent_id, event_type, date_from, date_to,
-        delegation_id, cursor, limit,
+        org_id=str(org.id),
+        agent_id=agent_id,
+        actor_agent_id=actor_agent_id,
+        target_agent_id=target_agent_id,
+        event_type=event_type,
+        policy_id=policy_id,
+        date_from=date_from,
+        date_to=date_to,
+        cost_min=cost_min,
+        cost_max=cost_max,
+        delegation_id=delegation_id,
+        cursor=cursor,
+        limit=limit,
     )
     latency = round((time.perf_counter() - start) * 1000, 2)
 

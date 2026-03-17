@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { apiGet } from '../api/client';
+import { apiGet, getApiUrl } from '../api/client';
 
 import { EmptyState } from '../components/common/EmptyState';
 import { formatAbsoluteTime, formatUsd, truncateId } from '../utils/formatters';
@@ -22,12 +22,18 @@ interface Props {
 export function AuditLog({ timeRange }: Props) {
   const params = getTimeRangeParams(timeRange);
   const [eventFilter, setEventFilter] = useState<string>('all');
+  const [actorFilter, setActorFilter] = useState('');
+  const [targetFilter, setTargetFilter] = useState('');
+  const [policyFilter, setPolicyFilter] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery<PaginatedResponse<AuditEntry>>({
-    queryKey: ['audit', params.window, eventFilter],
+    queryKey: ['audit', params.window, eventFilter, actorFilter, targetFilter, policyFilter],
     queryFn: () => apiGet<{ entries: AuditEntry[]; next_cursor: string | null }>('/audit/log', {
       ...(eventFilter !== 'all' ? { event_type: eventFilter } : {}),
+      ...(actorFilter ? { actor_agent_id: actorFilter } : {}),
+      ...(targetFilter ? { target_agent_id: targetFilter } : {}),
+      ...(policyFilter ? { policy_id: policyFilter } : {}),
       limit: 50,
     }).then(r => ({
       items: r.entries,
@@ -41,10 +47,13 @@ export function AuditLog({ timeRange }: Props) {
   async function exportAudit(format: 'csv' | 'json'): Promise<void> {
     const query = new URLSearchParams({
       ...(eventFilter !== 'all' ? { event_type: eventFilter } : {}),
+      ...(actorFilter ? { actor_agent_id: actorFilter } : {}),
+      ...(targetFilter ? { target_agent_id: targetFilter } : {}),
+      ...(policyFilter ? { policy_id: policyFilter } : {}),
       limit: '5000',
       format,
     });
-    const resp = await fetch(`/v1/audit/log?${query.toString()}`, {
+    const resp = await fetch(`${getApiUrl('/audit/log')}?${query.toString()}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('nexra_api_key') ?? ''}`,
       },
@@ -98,6 +107,24 @@ export function AuditLog({ timeRange }: Props) {
           <option value="all">All Event Types</option>
           {EVENT_TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
         </select>
+        <input
+          placeholder="Actor agent ID"
+          value={actorFilter}
+          onChange={(e) => setActorFilter(e.target.value)}
+          style={{ minWidth: '180px' }}
+        />
+        <input
+          placeholder="Target agent ID"
+          value={targetFilter}
+          onChange={(e) => setTargetFilter(e.target.value)}
+          style={{ minWidth: '180px' }}
+        />
+        <input
+          placeholder="Policy ID"
+          value={policyFilter}
+          onChange={(e) => setPolicyFilter(e.target.value)}
+          style={{ minWidth: '180px' }}
+        />
       </div>
 
       {isLoading ? (

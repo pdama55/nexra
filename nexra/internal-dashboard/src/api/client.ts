@@ -1,7 +1,8 @@
 // ─── API Client ───
 // Thin fetch wrapper with auth header injection and error handling.
 
-const API_BASE = '/v1';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, '') || '/v1';
+const HEALTH_URL = (import.meta.env.VITE_HEALTH_URL as string | undefined) || '/health';
 
 interface ApiErrorBody {
   status: number;
@@ -42,7 +43,8 @@ function getAuthHeaders(): Record<string, string> {
 }
 
 export async function apiGet<T>(path: string, params?: Record<string, string | number | boolean | undefined>): Promise<T> {
-  const url = new URL(`${API_BASE}${path}`, window.location.origin);
+  const base = API_BASE.startsWith('http') ? API_BASE : `${window.location.origin}${API_BASE}`;
+  const url = new URL(`${base}${path}`);
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined) {
@@ -76,7 +78,8 @@ export async function apiGet<T>(path: string, params?: Record<string, string | n
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const url = API_BASE.startsWith('http') ? `${API_BASE}${path}` : `${API_BASE}${path}`;
+  const res = await fetch(url, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: body ? JSON.stringify(body) : undefined,
@@ -105,10 +108,70 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
 }
 
 export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const url = API_BASE.startsWith('http') ? `${API_BASE}${path}` : `${API_BASE}${path}`;
+  const res = await fetch(url, {
     method: 'PATCH',
     headers: getAuthHeaders(),
     body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    let error: ApiErrorBody | null = null;
+    try {
+      const errBody = await res.json();
+      error = errBody.error;
+    } catch {
+      // Non-JSON error response
+    }
+    throw new NexraApiError(
+      res.status,
+      error?.code ?? `HTTP_${res.status}`,
+      error?.details ?? null,
+    );
+  }
+
+  const resBody = (await res.json()) as ApiEnvelope<T>;
+  if (!resBody || typeof resBody !== 'object' || !('data' in resBody)) {
+    throw new NexraApiError(res.status, 'INVALID_ENVELOPE', { path });
+  }
+  return resBody.data;
+}
+
+export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
+  const url = API_BASE.startsWith('http') ? `${API_BASE}${path}` : `${API_BASE}${path}`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    let error: ApiErrorBody | null = null;
+    try {
+      const errBody = await res.json();
+      error = errBody.error;
+    } catch {
+      // Non-JSON error response
+    }
+    throw new NexraApiError(
+      res.status,
+      error?.code ?? `HTTP_${res.status}`,
+      error?.details ?? null,
+    );
+  }
+
+  const resBody = (await res.json()) as ApiEnvelope<T>;
+  if (!resBody || typeof resBody !== 'object' || !('data' in resBody)) {
+    throw new NexraApiError(res.status, 'INVALID_ENVELOPE', { path });
+  }
+  return resBody.data;
+}
+
+export async function apiDelete<T>(path: string): Promise<T> {
+  const url = API_BASE.startsWith('http') ? `${API_BASE}${path}` : `${API_BASE}${path}`;
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
   });
 
   if (!res.ok) {
@@ -138,7 +201,7 @@ export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
  */
 export async function fetchHealth(): Promise<{ status: string; latency_ms: number }> {
   const start = Date.now();
-  const res = await fetch('/health');
+  const res = await fetch(HEALTH_URL);
   const latency = Date.now() - start;
 
   if (!res.ok) {
@@ -147,4 +210,15 @@ export async function fetchHealth(): Promise<{ status: string; latency_ms: numbe
 
   const body = await res.json();
   return { ...body, latency_ms: latency };
+}
+
+export function getApiUrl(path: string): string {
+  if (API_BASE.startsWith('http')) {
+    return `${API_BASE}${path}`;
+  }
+  return `${API_BASE}${path}`;
+}
+
+export function getHealthUrl(): string {
+  return HEALTH_URL;
 }

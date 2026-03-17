@@ -1,7 +1,9 @@
 import time
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Header, Request
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import get_authenticated_org
@@ -9,6 +11,8 @@ from api.schemas.common import DataResponse, MetaResponse
 from core.config import get_settings
 from core.crypto import encrypt_aes_gcm, generate_api_key, generate_org_jwt_secret
 from db.session import get_db
+from models.org_api_key import OrgApiKey
+from models.org_member import OrgMember
 from models.organization import Organization
 
 router = APIRouter(prefix="/orgs", tags=["organizations"])
@@ -17,6 +21,7 @@ router = APIRouter(prefix="/orgs", tags=["organizations"])
 class OrgCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     plan: str = Field("starter", description="starter | growth | enterprise")
+    owner_email: str = Field("admin@nexra.local")
 
 
 class OrgCreateResponse(BaseModel):
@@ -38,6 +43,27 @@ class OrgSettingsResponse(BaseModel):
 class OrgSettingsUpdateRequest(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=200)
     approval_url: str | None = None
+
+
+class OrgSessionResponse(BaseModel):
+    org_id: str
+    org_name: str
+    plan: str
+    role: str
+    email: str
+
+
+class OrgApiKeyCreateRequest(BaseModel):
+    name: str = Field("dashboard", min_length=1, max_length=120)
+
+
+class OrgMemberCreateRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=320)
+    role: str = Field("viewer")
+
+
+class OrgMemberUpdateRequest(BaseModel):
+    role: str = Field(..., description="admin|engineer|compliance|viewer")
 
 
 @router.post("/register", status_code=201, response_model=DataResponse[dict])
@@ -67,6 +93,23 @@ async def create_organization(
     db.add(org)
     await db.commit()
     await db.refresh(org)
+
+    db.add(
+        OrgApiKey(
+            org_id=org.id,
+            name="primary",
+            key_hash=hashed_key,
+            key_prefix=prefix,
+        )
+    )
+    db.add(
+        OrgMember(
+            org_id=org.id,
+            email=body.owner_email.lower().strip(),
+            role="admin",
+        )
+    )
+    await db.commit()
 
     return {
         "data": OrgCreateResponse(
@@ -127,4 +170,234 @@ async def update_org_settings(
         "meta": MetaResponse(
             request_id=getattr(request.state, "request_id", None),
         ).model_dump(),
+    }
+
+
+@router.get("/session", response_model=DataResponse[dict])
+async def get_org_session(
+    request: Request,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+    x_user_role: str | None = Header(None, alias="X-User-Role"),
+    x_user_email: str | None = Header(None, alias="X-User-Email"),
+):
+    role = (x_user_role or "").strip().lower()
+    if role not in {"admin", "engineer", "compliance", "viewer"}:
+        role = ""
+    email = (x_user_email or "admin@nexra.local").strip().lower() or "admin@nexra.local"
+    if role == "":
+        member_result = await db.execute(
+            select(OrgMember).where(
+                OrgMember.org_id == org.id,
+                OrgMember.email == email,
+            )
+        )
+        member = member_result.scalar_one_or_none()
+        role = member.role if member else "viewer"
+    if role not in {"admin", "engineer", "compliance", "viewer"}:
+        role = "viewer"
+    return {
+        "data": OrgSessionResponse(
+            org_id=str(org.id),
+            org_name=org.name,
+            plan=org.plan,
+            role=role,
+            email=email,
+        ).model_dump(),
+        "meta": MetaResponse(
+            request_id=getattr(request.state, "request_id", None),
+        ).model_dump(),
+    }
+
+
+@router.get("/api-keys", response_model=DataResponse[dict])
+async def list_api_keys(
+    request: Request,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(OrgApiKey).where(OrgApiKey.org_id == org.id).order_by(OrgApiKey.created_at.desc())
+    )
+    keys = list(result.scalars().all())
+    return {
+        "data": {
+            "items": [
+                {
+                    "id": str(item.id),
+                    "name": item.name,
+                    "key_prefix": item.key_prefix,
+                    "created_at": item.created_at.isoformat(),
+                    "last_used_at": item.last_used_at.isoformat() if item.last_used_at else None,
+                    "revoked_at": item.revoked_at.isoformat() if item.revoked_at else None,
+                }
+                for item in keys
+            ]
+        },
+        "meta": MetaResponse(
+            request_id=getattr(request.state, "request_id", None),
+        ).model_dump(),
+    }
+
+
+@router.post("/api-keys", response_model=DataResponse[dict])
+async def create_api_key(
+    request: Request,
+    body: OrgApiKeyCreateRequest,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    raw_key, hashed_key, prefix = generate_api_key()
+    row = OrgApiKey(
+        org_id=org.id,
+        name=body.name,
+        key_hash=hashed_key,
+        key_prefix=prefix,
+    )
+    db.add(row)
+    await db.commit()
+    await db.refresh(row)
+    return {
+        "data": {
+            "id": str(row.id),
+            "name": row.name,
+            "key_prefix": row.key_prefix,
+            "api_key": raw_key,
+            "created_at": row.created_at.isoformat(),
+        },
+        "meta": MetaResponse(
+            request_id=getattr(request.state, "request_id", None),
+        ).model_dump(),
+    }
+
+
+@router.delete("/api-keys/{key_id}", response_model=DataResponse[dict])
+async def revoke_api_key(
+    request: Request,
+    key_id: str,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(OrgApiKey).where(OrgApiKey.id == key_id, OrgApiKey.org_id == org.id)
+    )
+    row = result.scalar_one_or_none()
+    if not row:
+        return {
+            "data": {"id": key_id, "revoked": False},
+            "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
+        }
+    row.revoked_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {
+        "data": {"id": str(row.id), "revoked": True},
+        "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
+    }
+
+
+@router.get("/members", response_model=DataResponse[dict])
+async def list_members(
+    request: Request,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(OrgMember).where(OrgMember.org_id == org.id).order_by(OrgMember.created_at.asc())
+    )
+    members = list(result.scalars().all())
+    return {
+        "data": {
+            "items": [
+                {
+                    "id": str(item.id),
+                    "email": item.email,
+                    "role": item.role,
+                    "created_at": item.created_at.isoformat(),
+                    "last_active_at": item.last_active_at.isoformat() if item.last_active_at else None,
+                }
+                for item in members
+            ]
+        },
+        "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
+    }
+
+
+@router.post("/members", response_model=DataResponse[dict])
+async def create_member(
+    request: Request,
+    body: OrgMemberCreateRequest,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    role = body.role.lower().strip()
+    if role not in {"admin", "engineer", "compliance", "viewer"}:
+        role = "viewer"
+    member = OrgMember(
+        org_id=org.id,
+        email=body.email.lower().strip(),
+        role=role,
+    )
+    db.add(member)
+    await db.commit()
+    await db.refresh(member)
+    return {
+        "data": {
+            "id": str(member.id),
+            "email": member.email,
+            "role": member.role,
+            "created_at": member.created_at.isoformat(),
+        },
+        "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
+    }
+
+
+@router.patch("/members/{member_id}", response_model=DataResponse[dict])
+async def update_member(
+    request: Request,
+    member_id: str,
+    body: OrgMemberUpdateRequest,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(OrgMember).where(OrgMember.id == member_id, OrgMember.org_id == org.id)
+    )
+    member = result.scalar_one_or_none()
+    if not member:
+        return {
+            "data": {"id": member_id, "updated": False},
+            "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
+        }
+    role = body.role.lower().strip()
+    if role not in {"admin", "engineer", "compliance", "viewer"}:
+        role = "viewer"
+    member.role = role
+    await db.commit()
+    return {
+        "data": {"id": str(member.id), "role": member.role, "updated": True},
+        "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
+    }
+
+
+@router.delete("/members/{member_id}", response_model=DataResponse[dict])
+async def delete_member(
+    request: Request,
+    member_id: str,
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(OrgMember).where(OrgMember.id == member_id, OrgMember.org_id == org.id)
+    )
+    member = result.scalar_one_or_none()
+    if not member:
+        return {
+            "data": {"id": member_id, "deleted": False},
+            "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
+        }
+    await db.delete(member)
+    await db.commit()
+    return {
+        "data": {"id": member_id, "deleted": True},
+        "meta": MetaResponse(request_id=getattr(request.state, "request_id", None)).model_dump(),
     }

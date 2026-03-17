@@ -14,115 +14,69 @@ interface Props {
 
 export function SpendBudget({ timeRange }: Props) {
   const params = getTimeRangeParams(timeRange);
-  const chartBucket = params.window === 'last_30d' || params.window === 'last_7d' ? 'day' : 'hour';
-
-  const { data: rows } = useQuery<Array<{
-    agent_id: string;
-    period: string;
-    period_type: 'daily' | 'monthly';
-    cap_usd: number;
-    spent_usd: number;
-    remaining_usd: number;
-  }>>({
-    queryKey: ['spend-rows', params.window],
-    queryFn: () => apiGet<{ summary: Array<{
+  const { data: spendPayload } = useQuery<{
+    summary?: Array<{
       agent_id: string;
       period: string;
       period_type: 'daily' | 'monthly';
       cap_usd: number;
       spent_usd: number;
       remaining_usd: number;
-    }> }>('/spend/summary').then(r => r.summary),
-    refetchInterval: 300_000,
-  });
-
-  const { data: summary } = useQuery<SpendSummary>({
+    }>;
+    totals?: SpendSummary;
+    agent_breakdown?: Array<{
+      agent_id: string;
+      delegation_count: number;
+      total_spend_usd: number;
+      avg_cost_usd: number;
+    }>;
+    timeseries?: Array<{ timestamp: string; spend_usd: number; delegation_count: number }>;
+  }>({
     queryKey: ['spend-summary', params.window],
-    queryFn: async () => {
-      const spendRows = rows ?? [];
-      const totalSpend = spendRows.reduce((acc, row) => acc + row.spent_usd, 0);
-      const agentTotals = new Map<string, number>();
-      const capTotals = new Map<string, number>();
-
-      for (const row of spendRows) {
-        agentTotals.set(row.agent_id, (agentTotals.get(row.agent_id) ?? 0) + row.spent_usd);
-        capTotals.set(row.agent_id, (capTotals.get(row.agent_id) ?? 0) + row.cap_usd);
-      }
-
-      const delegationCount = spendRows.length;
-      const highest = [...agentTotals.entries()].sort((a, b) => b[1] - a[1])[0];
-      const totalCap = [...capTotals.values()].reduce((acc, cap) => acc + cap, 0);
-      return {
-        total_spend_usd: totalSpend,
-        delegation_count: delegationCount,
-        avg_cost_per_delegation: delegationCount > 0 ? totalSpend / delegationCount : 0,
-        highest_spend_agent: highest ? { agent_id: highest[0], spend_usd: highest[1] } : null,
-        budget_utilization: totalCap > 0 ? totalSpend / totalCap : 0,
-      };
-    },
-    enabled: !!rows,
+    queryFn: () => apiGet('/spend/summary', { window: params.window, breakdown: 'all' }),
     refetchInterval: 300_000,
   });
 
-  const { data: agentSpend } = useQuery<AgentSpend[]>({
-    queryKey: ['spend-agents', params.window],
+  const summary = spendPayload?.totals;
+  const rows = spendPayload?.summary ?? [];
+  const spendSeries = (spendPayload?.timeseries ?? []).map((row) => ({
+    timestamp: row.timestamp,
+    total: row.spend_usd,
+  }));
+
+  const { data: anomalyCounts } = useQuery<Record<string, number>>({
+    queryKey: ['spend-anomaly-counts', params.window],
     queryFn: async () => {
-      const spendRows = rows ?? [];
-      const byAgent = new Map<string, {
-        total_spend_usd: number;
-        delegation_count: number;
-        daily_cap_usd: number | null;
-        monthly_cap_usd: number | null;
-      }>();
-
-      for (const row of spendRows) {
-        const current = byAgent.get(row.agent_id) ?? {
-          total_spend_usd: 0,
-          delegation_count: 0,
-          daily_cap_usd: null,
-          monthly_cap_usd: null,
-        };
-        current.total_spend_usd += row.spent_usd;
-        current.delegation_count += 1;
-        if (row.period_type === 'daily') current.daily_cap_usd = row.cap_usd;
-        if (row.period_type === 'monthly') current.monthly_cap_usd = row.cap_usd;
-        byAgent.set(row.agent_id, current);
+      const events = await apiGet<{ entries: Array<{ actor_agent_id: string | null; target_agent_id: string | null }> }>(
+        '/audit/log',
+        { event_type: 'anomaly_detected', limit: 500 },
+      );
+      const counts: Record<string, number> = {};
+      for (const entry of events.entries) {
+        const key = entry.target_agent_id ?? entry.actor_agent_id ?? '';
+        if (!key) continue;
+        counts[key] = (counts[key] ?? 0) + 1;
       }
-
-      return [...byAgent.entries()].map(([agent_id, item]) => {
-        const capBase = (item.monthly_cap_usd ?? item.daily_cap_usd ?? 0);
-        return {
-          agent_id,
-          delegation_count: item.delegation_count,
-          total_spend_usd: item.total_spend_usd,
-          avg_cost_usd: item.delegation_count > 0 ? item.total_spend_usd / item.delegation_count : 0,
-          daily_cap_usd: item.daily_cap_usd,
-          monthly_cap_usd: item.monthly_cap_usd,
-          utilization: capBase > 0 ? item.total_spend_usd / capBase : 0,
-          anomaly_count: 0,
-        };
-      });
+      return counts;
     },
-    enabled: !!rows,
     refetchInterval: 300_000,
   });
 
-  const { data: spendSeries } = useQuery<Array<{ timestamp: string; total: number }>>({
-    queryKey: ['spend-series', params.window, chartBucket],
-    queryFn: async () => {
-      const buckets = await apiGet<Array<{
-        timestamp: string;
-        completed: number;
-        blocked: number;
-        failed: number;
-        total: number;
-      }>>('/analytics/usage', { window: params.window, bucket: chartBucket });
-      return buckets.map((b) => ({
-        timestamp: b.timestamp,
-        total: b.total,
-      }));
-    },
-    refetchInterval: 300_000,
+  const agentSpend: AgentSpend[] = (spendPayload?.agent_breakdown ?? []).map((item) => {
+    const agentRows = rows.filter((row) => row.agent_id === item.agent_id);
+    const dailyCap = agentRows.find((row) => row.period_type === 'daily')?.cap_usd ?? null;
+    const monthlyCap = agentRows.find((row) => row.period_type === 'monthly')?.cap_usd ?? null;
+    const capBase = monthlyCap ?? dailyCap ?? 0;
+    return {
+      agent_id: item.agent_id,
+      delegation_count: item.delegation_count,
+      total_spend_usd: item.total_spend_usd,
+      avg_cost_usd: item.avg_cost_usd,
+      daily_cap_usd: dailyCap,
+      monthly_cap_usd: monthlyCap,
+      utilization: capBase > 0 ? item.total_spend_usd / capBase : 0,
+      anomaly_count: anomalyCounts?.[item.agent_id] ?? 0,
+    };
   });
 
   return (
@@ -155,7 +109,7 @@ export function SpendBudget({ timeRange }: Props) {
 
       <div className="card" style={{ padding: 0, overflow: 'auto' }}>
         <div className="section-heading" style={{ padding: '16px 12px 8px' }}>Per-Agent Spend</div>
-        {agentSpend && agentSpend.length > 0 ? (
+        {agentSpend.length > 0 ? (
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>

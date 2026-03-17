@@ -1,11 +1,13 @@
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { apiGet } from '../api/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiGet, apiPut } from '../api/client';
 import { StatusPill } from '../components/common/StatusPill';
 import { EmptyState } from '../components/common/EmptyState';
 import type { Policy } from '../types';
 import { useState } from 'react';
 import { formatAbsoluteTime } from '../utils/formatters';
+import { useSession } from '../hooks/useSession';
+import { hasPermission } from '../utils/rbac';
 
 interface PolicyDetailPayload {
   current: Policy & {
@@ -27,6 +29,9 @@ interface PolicyEvalEvent {
 export function PolicyDetail() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState(0);
+  const queryClient = useQueryClient();
+  const session = useSession();
+  const canEdit = hasPermission(session.data?.role ?? 'viewer', 'createPolicy');
 
   const { data: payload } = useQuery<PolicyDetailPayload>({
     queryKey: ['policy', id],
@@ -52,6 +57,23 @@ export function PolicyDetail() {
       ),
     enabled: !!id && activeTab === 2,
   });
+  const updateMutation = useMutation({
+    mutationFn: (payload: { description: string; priority: number }) => apiPut(`/policies/${id}`, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['policy', id] });
+      queryClient.invalidateQueries({ queryKey: ['policy-versions', id] });
+      queryClient.invalidateQueries({ queryKey: ['policies'] });
+    },
+  });
+
+  function editPolicy(): void {
+    if (!policy) return;
+    const description = window.prompt('Description', policy.description ?? '') ?? policy.description ?? '';
+    const priorityInput = window.prompt('Priority', String(policy.priority)) ?? String(policy.priority);
+    const priority = Number(priorityInput);
+    if (!Number.isFinite(priority) || priority < 1) return;
+    updateMutation.mutate({ description, priority });
+  }
 
   const policy = payload?.current;
   if (!policy) {
@@ -73,7 +95,11 @@ export function PolicyDetail() {
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>{policy.description}</div>
           )}
         </div>
-        <button className="btn btn-primary">Edit</button>
+        {canEdit && (
+          <button className="btn btn-primary" onClick={editPolicy} disabled={updateMutation.isPending}>
+            {updateMutation.isPending ? 'Saving…' : 'Edit'}
+          </button>
+        )}
       </div>
 
       <div className="tabs">

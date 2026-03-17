@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { apiGet, apiPatch, apiPost } from '../api/client';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../api/client';
 import { EmptyState } from '../components/common/EmptyState';
 
 type SettingsTab = 'organization' | 'siem' | 'billing';
+type ExtendedSettingsTab = SettingsTab | 'apiKeys' | 'team';
 
 interface OrgSettings {
   org_id: string;
@@ -25,8 +26,10 @@ interface SIEMSettings {
 }
 
 export function Settings() {
-  const [tab, setTab] = useState<SettingsTab>('organization');
+  const [tab, setTab] = useState<ExtendedSettingsTab>('organization');
   const queryClient = useQueryClient();
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('viewer');
 
   const orgQuery = useQuery<OrgSettings>({
     queryKey: ['org-settings'],
@@ -39,6 +42,27 @@ export function Settings() {
   const connectStatusQuery = useQuery<{ onboarded: boolean; stripe_connect_account_id: string | null }>({
     queryKey: ['connect-status'],
     queryFn: () => apiGet('/marketplace/connect-status'),
+  });
+  const apiKeysQuery = useQuery<{ items: Array<{
+    id: string;
+    name: string;
+    key_prefix: string;
+    created_at: string;
+    last_used_at: string | null;
+    revoked_at: string | null;
+  }> }>({
+    queryKey: ['org-api-keys'],
+    queryFn: () => apiGet('/orgs/api-keys'),
+  });
+  const membersQuery = useQuery<{ items: Array<{
+    id: string;
+    email: string;
+    role: 'admin' | 'engineer' | 'compliance' | 'viewer';
+    created_at: string;
+    last_active_at: string | null;
+  }> }>({
+    queryKey: ['org-members'],
+    queryFn: () => apiGet('/orgs/members'),
   });
 
   const [orgNameDraft, setOrgNameDraft] = useState<string | null>(null);
@@ -96,10 +120,45 @@ export function Settings() {
       queryClient.invalidateQueries({ queryKey: ['org-settings'] });
     },
   });
+  const createApiKeyMutation = useMutation({
+    mutationFn: (name: string) => apiPost<{ api_key: string; key_prefix: string; name: string }>('/orgs/api-keys', { name }),
+    onSuccess: (data) => {
+      window.alert(`New API key (copy now):\n${data.api_key}`);
+      queryClient.invalidateQueries({ queryKey: ['org-api-keys'] });
+    },
+  });
+  const revokeApiKeyMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/orgs/api-keys/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['org-api-keys'] });
+    },
+  });
+  const inviteMemberMutation = useMutation({
+    mutationFn: () => apiPost('/orgs/members', { email: inviteEmail, role: inviteRole }),
+    onSuccess: () => {
+      setInviteEmail('');
+      setInviteRole('viewer');
+      queryClient.invalidateQueries({ queryKey: ['org-members'] });
+    },
+  });
+  const updateMemberMutation = useMutation({
+    mutationFn: ({ id, role }: { id: string; role: string }) => apiPatch(`/orgs/members/${id}`, { role }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['org-members'] });
+    },
+  });
+  const deleteMemberMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/orgs/members/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['org-members'] });
+    },
+  });
 
-  const tabs = useMemo<Array<{ key: SettingsTab; label: string }>>(
+  const tabs = useMemo<Array<{ key: ExtendedSettingsTab; label: string }>>(
     () => [
       { key: 'organization', label: 'Organization' },
+      { key: 'apiKeys', label: 'API Keys' },
+      { key: 'team', label: 'Team' },
       { key: 'siem', label: 'SIEM' },
       { key: 'billing', label: 'Billing' },
     ],
@@ -184,6 +243,133 @@ export function Settings() {
           {siemQuery.data?.cursor && (
             <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
               Last export cursor: <span className="mono">{siemQuery.data.cursor}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'apiKeys' && (
+        <div className="card">
+          <div className="section-heading">API Keys</div>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                const name = window.prompt('Key label', 'dashboard');
+                if (!name) return;
+                createApiKeyMutation.mutate(name);
+              }}
+              disabled={createApiKeyMutation.isPending}
+            >
+              {createApiKeyMutation.isPending ? 'Creating…' : 'Create API Key'}
+            </button>
+          </div>
+          {!apiKeysQuery.data || apiKeysQuery.data.items.length === 0 ? (
+            <EmptyState icon="K" heading="No API keys" message="Create an API key to access the API." />
+          ) : (
+            <div style={{ overflow: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Label', 'Prefix', 'Created', 'Last Used', 'Status', 'Actions'].map((h) => (
+                      <th key={h} className="label" style={{ padding: '10px 12px', textAlign: 'left' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {apiKeysQuery.data.items.map((item) => (
+                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '8px 12px' }}>{item.name}</td>
+                      <td style={{ padding: '8px 12px' }} className="mono">{item.key_prefix}</td>
+                      <td style={{ padding: '8px 12px' }} className="mono">{item.created_at}</td>
+                      <td style={{ padding: '8px 12px' }} className="mono">{item.last_used_at ?? '—'}</td>
+                      <td style={{ padding: '8px 12px' }}>{item.revoked_at ? 'revoked' : 'active'}</td>
+                      <td style={{ padding: '8px 12px' }}>
+                        {!item.revoked_at && (
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => revokeApiKeyMutation.mutate(item.id)}
+                            disabled={revokeApiKeyMutation.isPending}
+                          >
+                            Revoke
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'team' && (
+        <div className="card">
+          <div className="section-heading">Team Members</div>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+            <input
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="member@example.com"
+              style={{ minWidth: '220px' }}
+            />
+            <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}>
+              <option value="viewer">viewer</option>
+              <option value="compliance">compliance</option>
+              <option value="engineer">engineer</option>
+              <option value="admin">admin</option>
+            </select>
+            <button
+              className="btn btn-primary"
+              onClick={() => inviteMemberMutation.mutate()}
+              disabled={inviteMemberMutation.isPending || !inviteEmail}
+            >
+              {inviteMemberMutation.isPending ? 'Inviting…' : 'Invite'}
+            </button>
+          </div>
+          {!membersQuery.data || membersQuery.data.items.length === 0 ? (
+            <EmptyState icon="M" heading="No members" message="Invite members to collaborate in the dashboard." />
+          ) : (
+            <div style={{ overflow: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Email', 'Role', 'Joined', 'Last Active', 'Actions'].map((h) => (
+                      <th key={h} className="label" style={{ padding: '10px 12px', textAlign: 'left' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {membersQuery.data.items.map((member) => (
+                    <tr key={member.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '8px 12px' }}>{member.email}</td>
+                      <td style={{ padding: '8px 12px' }}>
+                        <select
+                          value={member.role}
+                          onChange={(e) => updateMemberMutation.mutate({ id: member.id, role: e.target.value })}
+                        >
+                          <option value="viewer">viewer</option>
+                          <option value="compliance">compliance</option>
+                          <option value="engineer">engineer</option>
+                          <option value="admin">admin</option>
+                        </select>
+                      </td>
+                      <td style={{ padding: '8px 12px' }} className="mono">{member.created_at}</td>
+                      <td style={{ padding: '8px 12px' }} className="mono">{member.last_active_at ?? '—'}</td>
+                      <td style={{ padding: '8px 12px' }}>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => deleteMemberMutation.mutate(member.id)}
+                          disabled={deleteMemberMutation.isPending}
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

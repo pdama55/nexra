@@ -98,9 +98,15 @@ class AgentDetailResponse(BaseModel):
 
 
 class AgentListItem(BaseModel):
+    id: str
+    org_id: str
     agent_id: str
     name: str
+    description: str
     capability_type: str
+    input_schema: dict
+    output_schema: dict
+    webhook_url: str
     trust_score: float
     status: str
     is_public: bool
@@ -108,6 +114,7 @@ class AgentListItem(BaseModel):
     pricing: dict
     sla: dict
     created_at: datetime
+    updated_at: datetime
 
 
 class AgentListResponse(BaseModel):

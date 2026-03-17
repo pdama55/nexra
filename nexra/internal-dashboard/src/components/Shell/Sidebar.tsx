@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { apiGet } from '../../api/client';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet, getHealthUrl } from '../../api/client';
 import './Sidebar.css';
 
 interface NavItem {
@@ -48,6 +49,11 @@ type HealthState = 'healthy' | 'degraded' | 'unhealthy';
 export function Sidebar() {
   const [healthState, setHealthState] = useState<HealthState>('healthy');
   const [hitlCount, setHitlCount] = useState(0);
+  const { data: org } = useQuery<{ org_id: string; name: string; plan: string }>({
+    queryKey: ['sidebar-org'],
+    queryFn: () => apiGet('/orgs/me'),
+    refetchInterval: 300_000,
+  });
 
   // Health check polling — every 60s per specs §4
   useEffect(() => {
@@ -56,7 +62,7 @@ export function Sidebar() {
     async function checkHealth() {
       try {
         const start = Date.now();
-        const res = await fetch('/health');
+        const res = await fetch(getHealthUrl());
         const elapsed = Date.now() - start;
 
         if (!mounted) return;
@@ -141,8 +147,8 @@ export function Sidebar() {
 
       <div className="sidebar-footer">
         <div className="sidebar-footer-text">
-          <div className="sidebar-footer-org">Nexra Org</div>
-          <div className="sidebar-footer-plan">Growth</div>
+          <div className="sidebar-footer-org">{org?.name ?? 'Nexra Org'}</div>
+          <div className="sidebar-footer-plan">{org?.plan ?? '—'}</div>
         </div>
         <div className="sidebar-footer-health">
           <span className={`health-dot ${healthState}`} />

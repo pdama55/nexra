@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { NexraApiError, apiGet } from '../api/client';
+import { NexraApiError, apiGet, getApiUrl } from '../api/client';
 import { EmptyState } from '../components/common/EmptyState';
 
 type ReportType = 'soc2' | 'gdpr' | 'hipaa';
@@ -64,7 +64,7 @@ export function ComplianceExport() {
         date_from: `${dateFrom}T00:00:00Z`,
         date_to: `${dateTo}T23:59:59Z`,
       });
-      const resp = await fetch(`/v1/compliance/export/csv?${query.toString()}`, {
+      const resp = await fetch(`${getApiUrl('/compliance/export/csv')}?${query.toString()}`, {
         headers: {
           'Content-Type': 'text/csv',
           Authorization: `Bearer ${localStorage.getItem('nexra_api_key') ?? ''}`,

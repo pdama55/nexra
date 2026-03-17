@@ -81,6 +81,8 @@ export interface Delegation {
   latency_ms: number | null;
   llm_tokens: number | null;
   callback_url: string | null;
+  delegation_depth?: number;
+  approval_deadline?: string | null;
   created_at: string;
   completed_at: string | null;
 }

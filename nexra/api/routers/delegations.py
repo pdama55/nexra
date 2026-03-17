@@ -1,4 +1,5 @@
 import time
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import redis.asyncio as aioredis
@@ -17,6 +18,7 @@ from api.schemas.delegations import (
     UsageResponse,
 )
 from core.errors import DELEGATION_NOT_FOUND, NexraError
+from core.config import get_settings
 from db.session import get_db
 from models.agent import Agent
 from models.delegation import Delegation
@@ -52,6 +54,12 @@ def _build_delegation_service(
 
 
 def _delegation_to_dashboard_item(delegation: Delegation) -> dict:
+    settings = get_settings()
+    approval_deadline = None
+    if delegation.status == "pending_approval":
+        approval_deadline_dt = delegation.created_at + timedelta(hours=settings.hil_approval_ttl_hours)
+        approval_deadline = approval_deadline_dt.isoformat()
+
     return {
         "id": str(delegation.id),
         "caller_org_id": str(delegation.caller_org_id),
@@ -74,6 +82,7 @@ def _delegation_to_dashboard_item(delegation: Delegation) -> dict:
         "callback_url": delegation.callback_url,
         "delegation_depth": delegation.delegation_depth,
         "parent_delegation_id": str(delegation.parent_delegation_id) if delegation.parent_delegation_id else None,
+        "approval_deadline": approval_deadline,
         "created_at": delegation.created_at.isoformat(),
         "completed_at": delegation.completed_at.isoformat() if delegation.completed_at else None,
     }
@@ -117,6 +126,14 @@ async def delegate(
 async def list_delegations(
     request: Request,
     status: str | None = Query(None),
+    caller_agent_id: str | None = Query(None),
+    callee_agent_id: str | None = Query(None),
+    policy_decision: str | None = Query(None),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
+    cost_min: float | None = Query(None, ge=0),
+    cost_max: float | None = Query(None, ge=0),
+    cursor: datetime | None = Query(None),
     limit: int = Query(25, ge=1, le=100),
     sort: str = Query("created_at:desc"),
     org: Organization = Depends(get_authenticated_org),
@@ -127,18 +144,55 @@ async def list_delegations(
     q = select(Delegation).where(Delegation.caller_org_id == org.id)
     if status:
         q = q.where(Delegation.status == status)
+    if caller_agent_id:
+        q = q.where(Delegation.caller_agent_id == caller_agent_id)
+    if callee_agent_id:
+        q = q.where(Delegation.callee_agent_id == callee_agent_id)
+    if policy_decision:
+        q = q.where(Delegation.policy_decision == policy_decision)
+    if date_from:
+        q = q.where(Delegation.created_at >= date_from)
+    if date_to:
+        q = q.where(Delegation.created_at <= date_to)
+    if cost_min is not None:
+        q = q.where(func.coalesce(Delegation.actual_cost_usd, 0) >= cost_min)
+    if cost_max is not None:
+        q = q.where(func.coalesce(Delegation.actual_cost_usd, 0) <= cost_max)
+    if cursor:
+        q = q.where(Delegation.created_at < cursor.astimezone(timezone.utc))
 
-    if sort == "created_at:asc":
+    if sort in ("created_at:asc", "approval_deadline:asc"):
         q = q.order_by(Delegation.created_at.asc())
     else:
         q = q.order_by(desc(Delegation.created_at))
 
-    result = await db.execute(q.limit(limit))
+    result = await db.execute(q.limit(limit + 1))
     rows = list(result.scalars().all())
+    has_more = len(rows) > limit
+    page_rows = rows[:limit]
+    next_cursor = page_rows[-1].created_at.isoformat() if has_more and page_rows else None
+
+    count_q = select(Delegation.id).where(Delegation.caller_org_id == org.id)
+    if status:
+        count_q = count_q.where(Delegation.status == status)
+    if caller_agent_id:
+        count_q = count_q.where(Delegation.caller_agent_id == caller_agent_id)
+    if callee_agent_id:
+        count_q = count_q.where(Delegation.callee_agent_id == callee_agent_id)
+    if policy_decision:
+        count_q = count_q.where(Delegation.policy_decision == policy_decision)
+    if date_from:
+        count_q = count_q.where(Delegation.created_at >= date_from)
+    if date_to:
+        count_q = count_q.where(Delegation.created_at <= date_to)
+    if cost_min is not None:
+        count_q = count_q.where(func.coalesce(Delegation.actual_cost_usd, 0) >= cost_min)
+    if cost_max is not None:
+        count_q = count_q.where(func.coalesce(Delegation.actual_cost_usd, 0) <= cost_max)
 
     total_result = await db.execute(
         select(func.count()).select_from(
-            select(Delegation.id).where(Delegation.caller_org_id == org.id).subquery()
+            count_q.subquery()
         )
     )
     total_count = int(total_result.scalar() or 0)
@@ -146,9 +200,9 @@ async def list_delegations(
     latency = round((time.perf_counter() - start) * 1000, 2)
     return {
         "data": {
-            "items": [_delegation_to_dashboard_item(d) for d in rows],
-            "cursor": None,
-            "has_more": False,
+            "items": [_delegation_to_dashboard_item(d) for d in page_rows],
+            "cursor": next_cursor,
+            "has_more": has_more,
             "total_count": total_count,
         },
         "meta": MetaResponse(

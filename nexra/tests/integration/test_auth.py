@@ -4,11 +4,13 @@ import uuid
 
 import pytest
 from fastapi import HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_authenticated_org_and_agent
+from api.dependencies import get_authenticated_org, get_authenticated_org_and_agent
 from core.crypto import encrypt_aes_gcm, generate_api_key, generate_org_jwt_secret
 from models.agent import Agent
+from models.org_api_key import OrgApiKey
 from models.organization import Organization
 
 TEST_ENC_KEY = "a" * 64
@@ -142,3 +144,79 @@ async def test_quarantined_agent_returns_403(db_session: AsyncSession) -> None:
         )
 
     assert exc.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_invalid_primary_key_with_matching_prefix_is_rejected(db_session: AsyncSession) -> None:
+    raw_key, hashed, prefix = generate_api_key()
+    org = Organization(
+        id=uuid.uuid4(),
+        name="Auth Org 4",
+        api_key_hash=hashed,
+        api_key_prefix=prefix,
+        plan="growth",
+        jwt_secret_enc=encrypt_aes_gcm(generate_org_jwt_secret(), TEST_ENC_KEY),
+        delegation_count=0,
+    )
+    db_session.add(org)
+    await db_session.commit()
+
+    tampered_char = "x" if raw_key[-1] != "x" else "y"
+    invalid_raw_key = f"{raw_key[:-1]}{tampered_char}"
+
+    request = type("Req", (), {"state": type("State", (), {})()})()
+    with pytest.raises(HTTPException) as exc:
+        await get_authenticated_org(
+            request=request,
+            authorization=f"Bearer {invalid_raw_key}",
+            db=db_session,
+            redis_client=_FakeRedis(),
+        )
+
+    assert exc.value.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_secondary_org_api_key_authenticates_and_updates_last_used(db_session: AsyncSession) -> None:
+    _, primary_hashed, primary_prefix = generate_api_key()
+    secondary_raw_key, secondary_hashed, secondary_prefix = generate_api_key()
+
+    org = Organization(
+        id=uuid.uuid4(),
+        name="Auth Org 5",
+        api_key_hash=primary_hashed,
+        api_key_prefix=primary_prefix,
+        plan="growth",
+        jwt_secret_enc=encrypt_aes_gcm(generate_org_jwt_secret(), TEST_ENC_KEY),
+        delegation_count=0,
+    )
+    db_session.add(org)
+    await db_session.flush()
+    db_session.add(
+        OrgApiKey(
+            org_id=org.id,
+            name="dashboard",
+            key_hash=secondary_hashed,
+            key_prefix=secondary_prefix,
+        )
+    )
+    await db_session.commit()
+
+    request = type("Req", (), {"state": type("State", (), {})()})()
+    org_result = await get_authenticated_org(
+        request=request,
+        authorization=f"Bearer {secondary_raw_key}",
+        db=db_session,
+        redis_client=_FakeRedis(),
+    )
+    await db_session.commit()
+
+    assert str(org_result.id) == str(org.id)
+    key_row_result = await db_session.execute(
+        select(OrgApiKey).where(
+            OrgApiKey.org_id == org.id,
+            OrgApiKey.key_prefix == secondary_prefix,
+        )
+    )
+    key_row = key_row_result.scalar_one()
+    assert key_row.last_used_at is not None
