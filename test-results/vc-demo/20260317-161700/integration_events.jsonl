@@ -1,2 +1,3 @@
 {"base_url": "http://127.0.0.1:8000", "event": "vc_suite_start", "timestamp": "2026-03-17T23:19:32.759357+00:00"}
 {"event": "baseline_suite_finished", "exit_code": 0, "log": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-161700/baseline_run.log", "summary": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-161700/baseline/summary.json", "timestamp": "2026-03-17T23:21:05.533165+00:00"}
+{"callee_agent_id": "vendor-vc-1773789673", "delegation_id": "70e4102b-9e6f-453e-b778-a2b4c6c92c36", "event": "cross_org_delegation", "status": "in_flight", "timestamp": "2026-03-17T23:21:16.607092+00:00"}
