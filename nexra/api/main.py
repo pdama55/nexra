@@ -99,6 +99,10 @@ def create_app() -> FastAPI:
 
     app.include_router(marketplace_router, prefix="/v1")
 
+    from api.routers.mcp import router as mcp_router
+
+    app.include_router(mcp_router, prefix="/v1")
+
     # ── Sentry ──
     if settings.sentry_dsn:
         import sentry_sdk

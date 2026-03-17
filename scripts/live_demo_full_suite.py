@@ -694,7 +694,7 @@ class SuiteRunner:
                 "allow": {},
                 "conditions": [],
                 "hil_threshold_usd": 0.01,
-                "on_violation": "block_and_alert",
+                "on_violation": "pause_for_approval",
             },
             expected_statuses={200},
         )

@@ -1,0 +1,7 @@
+{
+  "base_url": "http://127.0.0.1:8800",
+  "capture_dir": "test-results/live-demo/full-20260317-143656/captures",
+  "fail_endpoints": [
+    "slack"
+  ]
+}

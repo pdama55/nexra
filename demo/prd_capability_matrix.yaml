@@ -1,0 +1,247 @@
+version: 1
+source: Nexra_PRD.md
+required_policy: fail_if_missing_required
+features:
+  - feature_id: capability_registry
+    name: Capability registry with typed schemas/pricing/SLA
+    priority: P0
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: coordination_registry
+    artifacts:
+      - http_trace.jsonl
+      - summary.json
+    pass_criteria: "POST /v1/agents/register succeeds for private/public and A2A cards with schema/pricing/SLA persisted"
+
+  - feature_id: runtime_discovery
+    name: Runtime discovery with ranking and hard filters
+    priority: P0
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: coordination_discovery
+    artifacts:
+      - http_trace.jsonl
+      - summary.json
+    pass_criteria: "POST /v1/capabilities/discover returns ranked matches honoring capability/budget/latency/exclusions"
+
+  - feature_id: task_delegation_sync_async
+    name: Delegation handshake (sync + async callback lifecycle)
+    priority: P0
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: delegation_sync_async
+    artifacts:
+      - http_trace.jsonl
+      - captures/callback.jsonl
+    pass_criteria: "POST /v1/delegate yields completed or in_flight and /v1/delegations/{id}/complete transitions to completed"
+
+  - feature_id: scoped_context_passing
+    name: Scoped context passing and enforcement
+    priority: P0
+    required_for_vc: true
+    proof_type: db_assert
+    scenario_id: delegation_context_scope
+    artifacts:
+      - summary.json
+      - http_trace.jsonl
+    pass_criteria: "delegation context_scope persists and out-of-scope attempts are blocked or policy-denied"
+
+  - feature_id: usage_based_billing
+    name: Usage-based billing and cost metering
+    priority: P0
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: billing_metering
+    artifacts:
+      - summary.json
+      - integration_events.jsonl
+    pass_criteria: "delegation usage records cost/latency/tokens and spend summaries update"
+
+  - feature_id: framework_compatibility
+    name: Framework compatibility (LangGraph/CrewAI/Bedrock)
+    priority: P0
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: framework_adapters
+    artifacts:
+      - summary.json
+      - integration_events.jsonl
+    pass_criteria: "adapter bridge calls succeed for discover/delegate flows"
+
+  - feature_id: a2a_native_compatibility
+    name: A2A native compatibility
+    priority: P0
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: a2a_registration
+    artifacts:
+      - http_trace.jsonl
+      - summary.json
+    pass_criteria: "POST /v1/agents/register/a2a registers valid A2A card and participates in discovery"
+
+  - feature_id: policy_engine
+    name: Policy engine allow/block/pause and precedence
+    priority: P0
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: governance_policy_engine
+    artifacts:
+      - http_trace.jsonl
+      - summary.json
+    pass_criteria: "policy CRUD + decision outcomes (allow/block/pause) are enforced on delegations"
+
+  - feature_id: spend_caps
+    name: Spend metering and hard budget caps
+    priority: P0
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: governance_budget_caps
+    artifacts:
+      - http_trace.jsonl
+      - summary.json
+    pass_criteria: "over-cap delegation returns BUDGET_EXCEEDED and budget/reservation data remains consistent"
+
+  - feature_id: immutable_audit_log
+    name: Immutable audit log with export
+    priority: P0
+    required_for_vc: true
+    proof_type: db_assert
+    scenario_id: governance_audit_immutability
+    artifacts:
+      - summary.json
+      - report.md
+    pass_criteria: "audit events written for core lifecycle and exports available in JSON/CSV"
+
+  - feature_id: anomaly_detection
+    name: Cost anomaly detection
+    priority: P0
+    required_for_vc: true
+    proof_type: external_capture
+    scenario_id: governance_anomaly_detection
+    artifacts:
+      - captures/slack.jsonl
+      - captures/pagerduty.jsonl
+      - captures/sendgrid.jsonl
+    pass_criteria: "deterministic spend spike yields anomaly_detected and notifier fanout"
+
+  - feature_id: mcp_tool_surface
+    name: MCP exposure for discovery/delegation/governance reads
+    priority: P1
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: protocol_mcp_surface
+    artifacts:
+      - http_trace.jsonl
+      - summary.json
+    pass_criteria: "MCP tool listing and tool endpoints execute discover/delegate/governance reads"
+
+  - feature_id: cross_org_marketplace
+    name: Cross-org marketplace discovery and hiring
+    priority: P2
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: marketplace_cross_org_hire
+    artifacts:
+      - http_trace.jsonl
+      - summary.json
+    pass_criteria: "public agent discoverable cross-org and cross-org delegation completes"
+
+  - feature_id: stripe_connect_settlement
+    name: Stripe Connect onboarding and payout evidence
+    priority: P2
+    required_for_vc: true
+    proof_type: external_capture
+    scenario_id: marketplace_connect_settlement
+    artifacts:
+      - integration_events.jsonl
+      - summary.json
+    pass_criteria: "connect status/onboard path validated and payout evidence captured in audit/integration events"
+
+  - feature_id: circuit_breakers
+    name: Circuit breakers (quarantine + depth guardrail)
+    priority: P1
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: governance_circuit_breakers
+    artifacts:
+      - http_trace.jsonl
+      - summary.json
+    pass_criteria: "max depth enforcement and quarantined agents excluded from discovery/delegation"
+
+  - feature_id: hitl_gate
+    name: Human-in-the-loop approve/reject/expiry flows
+    priority: P1
+    required_for_vc: true
+    proof_type: external_capture
+    scenario_id: governance_hitl
+    artifacts:
+      - captures/approval.jsonl
+      - captures/notification.jsonl
+      - summary.json
+    pass_criteria: "pending_approval transition plus approve/reject outcomes and notifications"
+
+  - feature_id: trust_scores
+    name: Trust scores and status transitions
+    priority: P1
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: governance_trust_scores
+    artifacts:
+      - summary.json
+      - http_trace.jsonl
+    pass_criteria: "trust breakdown endpoint reflects score updates from completed delegations"
+
+  - feature_id: governance_dashboard_apis
+    name: Governance dashboard API surfaces
+    priority: P1
+    required_for_vc: true
+    proof_type: dashboard_visual
+    scenario_id: dashboard_governance_views
+    artifacts:
+      - screenshots/
+      - http_trace.jsonl
+    pass_criteria: "dashboard volume/cost/failure/trust/network/budget APIs return populated data"
+
+  - feature_id: siem_export
+    name: SIEM export and cursor progression
+    priority: P1
+    required_for_vc: true
+    proof_type: external_capture
+    scenario_id: governance_siem_export
+    artifacts:
+      - captures/siem.jsonl
+      - summary.json
+    pass_criteria: "SIEM config + export emits events and updates export cursor"
+
+  - feature_id: schema_validation
+    name: Input/output schema validation on delegations
+    priority: P2
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: governance_schema_validation
+    artifacts:
+      - http_trace.jsonl
+      - summary.json
+    pass_criteria: "invalid task/result payloads are rejected with validation errors"
+
+  - feature_id: compliance_exports
+    name: Compliance report exports and package generation
+    priority: P2
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: compliance_exports
+    artifacts:
+      - summary.json
+      - report.md
+    pass_criteria: "SOC2/GDPR/HIPAA report endpoints and compliance package required files are present"
+
+  - feature_id: policy_version_control
+    name: Policy version history and historical linkage
+    priority: P2
+    required_for_vc: true
+    proof_type: api_assert
+    scenario_id: governance_policy_versions
+    artifacts:
+      - http_trace.jsonl
+      - summary.json
+    pass_criteria: "policy updates create versions and version-history endpoint returns prior revisions"

@@ -1,0 +1,33 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "checks": [
+    {
+      "details": "GET http://127.0.0.1:8000/health -> 200",
+      "latency_ms": 364.29,
+      "mode": "network",
+      "name": "api_health",
+      "passed": true,
+      "required": true
+    },
+    {
+      "details": "GET http://127.0.0.1:8800/_health -> 200",
+      "latency_ms": 11.48,
+      "mode": "network",
+      "name": "mock_sink_health",
+      "passed": true,
+      "required": true
+    },
+    {
+      "details": "mock mode selected; external integrations mocked by sink",
+      "latency_ms": null,
+      "mode": "config",
+      "name": "integration_mode",
+      "passed": true,
+      "required": true
+    }
+  ],
+  "failed_total": 0,
+  "failure_policy": "fail-fast",
+  "integrations": "mock",
+  "required_failed": 0
+}

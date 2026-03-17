@@ -1,0 +1,114 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "generated_at": "2026-03-17T22:27:20.115126+00:00",
+  "results": [
+    {
+      "error": null,
+      "finished_at": "2026-03-17T22:26:03.100065+00:00",
+      "name": "health_org_bootstrap",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T22:26:01.521688+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T22:26:17.547192+00:00",
+      "name": "org_admin_surface",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T22:26:03.100088+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T22:26:24.529050+00:00",
+      "name": "agents_and_discovery",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T22:26:17.547258+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T22:26:31.408711+00:00",
+      "name": "policies_lifecycle",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T22:26:24.529070+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T22:26:40.405300+00:00",
+      "name": "delegation_async_callback",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T22:26:31.408750+00:00"
+    },
+    {
+      "error": "expected pending_approval status for HiTL policy",
+      "finished_at": "2026-03-17T22:26:45.121182+00:00",
+      "name": "hitl_flows",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T22:26:40.405326+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T22:26:53.436147+00:00",
+      "name": "depth_guardrail",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T22:26:45.121301+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T22:26:58.644348+00:00",
+      "name": "audit_and_compliance",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T22:26:53.436205+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T22:27:06.537610+00:00",
+      "name": "analytics_dashboard",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T22:26:58.644372+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-17T22:27:10.440844+00:00",
+      "name": "siem_export",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T22:27:06.537620+00:00"
+    },
+    {
+      "error": "expected email and pagerduty fanout captures. Ensure bootstrap mode sets SENDGRID_* and PAGERDUTY_EVENTS_BASE_URL/ANOMALY_PAGERDUTY_ROUTING_KEY.",
+      "finished_at": "2026-03-17T22:27:19.563907+00:00",
+      "name": "anomaly_fanout",
+      "passed": false,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-17T22:27:10.440912+00:00"
+    },
+    {
+      "error": "connect-onboard is optional; enable with --enable-stripe-onboard",
+      "finished_at": "2026-03-17T22:27:20.115113+00:00",
+      "name": "marketplace",
+      "passed": true,
+      "required": false,
+      "skipped": true,
+      "started_at": "2026-03-17T22:27:19.563928+00:00"
+    }
+  ]
+}

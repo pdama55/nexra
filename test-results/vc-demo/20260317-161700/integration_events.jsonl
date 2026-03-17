@@ -1,0 +1,2 @@
+{"base_url": "http://127.0.0.1:8000", "event": "vc_suite_start", "timestamp": "2026-03-17T23:19:32.759357+00:00"}
+{"event": "baseline_suite_finished", "exit_code": 0, "log": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-161700/baseline_run.log", "summary": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-161700/baseline/summary.json", "timestamp": "2026-03-17T23:21:05.533165+00:00"}

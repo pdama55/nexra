@@ -7,7 +7,7 @@ LOG_DIR="${TMPDIR:-/tmp}/nexra-live-demo-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$LOG_DIR"
 
 API_BASE_URL="${NEXRA_API_BASE_URL:-http://127.0.0.1:8000}"
-DASHBOARD_BASE_URL="${NEXRA_DASHBOARD_BASE_URL:-http://127.0.0.1:5173}"
+DASHBOARD_BASE_URL="${NEXRA_DASHBOARD_BASE_URL:-http://localhost:5173}"
 STATE_FILE="${NEXRA_STATE_FILE:-}"
 
 SKIP_NGROK="${NEXRA_SKIP_NGROK:-0}"
@@ -126,6 +126,19 @@ poll_http_ok() {
     fi
     sleep 1
   done
+}
+
+alternate_loopback_url() {
+  local url="$1"
+  if [[ "$url" == *"127.0.0.1"* ]]; then
+    printf '%s\n' "${url/127.0.0.1/localhost}"
+    return 0
+  fi
+  if [[ "$url" == *"localhost"* ]]; then
+    printf '%s\n' "${url/localhost/127.0.0.1}"
+    return 0
+  fi
+  printf '\n'
 }
 
 get_ngrok_url() {
@@ -294,8 +307,19 @@ if [[ "$SKIP_DASHBOARD" != "1" ]]; then
   echo "[info] starting internal dashboard..."
   start_bg "dashboard" "cd '$APP_DIR/internal-dashboard' && npm run dev"
 
+  DASHBOARD_READY_URL=""
   if poll_http_ok "$DASHBOARD_BASE_URL" 60; then
-    DASHBOARD_OPEN_URL="$DASHBOARD_BASE_URL/?nexra_api_key=$API_KEY"
+    DASHBOARD_READY_URL="$DASHBOARD_BASE_URL"
+  else
+    ALT_DASHBOARD_URL="$(alternate_loopback_url "$DASHBOARD_BASE_URL")"
+    if [[ -n "$ALT_DASHBOARD_URL" ]] && poll_http_ok "$ALT_DASHBOARD_URL" 5; then
+      DASHBOARD_READY_URL="$ALT_DASHBOARD_URL"
+      echo "[info] dashboard reachable via alternate loopback URL: $ALT_DASHBOARD_URL"
+    fi
+  fi
+
+  if [[ -n "$DASHBOARD_READY_URL" ]]; then
+    DASHBOARD_OPEN_URL="$DASHBOARD_READY_URL/?nexra_api_key=$API_KEY"
     echo "[info] opening dashboard in browser..."
     auto_open_url "$DASHBOARD_OPEN_URL"
   else

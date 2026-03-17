@@ -1,0 +1,4 @@
+{"base_url": "http://127.0.0.1:8000", "event": "vc_suite_start", "timestamp": "2026-03-17T23:00:30.568855+00:00"}
+{"event": "baseline_suite_finished", "exit_code": 0, "log": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-155804/baseline_run.log", "summary": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-155804/baseline/summary.json", "timestamp": "2026-03-17T23:01:56.848834+00:00"}
+{"callee_agent_id": "vendor-vc-1773788524", "delegation_id": "8faf2b9d-d0b1-4b81-a15b-20aaace8b49a", "event": "cross_org_delegation", "status": "in_flight", "timestamp": "2026-03-17T23:02:08.774606+00:00"}
+{"event": "capability_validator", "exit_code": 0, "stderr": "", "stdout": "{\n  \"optional_failed\": 0,\n  \"out\": \"/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-155804/capability_matrix_result.json\",\n  \"required_failed\": 0,\n  \"required_total\": 22\n}", "timestamp": "2026-03-17T23:02:12.238228+00:00"}

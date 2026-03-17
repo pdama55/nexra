@@ -1,0 +1,3 @@
+{"base_url": "http://127.0.0.1:8000", "event": "vc_suite_start", "timestamp": "2026-03-17T22:26:00.823728+00:00"}
+{"event": "baseline_suite_finished", "exit_code": 1, "log": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-152335/baseline_run.log", "summary": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-152335/baseline/summary.json", "timestamp": "2026-03-17T22:27:20.255218+00:00"}
+{"event": "capability_validator", "exit_code": 1, "stderr": "", "stdout": "{\n  \"optional_failed\": 0,\n  \"out\": \"/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-152335/capability_matrix_result.json\",\n  \"required_failed\": 18,\n  \"required_total\": 22\n}", "timestamp": "2026-03-17T22:27:32.022942+00:00"}

@@ -1,0 +1,81 @@
+version: 1
+profile: vc-12m
+summary: "12-minute VC narrative with synchronized dashboard and API evidence"
+acts:
+  - minute: "00:00-01:30"
+    act_id: act_1_platform_boot
+    panel: Overview
+    checkpoint: platform_ready
+    talking_point: "Nexra is the control plane over heterogeneous agent networks"
+    expected_events:
+      - preflight_passed
+      - seeded_data_loaded
+      - dashboard_session_synced
+
+  - minute: "01:30-03:30"
+    act_id: act_2_coordination
+    panel: Agents
+    checkpoint: coordination_flow
+    talking_point: "Agents register typed capabilities, discover at runtime, and delegate without hardcoded links"
+    expected_events:
+      - coordination_registry_passed
+      - coordination_discovery_passed
+      - delegation_sync_async_passed
+
+  - minute: "03:30-05:30"
+    act_id: act_3_governance_controls
+    panel: Policies
+    checkpoint: governance_controls
+    talking_point: "Policy, budget, depth, and HiTL gates enforce safe-by-default behavior"
+    expected_events:
+      - governance_policy_engine_passed
+      - governance_budget_caps_passed
+      - governance_hitl_passed
+      - governance_circuit_breakers_passed
+
+  - minute: "05:30-07:00"
+    act_id: act_4_trust_anomaly
+    panel: Trust + Anomalies
+    checkpoint: trust_and_anomaly
+    talking_point: "Trust scoring and anomaly fanout catch and contain runtime risk"
+    expected_events:
+      - governance_trust_scores_passed
+      - governance_anomaly_detection_passed
+
+  - minute: "07:00-08:30"
+    act_id: act_5_audit_siem_compliance
+    panel: Audit + Compliance
+    checkpoint: audit_compliance
+    talking_point: "Every action is auditable and exportable for security and compliance teams"
+    expected_events:
+      - governance_audit_immutability_passed
+      - governance_siem_export_passed
+      - compliance_exports_passed
+
+  - minute: "08:30-10:00"
+    act_id: act_6_marketplace
+    panel: Marketplace / Settings
+    checkpoint: marketplace_billing
+    talking_point: "Cross-org hiring and settlement prove marketplace monetization"
+    expected_events:
+      - marketplace_cross_org_hire_passed
+      - marketplace_connect_settlement_passed
+
+  - minute: "10:00-11:00"
+    act_id: act_7_protocol_surface
+    panel: Delegations + API trace
+    checkpoint: protocol_surface
+    talking_point: "A2A and MCP surfaces let existing ecosystems plug into Nexra governance"
+    expected_events:
+      - a2a_registration_passed
+      - protocol_mcp_surface_passed
+      - framework_adapters_passed
+
+  - minute: "11:00-12:00"
+    act_id: act_8_closeout
+    panel: Overview
+    checkpoint: closeout_bundle
+    talking_point: "Every claim in the demo maps to machine-verifiable artifacts"
+    expected_events:
+      - capability_matrix_passed
+      - vc_bundle_written
