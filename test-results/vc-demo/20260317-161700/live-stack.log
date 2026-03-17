@@ -27,3 +27,10 @@ Press Ctrl+C to stop everything.
 =====================================
 
 [info] NEXRA_NO_TAIL=1 enabled; keeping supervisor process alive without log tail
+
+[cleanup] stopping background processes...
+/Users/parthdama/Documents/Nexra/scripts/run_live_demo.sh: line 77: 18272 Hangup: 1               sleep 3600
+[cleanup] logs saved at: /var/folders/qx/b6lgpn4d7mq2_t_qb9y2_5gw0000gn/T//nexra-live-demo-20260317-161701
+
+[cleanup] stopping background processes...
+[cleanup] logs saved at: /var/folders/qx/b6lgpn4d7mq2_t_qb9y2_5gw0000gn/T//nexra-live-demo-20260317-161701
