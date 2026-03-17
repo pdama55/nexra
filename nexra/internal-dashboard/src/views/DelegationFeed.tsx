@@ -11,13 +11,13 @@ interface Props {
   timeRange: TimeRange;
 }
 
-export function DelegationFeed({ timeRange: _timeRange }: Props) {
+export function DelegationFeed({ timeRange }: Props) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [decisionFilter, setDecisionFilter] = useState<string>('all');
   const [liveMode, setLiveMode] = useState(false);
 
   const { data, isLoading } = useQuery<PaginatedResponse<Delegation>>({
-    queryKey: ['delegations', statusFilter],
+    queryKey: ['delegations', statusFilter, timeRange],
     queryFn: () => apiGet('/delegations', {
       limit: 25,
       sort: 'created_at:desc',

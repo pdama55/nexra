@@ -58,6 +58,10 @@ async def test_sdk_uses_control_plane_paths_and_parses_data_envelope(
             200,
             {"data": {"agent_id": "a1", "status": "probationary", "embedding_id": "emb-1", "registered_at": "2026-01-01T00:00:00Z"}},
         ),
+        ("POST", f"{base_url}/agents/register/a2a"): _FakeResponse(
+            200,
+            {"data": {"agent_id": "a2a-1", "status": "probationary", "embedding_id": "emb-2", "registered_at": "2026-01-01T00:00:00Z"}},
+        ),
         ("POST", f"{base_url}/capabilities/discover"): _FakeResponse(
             200,
             {"data": {"matches": [{"agent_id": "callee-1", "name": "Callee", "match_score": 0.9, "trust_score": 0.95, "status": "active"}]}},
@@ -91,17 +95,23 @@ async def test_sdk_uses_control_plane_paths_and_parses_data_envelope(
         webhook_url="https://example.com/hook",
         webhook_secret="a" * 32,
     )
+    register_a2a = await client.register_a2a(
+        name="A2A Agent",
+        url="https://example.com/a2a",
+    )
     matches = await client.discover(query="analysis", limit=1)
     delegation = await client.delegate(agent_id="callee-1", task={"q": "hello"})
     delegation_status = await client.get_delegation("d1")
 
     assert register.agent_id == "a1"
+    assert register_a2a.agent_id == "a2a-1"
     assert matches[0].agent_id == "callee-1"
     assert delegation.delegation_id == "d1"
     assert delegation_status.status == "completed"
 
     called_urls = [call["url"] for call in fake_client.calls]
     assert f"{base_url}/agents/register" in called_urls
+    assert f"{base_url}/agents/register/a2a" in called_urls
     assert f"{base_url}/capabilities/discover" in called_urls
     assert f"{base_url}/delegate" in called_urls
     assert f"{base_url}/delegations/d1" in called_urls

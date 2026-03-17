@@ -12,6 +12,16 @@ export interface RegisterParams {
   is_public?: boolean;
 }
 
+export interface A2ARegisterParams {
+  name: string;
+  description?: string;
+  url: string;
+  capabilities?: Record<string, unknown> | string[] | string;
+  skills?: string[] | string;
+  webhook_secret?: string;
+  is_public?: boolean;
+}
+
 export interface RegisterResult {
   agent_id: string;
   status: string;
@@ -67,6 +77,7 @@ export interface DelegationResult {
   result?: unknown;
   usage?: Usage;
   poll_url?: string;
+  approval_deadline?: string;
 }
 
 export interface NexraClientOptions {

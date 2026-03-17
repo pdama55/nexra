@@ -9,19 +9,19 @@ interface Props {
   timeRange: TimeRange;
 }
 
-export function Anomalies({ timeRange: _timeRange }: Props) {
+export function Anomalies({ timeRange }: Props) {
   const { data: agents } = useQuery<Agent[]>({
-    queryKey: ['agents-quarantined'],
+    queryKey: ['agents-quarantined', timeRange],
     queryFn: () => apiGet<{ agents: Agent[] }>('/agents/registry').then(r => r.agents.filter(a => a.status === 'quarantined')),
   });
 
   const { data: circuitBreakers } = useQuery<AuditEntry[]>({
-    queryKey: ['circuit-breakers'],
+    queryKey: ['circuit-breakers', timeRange],
     queryFn: () => apiGet<{ entries: AuditEntry[] }>('/audit/log', { event_type: 'circuit_breaker_tripped' }).then(r => r.entries),
   });
 
   const { data: anomalies } = useQuery<AuditEntry[]>({
-    queryKey: ['anomaly-history'],
+    queryKey: ['anomaly-history', timeRange],
     queryFn: () => apiGet<{ entries: AuditEntry[] }>('/audit/log', { event_type: 'anomaly_detected' }).then(r => r.entries),
   });
 

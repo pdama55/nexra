@@ -1,6 +1,7 @@
 export { NexraClient, NexraAPIError } from "./client.js";
 export type {
   RegisterParams,
+  A2ARegisterParams,
   RegisterResult,
   AgentMatch,
   DiscoverParams,

@@ -19,10 +19,9 @@ export class RouteErrorBoundary extends Component<Props, State> {
     return { hasError: true, message: error.message };
   }
 
-  componentDidCatch(error: Error, _errorInfo: ErrorInfo): void {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Keep logging local; avoid breaking render path.
-    // eslint-disable-next-line no-console
-    console.error('Route render error', error);
+    console.error('Route render error', error, errorInfo.componentStack);
   }
 
   render(): ReactNode {

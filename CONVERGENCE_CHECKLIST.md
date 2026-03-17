@@ -49,3 +49,8 @@ This checklist is the release-gate tracker for PRD/TDD convergence.
 - [x] Marketplace/compliance flows proven by automated tests
 - [x] Worker flows proven by automated tests
 - [x] Adapter/SDK compatibility proven against current API contract
+
+## Website Navbar Drift Guardrail
+- [x] Navbar source of truth moved to shared assets: `website/shared/navbar.css` + `website/shared/navbar.js`
+- [x] Inline navbar drift check documented and runnable:
+  `rg -n "\\.nav\\.scrolled\\s*\\{|\\.nav-toggle\\s*\\{|\\.nav-drawer\\s*\\{|body\\.is-nav-open|function initMobileNav|document\\.querySelectorAll\\('\\[data-scroll\\]'" website/index.html website/docs.html`

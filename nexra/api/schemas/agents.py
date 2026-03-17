@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class PricingSchema(BaseModel):
-    per_call_usd: float = Field(..., gt=0, description="Cost per delegation call in USD")
+    per_call_usd: float = Field(..., ge=0, description="Cost per delegation call in USD")
 
 
 class SLASchema(BaseModel):

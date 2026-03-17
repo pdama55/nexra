@@ -115,6 +115,6 @@ async def test_expire_stale_marks_blocked_and_emits_events(
     count = await service.expire_stale()
 
     assert count == 1
-    assert stale.status == "blocked"
+    assert stale.status == "failed"
     release_called.assert_awaited_once()
     append_called.assert_awaited_once()

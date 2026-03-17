@@ -11,13 +11,13 @@ interface Props {
   timeRange: TimeRange;
 }
 
-export function AgentRegistry({ timeRange: _timeRange }: Props) {
+export function AgentRegistry({ timeRange }: Props) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [capFilter, setCapFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
 
   const { data: agents, isLoading } = useQuery<Agent[]>({
-    queryKey: ['agents'],
+    queryKey: ['agents', timeRange],
     queryFn: () => apiGet<{ agents: Agent[] }>('/agents/registry').then(r => r.agents),
     refetchInterval: 300_000,
   });

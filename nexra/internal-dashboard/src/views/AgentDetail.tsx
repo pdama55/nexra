@@ -11,18 +11,18 @@ interface Props {
   timeRange: TimeRange;
 }
 
-export function AgentDetail({ timeRange: _timeRange }: Props) {
+export function AgentDetail({ timeRange }: Props) {
   const { agentId } = useParams<{ agentId: string }>();
   const [activeTab, setActiveTab] = useState(0);
 
   const { data: agent } = useQuery<Agent>({
-    queryKey: ['agent', agentId],
+    queryKey: ['agent', agentId, timeRange],
     queryFn: () => apiGet(`/agents/${agentId}`),
     enabled: !!agentId,
   });
 
   const { data: trustData } = useQuery<TrustBreakdown>({
-    queryKey: ['agent-trust', agentId],
+    queryKey: ['agent-trust', agentId, timeRange],
     queryFn: () => apiGet<{
       trust_score: number;
       delegation_count: number;
@@ -42,14 +42,14 @@ export function AgentDetail({ timeRange: _timeRange }: Props) {
     enabled: !!agentId && activeTab === 1,
   });
   const { data: agentDelegations } = useQuery<Delegation[]>({
-    queryKey: ['agent-delegations', agentId],
+    queryKey: ['agent-delegations', agentId, timeRange],
     queryFn: () => apiGet<{ items: Delegation[] }>('/delegations', { limit: 100 }).then((r) =>
       r.items.filter((item) => item.caller_agent_id === agentId || item.callee_agent_id === agentId),
     ),
     enabled: !!agentId && activeTab === 2,
   });
   const { data: agentAudit } = useQuery<AuditEntry[]>({
-    queryKey: ['agent-audit', agentId],
+    queryKey: ['agent-audit', agentId, timeRange],
     queryFn: () => apiGet<{ entries: AuditEntry[] }>('/audit/log', { agent_id: agentId, limit: 100 }).then((r) => r.entries),
     enabled: !!agentId && activeTab === 3,
   });

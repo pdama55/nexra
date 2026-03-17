@@ -45,3 +45,4 @@ class DelegationResult:
     result: Any = None
     usage: Usage | None = None
     poll_url: str | None = None
+    approval_deadline: str | None = None

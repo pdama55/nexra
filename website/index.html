@@ -14,6 +14,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Navbar source of truth: edit shared styles in /shared/navbar.css -->
+<link rel="stylesheet" href="/shared/navbar.css">
 <style>
 :root {
   --bg: #090b10;
@@ -148,201 +150,6 @@ body::after {
 .reveal.visible {
   opacity: 1;
   transform: translateY(0);
-}
-
-.nav {
-  position: fixed;
-  inset: 0 0 auto 0;
-  z-index: 1200;
-  border-bottom: 0.0625rem solid rgba(255, 255, 255, 0.08);
-  background: rgba(8, 12, 20, 0.9);
-  backdrop-filter: blur(0.2rem);
-  transition: background 0.24s var(--ease), border-color 0.24s var(--ease);
-}
-.nav.scrolled {
-  background: rgba(8, 12, 20, 0.95);
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(0.24rem);
-}
-
-.nav-shell {
-  min-height: 4.5rem;
-  max-width: var(--shell-max);
-  width: 100%;
-  margin: 0 auto;
-  padding-left: var(--shell-pad-desktop);
-  padding-right: var(--shell-pad-desktop);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.nav-left {
-  flex: 0 0 12rem;
-  display: flex;
-  align-items: center;
-}
-
-.nav-center {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 2.75rem;
-}
-
-.nav-right {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.75rem;
-}
-.nav-wordmark {
-  font-family: var(--font-body);
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.96);
-}
-.nav-links {
-  list-style: none;
-  display: flex;
-  gap: 1.95rem;
-  align-items: center;
-}
-.nav-links a {
-  font-size: 0.86rem;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.72);
-  opacity: 1;
-  position: relative;
-  transition: color 0.18s ease, opacity 0.18s ease;
-}
-.nav-links a::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: -0.25rem;
-  width: 100%;
-  height: 0.0625rem;
-  background: var(--fg);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 160ms ease;
-}
-.nav-links a:hover { color: var(--fg); }
-.nav-links a:hover::after { transform: scaleX(1); }
-.nav-cta {
-  height: 2.65rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.86rem;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: #111418;
-  background: #f5f7fa;
-  border: 0.0625rem solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.72rem;
-  padding-left: 1.2rem;
-  padding-right: 1.2rem;
-  box-shadow: 0 0.35rem 0.85rem rgba(0, 0, 0, 0.22);
-  transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
-}
-.nav-cta:hover {
-  transform: translateY(-0.0625rem);
-  opacity: 1;
-  background: #fbfdff;
-  box-shadow: 0 0.45rem 1rem rgba(0, 0, 0, 0.26);
-}
-
-.nav-toggle {
-  display: none;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.5rem;
-  border: 0.0625rem solid rgba(194, 202, 212, 0.24);
-  background: rgba(19, 26, 36, 0.72);
-  align-items: center;
-  justify-content: center;
-  gap: 0.2rem;
-  flex-direction: column;
-  cursor: pointer;
-}
-
-.nav-toggle span {
-  width: 1.2rem;
-  height: 0.1rem;
-  border-radius: 99rem;
-  background: rgba(244, 246, 248, 0.92);
-}
-
-.nav-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(6, 8, 12, 0.62);
-  z-index: 900;
-}
-
-.nav-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: min(90vw, 21rem);
-  height: 100vh;
-  padding: 5.5rem var(--space-3) var(--space-3);
-  background: var(--surface-1);
-  border-left: 0.0625rem solid rgba(194, 202, 212, 0.22);
-  box-shadow: var(--shadow-soft);
-  transform: translateX(100%);
-  transition: transform 0.28s var(--ease);
-  z-index: 1001;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.nav-drawer.open {
-  transform: translateX(0);
-}
-
-.nav-drawer-wordmark {
-  font-family: var(--font-display);
-  letter-spacing: 0.08em;
-  font-size: 1.4rem;
-}
-
-.nav-drawer-links {
-  list-style: none;
-  display: grid;
-  gap: 0.8rem;
-}
-
-.nav-drawer-links a {
-  display: inline-flex;
-  padding: 0.8rem 0.2rem;
-  border-bottom: 0.0625rem solid rgba(194, 202, 212, 0.16);
-  color: var(--text-secondary);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.nav-drawer-cta {
-  width: 100%;
-  justify-content: center;
-  margin-left: 0;
-}
-
-body.is-nav-open {
-  overflow: hidden;
 }
 
 .hero {
@@ -1072,7 +879,6 @@ p { color: var(--text-primary); }
   opacity: 1;
 }
 
-.nav-links a,
 .why-num,
 .session-step-desc,
 .code-output-label,
@@ -3198,11 +3004,6 @@ body::after {
     padding-right: var(--shell-pad-tablet);
   }
 
-  .nav-shell {
-    padding-left: var(--shell-pad-tablet);
-    padding-right: var(--shell-pad-tablet);
-  }
-
   .hero .container {
     max-width: var(--shell-max);
     padding-left: var(--shell-pad-tablet);
@@ -3268,10 +3069,6 @@ body::after {
 }
 
 @media (max-width: 68.75rem) {
-  .nav-shell { padding-left: 1.75rem; padding-right: 1.75rem; }
-  .nav-links {
-    gap: 1.4rem;
-  }
   .session-grid { grid-template-columns: 1fr; min-height: auto; }
   .session-steps { border-right: none; border-bottom: 0.0625rem solid var(--border); }
   .session-panel { min-height: 32.5rem; }
@@ -3281,23 +3078,6 @@ body::after {
 
 @media (max-width: 56.25rem) {
   .container { padding: 0 var(--shell-pad-mobile); }
-  .nav-shell {
-    min-height: 4.5rem;
-    padding-left: var(--shell-pad-mobile);
-    padding-right: var(--shell-pad-mobile);
-    gap: 0.5rem;
-  }
-  .nav-left {
-    flex-basis: auto;
-  }
-  .nav-center { display: none; }
-  .nav-toggle { display: inline-flex; }
-  .nav-cta {
-    height: 2.5rem;
-    font-size: 0.8rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
   .section {
     padding-top: 7rem;
     padding-bottom: 7rem;
@@ -3434,21 +3214,6 @@ body::after {
 }
 
 @media (max-width: 32.5rem) {
-  .nav-wordmark {
-    font-size: 1.3rem;
-  }
-
-  .nav-cta {
-    height: 2.45rem;
-    font-size: 0.76rem;
-    padding-left: 0.875rem;
-    padding-right: 0.875rem;
-  }
-
-  .nav-right {
-    gap: 0.5rem;
-  }
-
   .hero-btn {
     width: 100%;
     justify-content: center;
@@ -3838,8 +3603,23 @@ body::after {
   line-height: 1.06;
 }
 
+/* 10% smaller for the two requested section headlines. */
+#icp .section-title,
+#surfaces .section-title {
+  font-size: clamp(1.86rem, 4.05vw, 3.08rem);
+}
+
+/* 15% smaller for ROI section headline. */
+#roi .section-title {
+  font-size: clamp(1.76rem, 3.83vw, 2.91rem);
+}
+
 #roi .roi-stat strong {
-  font-size: clamp(3.24rem, 8.1vw, 4.86rem);
+  font-size: clamp(2.2rem, 5.52vw, 3.3rem);
+}
+
+#roi .roi-stat span {
+  margin-top: 1.25rem;
 }
 
 .footer-cta .footer-headline {
@@ -3861,9 +3641,7 @@ body::after {
 .btn-primary,
 .waitlist-btn,
 .hero-btn-primary,
-.hero-waitlist-btn,
-.nav-cta,
-.nav-drawer-cta {
+.hero-waitlist-btn {
   background: #ffffff;
   color: #000000;
   border: none;
@@ -3882,9 +3660,7 @@ body::after {
 .btn-primary:hover,
 .waitlist-btn:hover,
 .hero-btn-primary:hover,
-.hero-waitlist-btn:hover,
-.nav-cta:hover,
-.nav-drawer-cta:hover {
+.hero-waitlist-btn:hover {
   background: rgba(255, 255, 255, 0.9);
   transform: translateY(-0.0625rem);
   opacity: 1;
@@ -3893,9 +3669,7 @@ body::after {
 .btn-primary:active,
 .waitlist-btn:active,
 .hero-btn-primary:active,
-.hero-waitlist-btn:active,
-.nav-cta:active,
-.nav-drawer-cta:active {
+.hero-waitlist-btn:active {
   transform: translateY(0);
   background: rgba(255, 255, 255, 0.8);
 }
@@ -3944,17 +3718,6 @@ body::after {
 .hero-btn-tertiary:hover {
   color: #ffffff;
   transform: translateY(-0.0625rem);
-}
-
-.nav-cta,
-.nav-drawer-cta {
-  height: auto;
-  min-height: 0;
-  padding: 0.55rem 0.9rem;
-  font-size: 0.8rem;
-  border-radius: 0.5rem;
-  text-transform: none;
-  letter-spacing: 0.01em;
 }
 
 .hero-actions,
@@ -4415,7 +4178,7 @@ body::after {
           <span class="line" data-line>THE CONTROL PLANE</span>
           <span class="line" data-line>FOR AI AGENT NETWORKS</span>
         </h1>
-        <p class="hero-subhead">A2A and MCP made agent communication possible. They did not add policy, spend controls, or an audit trail.<br><br>Runtime discovery and delegation for multi-agent systems.<br>Policy enforcement, spend caps, scoped tokens, circuit breakers, and immutable audit trails built in.</p>
+        <p class="hero-subhead">A2A and MCP made agent communication possible. They did not add policy, spend controls, or an audit trail.<br><br>Nexra lets agents discover, evaluate, and delegate work to other agents under scoped permissions, spend caps, circuit breakers, and immutable audit logs.</p>
         <div class="hero-waitlist">
           <form id="waitlist-form-hero" class="footer-waitlist-form waitlist-form" data-source="hero" onsubmit="return handleWaitlist(event, this)" novalidate>
             <label class="sr-only" for="waitlist-email-hero">Work email</label>
@@ -4833,6 +4596,8 @@ budget:      $0.08
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<!-- Navbar source of truth: edit shared behavior in /shared/navbar.js -->
+<script src="/shared/navbar.js"></script>
 <script>
 var motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -4869,11 +4634,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.style.opacity = '1';
   }, prefersReducedMotion() ? 0 : 40);
 
-  var nav = document.getElementById('nav');
-  nav.style.opacity = '0';
-  nav.style.transition = 'opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
-  setTimeout(function() { nav.style.opacity = '1'; }, prefersReducedMotion() ? 0 : 120);
-
   if (!prefersReducedMotion()) {
     setTimeout(animateHeadline, 340);
   } else {
@@ -4898,54 +4658,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  initMobileNav();
   initHeroNetwork();
   initDelegationSession();
   initWhyNowStack();
   initStakeholderTabs();
 });
-
-function initMobileNav() {
-  var toggle = document.getElementById('nav-toggle');
-  var drawer = document.getElementById('nav-drawer');
-  var overlay = document.getElementById('nav-overlay');
-  if (!toggle || !drawer || !overlay) return;
-
-  function setOpen(next) {
-    toggle.setAttribute('aria-expanded', next ? 'true' : 'false');
-    drawer.setAttribute('aria-hidden', next ? 'false' : 'true');
-    drawer.classList.toggle('open', next);
-    overlay.hidden = !next;
-    document.body.classList.toggle('is-nav-open', next);
-  }
-
-  toggle.addEventListener('click', function() {
-    var isOpen = toggle.getAttribute('aria-expanded') === 'true';
-    setOpen(!isOpen);
-  });
-
-  overlay.addEventListener('click', function() {
-    setOpen(false);
-  });
-
-  drawer.querySelectorAll('[data-nav-close]').forEach(function(link) {
-    link.addEventListener('click', function() {
-      setOpen(false);
-    });
-  });
-
-  document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-      setOpen(false);
-    }
-  });
-
-  window.addEventListener('resize', function() {
-    if (window.innerWidth > 900) {
-      setOpen(false);
-    }
-  });
-}
 
 function animateHeadline() {
   var lines = document.querySelectorAll('[data-line]');
@@ -4975,14 +4692,6 @@ function animateHeadline() {
     }
   });
 }
-
-(function() {
-  var nav = document.getElementById('nav');
-  window.addEventListener('scroll', function() {
-    if (window.scrollY > 10) nav.classList.add('scrolled');
-    else nav.classList.remove('scrolled');
-  }, { passive: true });
-})();
 
 (function() {
   var reveals = document.querySelectorAll('.reveal');
@@ -5042,43 +4751,6 @@ function animateHeadline() {
   }, { threshold: 0.2 });
 
   observer.observe(block);
-})();
-
-(function() {
-  function easeInOutCubic(t) {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  }
-
-  function smoothScroll(target, duration) {
-    var el = document.querySelector(target);
-    if (!el) return;
-
-    var start = window.scrollY;
-    var end = el.getBoundingClientRect().top + start - 72;
-    var startTime = null;
-
-    if (prefersReducedMotion()) {
-      window.scrollTo(0, end);
-      return;
-    }
-
-    function step(timestamp) {
-      if (!startTime) startTime = timestamp;
-      var progress = Math.min((timestamp - startTime) / duration, 1);
-      var eased = easeInOutCubic(progress);
-      window.scrollTo(0, start + (end - start) * eased);
-      if (progress < 1) requestAnimationFrame(step);
-    }
-
-    requestAnimationFrame(step);
-  }
-
-  document.querySelectorAll('[data-scroll]').forEach(function(link) {
-    link.addEventListener('click', function(e) {
-      e.preventDefault();
-      smoothScroll(this.getAttribute('href'), 560);
-    });
-  });
 })();
 
 function initWhyNowStack() {
@@ -5292,6 +4964,13 @@ function initDelegationSession() {
     }, 4500);
   }
 
+  function stopAutoAdvance() {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+  }
+
   stepButtons.forEach(function(btn) {
     btn.addEventListener('click', function() {
       var idx = parseInt(btn.getAttribute('data-session-step'), 10);
@@ -5303,17 +4982,21 @@ function initDelegationSession() {
   setStep(0);
   if (reduceMotion) return;
 
-  var hasStarted = false;
+  var inView = false;
   var startWhenVisible = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
-      if (!hasStarted && entry.isIntersecting) {
-        hasStarted = true;
+      if (entry.isIntersecting && !inView) {
+        inView = true;
+        stopAutoAdvance();
         setStep(0);
         startAutoAdvance();
-        startWhenVisible.unobserve(sessionShell);
+      } else if (!entry.isIntersecting && inView) {
+        inView = false;
+        stopAutoAdvance();
+        setStep(0);
       }
     });
-  }, { threshold: 0.35 });
+  }, { threshold: 0.45 });
 
   startWhenVisible.observe(sessionShell);
 }

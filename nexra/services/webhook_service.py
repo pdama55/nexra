@@ -90,3 +90,51 @@ class WebhookService:
                 )
 
             return resp.json()
+
+    async def enqueue(
+        self,
+        webhook_url: str,
+        payload: dict,
+        webhook_secret: str,
+        delegation_id: str,
+    ) -> None:
+        """Queue asynchronous callee webhook delivery."""
+        from workers.webhook_worker import deliver_webhook_async
+
+        deliver_webhook_async.delay(
+            webhook_url=webhook_url,
+            payload=payload,
+            webhook_secret=webhook_secret,
+            delegation_id=delegation_id,
+        )
+
+    async def deliver_callback(
+        self,
+        callback_url: str,
+        payload: dict,
+        delegation_id: str,
+        timeout_ms: int = 10_000,
+    ) -> None:
+        """Deliver completion payload to caller callback URL."""
+        effective_timeout = max(1.0, timeout_ms / 1000)
+        headers = {
+            "Content-Type": "application/json",
+            "X-Delegation-ID": delegation_id,
+            "X-Nexra-Timestamp": str(int(time.time())),
+        }
+        async with httpx.AsyncClient(timeout=effective_timeout) as client:
+            try:
+                response = await client.post(callback_url, json=payload, headers=headers)
+            except httpx.RequestError as exc:
+                raise NexraError(
+                    503,
+                    CALLEE_WEBHOOK_FAILED,
+                    f"Callback delivery failed: {str(exc)[:200]}",
+                )
+
+            if not response.is_success:
+                raise NexraError(
+                    503,
+                    CALLEE_WEBHOOK_FAILED,
+                    f"Callback endpoint returned {response.status_code}",
+                )

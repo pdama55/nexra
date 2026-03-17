@@ -685,7 +685,7 @@
         "properties": {
           "per_call_usd": {
             "description": "Cost per delegation call in USD",
-            "exclusiveMinimum": 0.0,
+            "minimum": 0.0,
             "title": "Per Call Usd",
             "type": "number"
           }
@@ -901,6 +901,61 @@
           }
         },
         "summary": "Register Agent",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
+    "/v1/agents/register/a2a": {
+      "post": {
+        "description": "Register a Google A2A-style agent card as a Nexra agent.",
+        "operationId": "register_a2a_agent_v1_agents_register_a2a_post",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Agent Card",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register A2A Agent",
         "tags": [
           "agents"
         ]

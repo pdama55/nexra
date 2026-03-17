@@ -34,6 +34,15 @@ class NexraClient:
         data = resp.json()["data"]
         return RegisterResult(**data)
 
+    async def register_a2a(self, **agent_card: Any) -> RegisterResult:
+        resp = await self._client.post(
+            f"{self.base_url}/agents/register/a2a",
+            json=agent_card,
+        )
+        self._check_response(resp)
+        data = resp.json()["data"]
+        return RegisterResult(**data)
+
     async def discover(
         self,
         query: str,
@@ -118,6 +127,7 @@ class NexraClient:
             result=data.get("result"),
             usage=usage,
             poll_url=data.get("poll_url"),
+            approval_deadline=data.get("approval_deadline"),
         )
 
     def _check_response(self, resp: httpx.Response) -> None:

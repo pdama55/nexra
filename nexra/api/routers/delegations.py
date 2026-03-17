@@ -22,10 +22,12 @@ from models.agent import Agent
 from models.delegation import Delegation
 from models.organization import Organization
 from services.audit_service import AuditService
+from services.billing_service import BillingService
 from services.budget_service import BudgetService
 from services.delegation_service import DelegationService
+from services.hitl_service import HiTLService
 from services.policy_engine import PolicyEngine
-from services.trust_service import TrustService
+from services.trust_service import CircuitBreakerService, TrustService
 from services.webhook_service import WebhookService
 
 router = APIRouter(tags=["delegations"])
@@ -39,9 +41,13 @@ def _build_delegation_service(
     budget_service = BudgetService(db)
     audit_service = AuditService(db)
     trust_service = TrustService(db)
+    billing_service = BillingService()
+    hitl_service = HiTLService(db)
+    circuit_breaker = CircuitBreakerService(redis_client)
     return DelegationService(
         db, redis_client, policy_engine, webhook_service,
         budget_service, audit_service, trust_service,
+        billing_service, hitl_service, circuit_breaker,
     )
 
 
@@ -243,13 +249,23 @@ async def approve_delegation(
     db: AsyncSession = Depends(get_db),
 ):
     """Approve a paused delegation (HiTL)."""
-    from services.hitl_service import HiTLService
+    start = time.perf_counter()
+    redis_client = await get_redis()
+    service = _build_delegation_service(db, redis_client)
+    result = await service.approve_and_resume(org, delegation_id, "admin")
+    latency = round((time.perf_counter() - start) * 1000, 2)
 
-    service = HiTLService(db)
-    delegation = await service.approve(delegation_id, str(org.id), "admin")
-    return DataResponse(
-        data={"delegation_id": str(delegation.id), "status": delegation.status},
-        meta=MetaResponse(request_id=getattr(request.state, "request_id", None)),
+    status_code = 200 if result.status == "completed" else 202
+    response = DataResponse(
+        data=result,
+        meta=MetaResponse(
+            request_id=getattr(request.state, "request_id", None),
+            latency_ms=latency,
+        ),
+    )
+    return JSONResponse(
+        status_code=status_code,
+        content=response.model_dump(mode="json"),
     )
 
 

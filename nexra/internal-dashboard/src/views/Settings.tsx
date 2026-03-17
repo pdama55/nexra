@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiGet, apiPatch, apiPost } from '../api/client';
@@ -41,32 +41,26 @@ export function Settings() {
     queryFn: () => apiGet('/marketplace/connect-status'),
   });
 
-  const [orgName, setOrgName] = useState('');
-  const [approvalUrl, setApprovalUrl] = useState('');
-  const [siemTarget, setSiemTarget] = useState('generic');
-  const [siemEndpoint, setSiemEndpoint] = useState('');
+  const [orgNameDraft, setOrgNameDraft] = useState<string | null>(null);
+  const [approvalUrlDraft, setApprovalUrlDraft] = useState<string | null>(null);
+  const [siemTargetDraft, setSiemTargetDraft] = useState<string | null>(null);
+  const [siemEndpointDraft, setSiemEndpointDraft] = useState<string | null>(null);
   const [siemApiKey, setSiemApiKey] = useState('');
-  const [siemEnabled, setSiemEnabled] = useState(true);
-  const [siemEventTypes, setSiemEventTypes] = useState('');
+  const [siemEnabledDraft, setSiemEnabledDraft] = useState<boolean | null>(null);
+  const [siemEventTypesDraft, setSiemEventTypesDraft] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!orgQuery.data) return;
-    setOrgName(orgQuery.data.name);
-    setApprovalUrl(orgQuery.data.approval_url ?? '');
-  }, [orgQuery.data]);
-
-  useEffect(() => {
-    if (!siemQuery.data) return;
-    setSiemTarget(siemQuery.data.target ?? 'generic');
-    setSiemEndpoint(siemQuery.data.endpoint ?? '');
-    setSiemEnabled(Boolean(siemQuery.data.enabled));
-    setSiemEventTypes((siemQuery.data.event_types ?? []).join(','));
-    setSiemApiKey('');
-  }, [siemQuery.data]);
+  const orgName = orgNameDraft ?? orgQuery.data?.name ?? '';
+  const approvalUrl = approvalUrlDraft ?? orgQuery.data?.approval_url ?? '';
+  const siemTarget = siemTargetDraft ?? siemQuery.data?.target ?? 'generic';
+  const siemEndpoint = siemEndpointDraft ?? siemQuery.data?.endpoint ?? '';
+  const siemEnabled = siemEnabledDraft ?? Boolean(siemQuery.data?.enabled ?? true);
+  const siemEventTypes = siemEventTypesDraft ?? (siemQuery.data?.event_types ?? []).join(',');
 
   const updateOrgMutation = useMutation({
     mutationFn: () => apiPatch('/orgs/me', { name: orgName, approval_url: approvalUrl || null }),
     onSuccess: () => {
+      setOrgNameDraft(null);
+      setApprovalUrlDraft(null);
       queryClient.invalidateQueries({ queryKey: ['org-settings'] });
     },
   });
@@ -83,6 +77,10 @@ export function Settings() {
         .filter(Boolean),
     }),
     onSuccess: () => {
+      setSiemTargetDraft(null);
+      setSiemEndpointDraft(null);
+      setSiemEnabledDraft(null);
+      setSiemEventTypesDraft(null);
       queryClient.invalidateQueries({ queryKey: ['siem-config'] });
       setSiemApiKey('');
     },
@@ -129,9 +127,9 @@ export function Settings() {
               <div className="section-heading">Organization Profile</div>
               <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '8px', fontSize: '13px' }}>
                 <div style={{ color: 'var(--text-tertiary)' }}>Org Name</div>
-                <input value={orgName} onChange={(e) => setOrgName(e.target.value)} />
+                <input value={orgName} onChange={(e) => setOrgNameDraft(e.target.value)} />
                 <div style={{ color: 'var(--text-tertiary)' }}>Approval URL</div>
-                <input value={approvalUrl} onChange={(e) => setApprovalUrl(e.target.value)} placeholder="https://example.com/approval-webhook" />
+                <input value={approvalUrl} onChange={(e) => setApprovalUrlDraft(e.target.value)} placeholder="https://example.com/approval-webhook" />
                 <div style={{ color: 'var(--text-tertiary)' }}>Plan</div>
                 <div className="mono" style={{ padding: '8px 0' }}>{orgQuery.data.plan}</div>
                 <div style={{ color: 'var(--text-tertiary)' }}>Org ID</div>
@@ -157,21 +155,21 @@ export function Settings() {
           <div className="section-heading">SIEM Export Configuration</div>
           <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '8px', fontSize: '13px' }}>
             <div style={{ color: 'var(--text-tertiary)' }}>Target</div>
-            <select value={siemTarget} onChange={(e) => setSiemTarget(e.target.value)}>
+            <select value={siemTarget} onChange={(e) => setSiemTargetDraft(e.target.value)}>
               <option value="generic">generic</option>
               <option value="splunk">splunk</option>
               <option value="datadog">datadog</option>
               <option value="elastic">elastic</option>
             </select>
             <div style={{ color: 'var(--text-tertiary)' }}>Endpoint</div>
-            <input value={siemEndpoint} onChange={(e) => setSiemEndpoint(e.target.value)} placeholder="https://siem.example.com/ingest" />
+            <input value={siemEndpoint} onChange={(e) => setSiemEndpointDraft(e.target.value)} placeholder="https://siem.example.com/ingest" />
             <div style={{ color: 'var(--text-tertiary)' }}>API Key</div>
             <input value={siemApiKey} onChange={(e) => setSiemApiKey(e.target.value)} type="password" placeholder={siemQuery.data?.api_key_set ? 'Key already set (enter new to rotate)' : 'Optional'} />
             <div style={{ color: 'var(--text-tertiary)' }}>Event Types</div>
-            <input value={siemEventTypes} onChange={(e) => setSiemEventTypes(e.target.value)} placeholder="policy_evaluated,delegation_completed" />
+            <input value={siemEventTypes} onChange={(e) => setSiemEventTypesDraft(e.target.value)} placeholder="policy_evaluated,delegation_completed" />
           </div>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '12px', fontSize: '13px' }}>
-            <input type="checkbox" checked={siemEnabled} onChange={(e) => setSiemEnabled(e.target.checked)} />
+            <input type="checkbox" checked={siemEnabled} onChange={(e) => setSiemEnabledDraft(e.target.checked)} />
             Enabled
           </label>
           <div style={{ marginTop: '16px' }}>

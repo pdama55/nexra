@@ -1,8 +1,9 @@
 import time
 import uuid as uuid_mod
+import re
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Body, Depends, Query, Request
 from openai import AsyncOpenAI
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,6 +29,30 @@ router = APIRouter(prefix="/agents", tags=["agents"])
 _openai_client: AsyncOpenAI | None = None
 
 
+def _slugify(text: str) -> str:
+    slug = text.lower().strip()
+    slug = re.sub(r"[^\w\s-]", "", slug)
+    slug = re.sub(r"[\s_]+", "-", slug)
+    slug = slug.strip("-")
+    return slug[:64] or "a2a-agent"
+
+
+def _map_a2a_capabilities(capabilities: dict | list | str | None) -> str:
+    capability_keywords = {
+        "research": ["research", "search", "investigate", "find"],
+        "analysis": ["analysis", "analyze", "evaluate", "assess"],
+        "generation": ["generate", "create", "write", "produce"],
+        "enrichment": ["enrich", "augment", "enhance", "supplement"],
+        "validation": ["validate", "verify", "check", "confirm"],
+        "execution": ["execute", "run", "perform", "do"],
+    }
+    cap_text = str(capabilities or "").lower()
+    for cap_type, keywords in capability_keywords.items():
+        if any(kw in cap_text for kw in keywords):
+            return cap_type
+    return "other"
+
+
 def _get_openai_client() -> AsyncOpenAI:
     global _openai_client
     if _openai_client is None:
@@ -50,6 +75,63 @@ async def register_agent(
     start = time.perf_counter()
     service = AgentService(db, _get_openai_client())
     agent = await service.register(str(org.id), body)
+    latency = round((time.perf_counter() - start) * 1000, 2)
+
+    return DataResponse(
+        data=AgentRegisterResponse(
+            agent_id=agent.agent_id,
+            status=agent.status,
+            embedding_id=str(agent.id),
+            registered_at=agent.created_at,
+        ),
+        meta=MetaResponse(
+            request_id=getattr(request.state, "request_id", None),
+            latency_ms=latency,
+        ),
+    )
+
+
+@router.post("/register/a2a")
+async def register_a2a_agent(
+    request: Request,
+    agent_card: dict[str, Any] = Body(...),
+    org: Organization = Depends(get_authenticated_org),
+    db: AsyncSession = Depends(get_db),
+):
+    """Register a Google A2A-style agent card as a Nexra agent."""
+    if "name" not in agent_card:
+        raise NexraError(400, "INVALID_A2A_CARD", "A2A Agent Card must include 'name'")
+    if "url" not in agent_card:
+        raise NexraError(400, "INVALID_A2A_CARD", "A2A Agent Card must include 'url'")
+
+    name = str(agent_card["name"])
+    description = str(agent_card.get("description") or name)
+    if len(description) < 20:
+        description = f"{description} (A2A registered agent)"
+
+    provided_secret = str(agent_card.get("webhook_secret") or "")
+    webhook_secret = provided_secret if len(provided_secret) >= 32 else ("a2a-" + _slugify(name)).ljust(32, "x")
+
+    payload = AgentRegisterRequest(
+        agent_id=_slugify(name),
+        name=name,
+        description=description,
+        capability_type=_map_a2a_capabilities(agent_card.get("capabilities") or agent_card.get("skills")),
+        input_schema={"type": "object"},
+        output_schema={"type": "object"},
+        pricing={"per_call_usd": max(float(agent_card.get("per_call_usd", 0.0) or 0.0), 0.0)},
+        sla={
+            "p99_latency_ms": int(agent_card.get("p99_latency_ms", 30000)),
+            "availability": float(agent_card.get("availability", 0.99)),
+        },
+        webhook_url=str(agent_card["url"]),
+        webhook_secret=webhook_secret,
+        is_public=bool(agent_card.get("is_public", False)),
+    )
+
+    start = time.perf_counter()
+    service = AgentService(db, _get_openai_client())
+    agent = await service.register(str(org.id), payload)
     latency = round((time.perf_counter() - start) * 1000, 2)
 
     return DataResponse(

@@ -1,4 +1,5 @@
 import type {
+  A2ARegisterParams,
   AgentMatch,
   DelegateParams,
   DelegationResult,
@@ -25,6 +26,11 @@ export class NexraClient {
 
   async register(params: RegisterParams): Promise<RegisterResult> {
     const resp = await this.post("/agents/register", params);
+    return resp.data as RegisterResult;
+  }
+
+  async registerA2A(params: A2ARegisterParams): Promise<RegisterResult> {
+    const resp = await this.post("/agents/register/a2a", params);
     return resp.data as RegisterResult;
   }
 

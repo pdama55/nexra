@@ -1,4 +1,5 @@
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -9,6 +10,12 @@ from core.errors import NexraError
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    from api.dependencies import close_redis
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        yield
+        await close_redis()
 
     app = FastAPI(
         title="Nexra API",
@@ -16,6 +23,7 @@ def create_app() -> FastAPI:
         version="0.1.0",
         docs_url="/docs" if settings.environment != "production" else None,
         redoc_url=None,
+        lifespan=lifespan,
     )
 
     # ── Middleware ──
@@ -90,13 +98,6 @@ def create_app() -> FastAPI:
     from api.routers.marketplace import router as marketplace_router
 
     app.include_router(marketplace_router, prefix="/v1")
-
-    # ── Lifecycle ──
-    from api.dependencies import close_redis
-
-    @app.on_event("shutdown")
-    async def shutdown():
-        await close_redis()
 
     # ── Sentry ──
     if settings.sentry_dsn:

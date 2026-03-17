@@ -19,18 +19,18 @@ CIRCUIT_BREAKER_THRESHOLD = 0.50
 
 
 class TrustService:
-    """Trust score computation and automatic status transitions.
+    """Trust score computation and automatic status transitions."""
 
-    Formula: 0.4*success_rate + 0.3*latency_score + 0.2*budget_adherence + 0.1*recency
-    """
+    WINDOW_DAYS = 30
 
-    WEIGHT_SUCCESS = 0.4
-    WEIGHT_LATENCY = 0.3
-    WEIGHT_BUDGET = 0.2
-    WEIGHT_RECENCY = 0.1
+    WEIGHT_SUCCESS_RATE = 0.40
+    WEIGHT_SLA_COMPLIANCE = 0.30
+    WEIGHT_COST_ACCURACY = 0.20
+    WEIGHT_POLICY_VIOLATIONS_INVERSE = 0.10
 
     ACTIVATION_SCORE = 0.70
     ACTIVATION_MIN_COUNT = 10
+    PROBATIONARY_SCORE = 0.40
     QUARANTINE_SCORE = 0.20
 
     def __init__(self, db: AsyncSession) -> None:
@@ -42,7 +42,7 @@ class TrustService:
         org_id: str,
         delegation: Delegation,
     ) -> float:
-        """Recompute trust score after a delegation completes or fails."""
+        """Recompute trust score in a rolling 30-day window."""
         agent_result = await self.db.execute(
             select(Agent).where(Agent.org_id == org_id, Agent.agent_id == agent_id)
         )
@@ -51,63 +51,47 @@ class TrustService:
             return 1.0
 
         score_before = float(agent.trust_score)
+        window_start = datetime.now(timezone.utc) - timedelta(days=self.WINDOW_DAYS)
 
         deleg_result = await self.db.execute(
             select(Delegation)
             .where(
                 Delegation.callee_agent_id == agent_id,
                 Delegation.callee_org_id == org_id,
-                Delegation.status.in_(["completed", "failed", "timeout"]),
+                Delegation.created_at >= window_start,
+                Delegation.status.in_(["completed", "failed", "timeout", "blocked"]),
             )
             .order_by(Delegation.created_at.desc())
-            .limit(100)
         )
         delegations = list(deleg_result.scalars().all())
-
-        if not delegations:
+        total = len(delegations)
+        if total == 0:
             return score_before
 
-        completed = sum(1 for d in delegations if d.status == "completed")
-        success_rate = completed / len(delegations)
+        completed = [d for d in delegations if d.status == "completed"]
+        success_rate = len(completed) / max(total, 1)
 
         sla_ms = int(agent.sla.get("p99_latency_ms", 8000)) if agent.sla else 8000
-        latency_scores = []
-        for d in delegations:
-            if d.latency_ms and d.status == "completed":
-                ratio = d.latency_ms / sla_ms
-                if ratio <= 1.0:
-                    latency_scores.append(1.0)
-                elif ratio <= 2.0:
-                    latency_scores.append(2.0 - ratio)
-                else:
-                    latency_scores.append(0.0)
-        latency_score = (
-            sum(latency_scores) / len(latency_scores) if latency_scores else 0.5
-        )
+        sla_met = sum(1 for d in completed if d.latency_ms is not None and d.latency_ms <= sla_ms)
+        sla_compliance = sla_met / max(len(completed), 1)
 
-        budget_scores = []
-        for d in delegations:
-            if d.actual_cost_usd and d.estimated_cost_usd and d.status == "completed":
-                ratio = float(d.actual_cost_usd) / float(d.estimated_cost_usd)
-                if ratio <= 1.0:
-                    budget_scores.append(1.0)
-                elif ratio <= 1.5:
-                    budget_scores.append(1.5 - ratio)
-                else:
-                    budget_scores.append(0.0)
-        budget_adherence = (
-            sum(budget_scores) / len(budget_scores) if budget_scores else 0.5
-        )
+        estimated = float(delegation.estimated_cost_usd or 0)
+        actual = float(delegation.actual_cost_usd or 0)
+        cost_accuracy = max(0.0, 1.0 - abs(actual - estimated) / max(estimated, 0.001))
+        cost_accuracy = min(cost_accuracy, 1.0)
 
-        most_recent = delegations[0].created_at
-        hours_since = (datetime.now(timezone.utc) - most_recent).total_seconds() / 3600
-        recency = max(0.0, 1.0 - (hours_since / 168))
+        policy_violations = sum(
+            1
+            for d in delegations
+            if d.status == "blocked" or d.policy_decision == "block"
+        )
+        policy_violations_inverse = max(0.0, 1.0 - policy_violations / max(total, 1))
 
         new_score = round(
-            self.WEIGHT_SUCCESS * success_rate
-            + self.WEIGHT_LATENCY * latency_score
-            + self.WEIGHT_BUDGET * budget_adherence
-            + self.WEIGHT_RECENCY * recency,
+            (success_rate * self.WEIGHT_SUCCESS_RATE)
+            + (sla_compliance * self.WEIGHT_SLA_COMPLIANCE)
+            + (cost_accuracy * self.WEIGHT_COST_ACCURACY)
+            + (policy_violations_inverse * self.WEIGHT_POLICY_VIOLATIONS_INVERSE),
             3,
         )
         new_score = max(0.0, min(1.0, new_score))
@@ -120,31 +104,37 @@ class TrustService:
             score_after=Decimal(str(new_score)),
             components={
                 "success_rate": round(success_rate, 3),
-                "latency_score": round(latency_score, 3),
-                "budget_adherence": round(budget_adherence, 3),
-                "recency": round(recency, 3),
-                "delegation_count": len(delegations),
+                "sla_compliance": round(sla_compliance, 3),
+                "cost_accuracy": round(cost_accuracy, 3),
+                "policy_violations_inverse": round(policy_violations_inverse, 3),
+                "policy_violations": int(policy_violations),
+                "delegation_count": total,
             },
         )
         self.db.add(event)
 
-        agent.trust_score = Decimal(str(new_score))
-        agent.delegation_count = len(delegations)
-
         old_status = agent.status
+        agent.trust_score = Decimal(str(new_score))
+        agent.delegation_count = max(int(agent.delegation_count) + 1, total)
+
         if new_score < self.QUARANTINE_SCORE:
             agent.status = "quarantined"
+        elif new_score < self.PROBATIONARY_SCORE and old_status == "active":
+            agent.status = "probationary"
         elif (
-            agent.status == "probationary"
-            and new_score >= self.ACTIVATION_SCORE
-            and len(delegations) >= self.ACTIVATION_MIN_COUNT
+            new_score >= self.ACTIVATION_SCORE
+            and agent.delegation_count >= self.ACTIVATION_MIN_COUNT
+            and old_status == "probationary"
         ):
             agent.status = "active"
 
         if agent.status != old_status:
             logger.info(
-                f"Agent {agent_id} status transition: {old_status} -> {agent.status} "
-                f"(score: {new_score})"
+                "Agent %s status transition: %s -> %s (score: %.3f)",
+                agent_id,
+                old_status,
+                agent.status,
+                new_score,
             )
 
         await self.db.commit()
@@ -153,7 +143,8 @@ class TrustService:
     async def get_score(self, org_id: str, agent_id: str) -> float:
         result = await self.db.execute(
             select(Agent.trust_score).where(
-                Agent.org_id == org_id, Agent.agent_id == agent_id
+                Agent.org_id == org_id,
+                Agent.agent_id == agent_id,
             )
         )
         score = result.scalar_one_or_none()
@@ -161,17 +152,16 @@ class TrustService:
 
 
 class CircuitBreakerService:
-    """Redis-based circuit breaker for agent failure tracking.
-
-    Uses sorted sets with timestamps as scores. Window is 10 minutes.
-    Trips when >50% of recent delegations (min 5) have failed.
-    """
+    """Redis-based circuit breaker for agent failure tracking."""
 
     def __init__(self, redis_client: aioredis.Redis) -> None:
         self.redis = redis_client
 
     async def record_outcome(
-        self, agent_id: str, org_id: str, success: bool
+        self,
+        agent_id: str,
+        org_id: str,
+        success: bool,
     ) -> None:
         key = f"cb:{org_id}:{agent_id}"
         now = _time.time()
@@ -191,8 +181,10 @@ class CircuitBreakerService:
 
         failures = sum(
             1
-            for e in entries
-            if (e if isinstance(e, str) else e.decode("utf-8")).startswith("fail:")
+            for entry in entries
+            if (
+                entry if isinstance(entry, str) else entry.decode("utf-8")
+            ).startswith("fail:")
         )
         failure_rate = failures / len(entries)
         return failure_rate > CIRCUIT_BREAKER_THRESHOLD
