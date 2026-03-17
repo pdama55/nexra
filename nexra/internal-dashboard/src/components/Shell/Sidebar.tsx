@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { apiGet } from '../../api/client';
 import './Sidebar.css';
 
 interface NavItem {
@@ -84,10 +85,13 @@ export function Sidebar() {
 
     async function fetchHitlCount() {
       try {
-        const res = await fetch('/v1/delegations?status=pending_approval&limit=0');
-        if (!res.ok || !mounted) return;
-        const data = await res.json();
-        if (mounted) setHitlCount(data.total_count ?? data.items?.length ?? 0);
+        if (!localStorage.getItem('nexra_api_key')) return;
+        const data = await apiGet<{ items: Array<unknown>; total_count?: number }>('/delegations', {
+          status: 'pending_approval',
+          limit: 100,
+        });
+        if (!mounted) return;
+        setHitlCount(data.total_count ?? data.items?.length ?? 0);
       } catch {
         // Silently fail — badge just won't update
       }

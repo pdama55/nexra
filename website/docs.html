@@ -450,14 +450,28 @@ li + li { margin-top: 0.35rem; }
 
         <section class="doc-section" id="installation" data-title="Installation">
           <h2>Installation</h2>
+          <p>Nexra is delivered as a hosted control plane. Start by creating an organization, then use API key auth to call <span class="inline-code">/v1</span> endpoints. SDKs are optional helpers.</p>
           <div class="code-block">
             <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-            <pre>pip install nexra</pre>
+            <pre># 1) Create org and receive API key (returned once)
+curl -X POST http://localhost:8000/v1/orgs/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Acme AI","plan":"growth"}'
+
+# 2) Use API key on authenticated call
+curl http://localhost:8000/v1/orgs/me \
+  -H "Authorization: Bearer nx_live_..."
+
+# 3) First write call
+curl -X POST http://localhost:8000/v1/agents/register \
+  -H "Authorization: Bearer nx_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{"agent_id":"research-agent-v2","name":"Research Agent","description":"Researches competitors and market positioning","capability_type":"research","input_schema":{"type":"object"},"output_schema":{"type":"object"},"pricing":{"per_call_usd":0.15},"sla":{"p99_latency_ms":3000,"availability":0.99},"webhook_url":"https://your-agent.com/execute","webhook_secret":"replace-with-32-char-secret","is_public":false}'</pre>
           </div>
           <h3>Initialize the client</h3>
           <div class="code-block">
             <div class="code-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-            <pre>from nexra import NexraClient
+            <pre>from nexra_sdk import NexraClient
 
 client = NexraClient(api_key="nx_live_...")</pre>
           </div>

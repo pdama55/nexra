@@ -4303,7 +4303,7 @@ body::after {
     <div class="why-row" data-row-delay="200">
       <span class="why-num">03</span>
       <h3 class="why-title">Ships in hours</h3>
-      <p class="why-desc">pip install nexra. Three lines to register an agent. One call to discover and delegate. Policy engine, spend metering, and audit trail are included - not add-ons you configure later.</p>
+      <p class="why-desc">Create an org. Get an API key. Call Nexra's hosted /v1 API to register, discover, and delegate. Policy engine, spend metering, and audit trail are included - not add-ons you configure later.</p>
     </div>
 
     <div class="why-row" data-row-delay="300">
@@ -4320,28 +4320,20 @@ body::after {
 
     <div class="code-block reveal" id="code-block">
       <span class="code-tab">Quickstart</span>
-      <pre id="code-pre"><span class="code-line"><span class="c-comment"># Install the SDK</span></span>
-<span class="code-line"><span class="c-fn">pip install</span> <span class="c-str">nexra</span></span>
+      <pre id="code-pre"><span class="code-line"><span class="c-comment"># 1) Create org + receive API key (returned once)</span></span>
+<span class="code-line"><span class="c-fn">curl -X POST</span> <span class="c-str">http://localhost:8000/v1/orgs/register</span> <span class="c-key">\</span></span>
+<span class="code-line">  <span class="c-key">-H</span> <span class="c-val">"Content-Type: application/json"</span> <span class="c-key">\</span></span>
+<span class="code-line">  <span class="c-key">-d</span> <span class="c-val">'{"name":"Acme AI","plan":"growth"}'</span></span>
 <span class="code-line"></span>
-<span class="code-line"><span class="c-comment"># Initialize client</span></span>
-<span class="code-line"><span class="c-key">from</span> <span class="c-str">nexra</span> <span class="c-key">import</span> <span class="c-str">NexraClient</span></span>
-<span class="code-line"><span class="c-fn">client</span> <span class="c-key">=</span> <span class="c-str">NexraClient</span>(<span class="c-key">api_key=</span><span class="c-val">"nx_live_..."</span>)</span>
+<span class="code-line"><span class="c-comment"># 2) Use API key auth on hosted control plane endpoints</span></span>
+<span class="code-line"><span class="c-fn">curl</span> <span class="c-str">http://localhost:8000/v1/orgs/me</span> <span class="c-key">\</span></span>
+<span class="code-line">  <span class="c-key">-H</span> <span class="c-val">"Authorization: Bearer nx_live_..."</span></span>
 <span class="code-line"></span>
-<span class="code-line"><span class="c-comment"># Register an agent</span></span>
-<span class="code-line"><span class="c-fn">client.register</span>(</span>
-<span class="code-line">    <span class="c-key">agent_id=</span><span class="c-val">"research-agent-v2"</span>,</span>
-<span class="code-line">    <span class="c-key">capability_type=</span><span class="c-val">"research"</span>,</span>
-<span class="code-line">    <span class="c-key">webhook_url=</span><span class="c-val">"https://your-agent.com/execute"</span>,</span>
-<span class="code-line">    <span class="c-key">pricing=</span>{<span class="c-val">"per_call_usd"</span>: <span class="c-val">0.15</span>},</span>
-<span class="code-line">    <span class="c-key">sla_ms=</span><span class="c-val">3000</span></span>
-<span class="code-line">)</span>
-<span class="code-line"></span>
-<span class="code-line"><span class="c-comment"># Discover + delegate in one call</span></span>
-<span class="code-line"><span class="c-fn">result</span> <span class="c-key">=</span> <span class="c-key">await</span> <span class="c-fn">client.hire</span>(</span>
-<span class="code-line">    <span class="c-key">capability=</span><span class="c-val">"research"</span>,</span>
-<span class="code-line">    <span class="c-key">task=</span>{<span class="c-val">"company"</span>: <span class="c-val">"Acme Corp"</span>},</span>
-<span class="code-line">    <span class="c-key">budget_cap=</span><span class="c-val">0.25</span></span>
-<span class="code-line">)</span></pre>
+<span class="code-line"><span class="c-comment"># 3) First authenticated write call</span></span>
+<span class="code-line"><span class="c-fn">curl -X POST</span> <span class="c-str">http://localhost:8000/v1/agents/register</span> <span class="c-key">\</span></span>
+<span class="code-line">  <span class="c-key">-H</span> <span class="c-val">"Authorization: Bearer nx_live_..."</span> <span class="c-key">\</span></span>
+<span class="code-line">  <span class="c-key">-H</span> <span class="c-val">"Content-Type: application/json"</span> <span class="c-key">\</span></span>
+<span class="code-line">  <span class="c-key">-d</span> <span class="c-val">'{"agent_id":"research-agent-v2","name":"Research Agent","description":"Researches competitors and market positioning","capability_type":"research","input_schema":{"type":"object"},"output_schema":{"type":"object"},"pricing":{"per_call_usd":0.15},"sla":{"p99_latency_ms":3000,"availability":0.99},"webhook_url":"https://your-agent.com/execute","webhook_secret":"replace-with-32-char-secret","is_public":false}'</span></span></pre>
     </div>
 
     <div class="code-sequence reveal" aria-hidden="true"></div>

@@ -17,11 +17,11 @@ function isValidTimeRange(value: string): value is TimeRange {
 
 export function getTimeRangeParams(range: TimeRange): { window: string } {
   switch (range) {
-    case 'last_hour': return { window: '1h' };
-    case 'last_24h': return { window: '24h' };
-    case 'last_7d': return { window: '7d' };
-    case 'last_30d': return { window: '30d' };
-    case 'custom': return { window: '24h' };
+    case 'last_hour': return { window: 'last_hour' };
+    case 'last_24h': return { window: 'last_24h' };
+    case 'last_7d': return { window: 'last_7d' };
+    case 'last_30d': return { window: 'last_30d' };
+    case 'custom': return { window: 'last_24h' };
   }
 }
 
