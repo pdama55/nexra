@@ -30,6 +30,11 @@
       "details": "api+dashboard ready",
       "status": "passed",
       "updated_at": "2026-03-18T02:37:38.381067+00:00"
+    },
+    "terminal": {
+      "details": "exit_code=130",
+      "status": "failed",
+      "updated_at": "2026-03-18T02:38:24.844171+00:00"
     }
   },
   "profile": "vc-12m"
