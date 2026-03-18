@@ -1,0 +1,36 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "dashboard_url": "http://127.0.0.1:5175",
+  "failure_policy": "fail-fast",
+  "generated_at": "2026-03-18T04:23:11.982582+00:00",
+  "integrations": "real",
+  "mode": "attach",
+  "phases": {
+    "mock_sink": {
+      "details": "mock sink ready at http://127.0.0.1:8800",
+      "status": "passed",
+      "updated_at": "2026-03-18T04:23:12.160297+00:00"
+    },
+    "preflight": {
+      "details": "preflight exit=1",
+      "status": "failed",
+      "updated_at": "2026-03-18T04:23:38.399024+00:00"
+    },
+    "runner": {
+      "details": "bootstrapping vc runner",
+      "status": "in_progress",
+      "updated_at": "2026-03-18T04:23:12.025656+00:00"
+    },
+    "stack": {
+      "details": "api+dashboard ready",
+      "status": "passed",
+      "updated_at": "2026-03-18T04:23:28.275888+00:00"
+    },
+    "terminal": {
+      "details": "exit_code=1",
+      "status": "failed",
+      "updated_at": "2026-03-18T04:23:38.437435+00:00"
+    }
+  },
+  "profile": "vc-12m"
+}

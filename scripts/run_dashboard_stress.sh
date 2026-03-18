@@ -146,19 +146,17 @@ alternate_loopback_url() {
 MOCK_SINK_PORT="${NEXRA_MOCK_SINK_PORT:-8800}"
 MOCK_SINK_BASE_URL="http://127.0.0.1:${MOCK_SINK_PORT}"
 
-if [[ "$INTEGRATIONS" != "real" ]]; then
-  echo "[info] starting local mock sink: $MOCK_SINK_BASE_URL"
-  python3 "$ROOT_DIR/scripts/live_demo_mock_sink.py" \
-    --port "$MOCK_SINK_PORT" \
-    --out-dir "$RESULTS_DIR" >"$MOCK_SINK_LOG" 2>&1 &
-  MOCK_SINK_PID=$!
-  if ! wait_for_http_ok "$MOCK_SINK_BASE_URL/_health" 30; then
-    echo "Mock sink failed to start. See $MOCK_SINK_LOG" >&2
-    exit 1
-  fi
-  MOCK_SINK_STARTED=1
-  export NEXRA_MOCK_SINK_BASE_URL="$MOCK_SINK_BASE_URL"
+echo "[info] starting local mock sink: $MOCK_SINK_BASE_URL"
+python3 "$ROOT_DIR/scripts/live_demo_mock_sink.py" \
+  --port "$MOCK_SINK_PORT" \
+  --out-dir "$RESULTS_DIR" >"$MOCK_SINK_LOG" 2>&1 &
+MOCK_SINK_PID=$!
+if ! wait_for_http_ok "$MOCK_SINK_BASE_URL/_health" 30; then
+  echo "Mock sink failed to start. See $MOCK_SINK_LOG" >&2
+  exit 1
 fi
+MOCK_SINK_STARTED=1
+export NEXRA_MOCK_SINK_BASE_URL="$MOCK_SINK_BASE_URL"
 
 if [[ "$MODE" == "bootstrap" ]]; then
   BOOTSTRAPPED=1
@@ -319,10 +317,43 @@ env "NEXRA_DASHBOARD_DIR=$INTERNAL_DASHBOARD_DIR" \
   --results-dir "$RESULTS_DIR" >"$RESULTS_DIR/parity.log" 2>&1 &
 PARITY_PID=$!
 
-wait "$LOAD_PID"
-LOAD_EXIT=$?
-wait "$PARITY_PID"
-PARITY_EXIT=$?
+if [[ "$FAILURE_MODE" == "fail-fast" ]]; then
+  LOAD_EXIT=0
+  PARITY_EXIT=0
+  LOAD_DONE=0
+  PARITY_DONE=0
+
+  while [[ "$LOAD_DONE" == "0" || "$PARITY_DONE" == "0" ]]; do
+    if [[ "$LOAD_DONE" == "0" ]] && ! kill -0 "$LOAD_PID" >/dev/null 2>&1; then
+      wait "$LOAD_PID"
+      LOAD_EXIT=$?
+      LOAD_DONE=1
+      if [[ "$LOAD_EXIT" -ne 0 && "$PARITY_DONE" == "0" ]] && kill -0 "$PARITY_PID" >/dev/null 2>&1; then
+        echo "[warn] fail-fast: api load failed; terminating parity sweep"
+        kill "$PARITY_PID" >/dev/null 2>&1 || true
+      fi
+    fi
+
+    if [[ "$PARITY_DONE" == "0" ]] && ! kill -0 "$PARITY_PID" >/dev/null 2>&1; then
+      wait "$PARITY_PID"
+      PARITY_EXIT=$?
+      PARITY_DONE=1
+      if [[ "$PARITY_EXIT" -ne 0 && "$LOAD_DONE" == "0" ]] && kill -0 "$LOAD_PID" >/dev/null 2>&1; then
+        echo "[warn] fail-fast: parity sweep failed; terminating api load"
+        kill "$LOAD_PID" >/dev/null 2>&1 || true
+      fi
+    fi
+
+    if [[ "$LOAD_DONE" == "0" || "$PARITY_DONE" == "0" ]]; then
+      sleep 1
+    fi
+  done
+else
+  wait "$LOAD_PID"
+  LOAD_EXIT=$?
+  wait "$PARITY_PID"
+  PARITY_EXIT=$?
+fi
 set -e
 
 set +e
@@ -331,9 +362,11 @@ python3 - <<'PY' \
 "$STRESS_SUMMARY" \
 "$STRESS_REPORT" \
 "$ERROR_RATE_THRESHOLD" \
+"$ROUTE_TIMEOUT_MS" \
 "$LOAD_EXIT" \
 "$PARITY_EXIT" \
-"$SUITE_EXIT"
+"$SUITE_EXIT" \
+"$FAILURE_MODE"
 import json
 import sys
 from datetime import datetime, timezone
@@ -343,9 +376,11 @@ results_dir = Path(sys.argv[1])
 summary_path = Path(sys.argv[2])
 report_path = Path(sys.argv[3])
 err_threshold = float(sys.argv[4])
-load_exit = int(sys.argv[5])
-parity_exit = int(sys.argv[6])
-suite_exit = int(sys.argv[7])
+route_timeout_ms = int(sys.argv[5])
+load_exit = int(sys.argv[6])
+parity_exit = int(sys.argv[7])
+suite_exit = int(sys.argv[8])
+failure_mode = str(sys.argv[9])
 
 def read_json(path: Path) -> dict:
     if not path.exists():
@@ -361,13 +396,17 @@ capability = read_json(results_dir / "vc_suite" / "capability_matrix_result.json
 
 critical: list[str] = []
 warnings: list[str] = []
+load_terminated_for_fail_fast = failure_mode == "fail-fast" and parity_exit != 0 and load_exit in {130, 143}
 
 if not (results_dir / "vc_org_profile.json").exists():
     critical.append("missing vc_org_profile.json")
 if not (results_dir / "vc_suite" / "baseline" / "summary.json").exists():
     critical.append("missing vc baseline summary")
 if not (results_dir / "endpoint_metrics.json").exists():
-    critical.append("missing endpoint_metrics.json")
+    if load_terminated_for_fail_fast:
+        warnings.append("endpoint_metrics.json missing (api load terminated after parity fail-fast)")
+    else:
+        critical.append("missing endpoint_metrics.json")
 if not (results_dir / "ui_parity_results.json").exists():
     critical.append("missing ui_parity_results.json")
 
@@ -376,16 +415,21 @@ if required_failed != 0:
     critical.append(f"capability matrix required_failed={required_failed}")
 
 if load_exit != 0:
-    critical.append(f"dashboard_api_load exit={load_exit}")
+    if load_terminated_for_fail_fast:
+        warnings.append(f"dashboard_api_load exit={load_exit} (terminated after parity fail-fast)")
+    else:
+        critical.append(f"dashboard_api_load exit={load_exit}")
 if parity_exit != 0:
     critical.append(f"dashboard_parity_sweep exit={parity_exit}")
 if suite_exit != 0:
     warnings.append(f"vc_demo_suite exit={suite_exit} (artifacts still evaluated)")
 
 route_fail = int(ui_parity.get("route_render_failures", 0))
+route_latency_breaches = int(ui_parity.get("route_latency_breaches", 0))
 ui_mismatch = int(ui_parity.get("required_mismatches", 0))
 frontend_err = int(ui_parity.get("frontend_uncaught_errors", 0))
 frontend_console_err = int(ui_parity.get("frontend_console_errors", 0))
+frontend_network_err = int(ui_parity.get("frontend_network_errors", 0))
 sweeps_run = int(ui_parity.get("sweeps_run", 0))
 if sweeps_run < 1:
     critical.append("no parity sweeps completed")
@@ -397,6 +441,10 @@ if frontend_err > 0:
     critical.append(f"frontend uncaught errors={frontend_err}")
 if frontend_console_err > 0:
     warnings.append(f"frontend console errors={frontend_console_err}")
+if frontend_network_err > 0:
+    warnings.append(f"frontend network errors={frontend_network_err}")
+if route_latency_breaches > 0:
+    warnings.append(f"route latency breaches={route_latency_breaches} (threshold_ms={route_timeout_ms})")
 
 required_endpoints = [
     "analytics_usage",
@@ -414,17 +462,21 @@ required_endpoints = [
     "marketplace_connect_status",
 ]
 endpoints = endpoint_metrics.get("endpoints", {}) if isinstance(endpoint_metrics, dict) else {}
-for ep in required_endpoints:
-    row = endpoints.get(ep)
-    if not isinstance(row, dict):
+if isinstance(endpoints, dict) and endpoints:
+    for ep in required_endpoints:
+        row = endpoints.get(ep)
+        if not isinstance(row, dict):
+            critical.append(f"required endpoint missing metrics: {ep}")
+            continue
+        rate = float(row.get("non_2xx_4xx_rate", 1.0))
+        total = int(row.get("total_requests", 0))
+        if total < 1:
+            critical.append(f"required endpoint unexercised: {ep}")
+        if rate > err_threshold:
+            critical.append(f"{ep} non_2xx_4xx_rate={rate:.4f} > {err_threshold:.4f}")
+elif not load_terminated_for_fail_fast:
+    for ep in required_endpoints:
         critical.append(f"required endpoint missing metrics: {ep}")
-        continue
-    rate = float(row.get("non_2xx_4xx_rate", 1.0))
-    total = int(row.get("total_requests", 0))
-    if total < 1:
-        critical.append(f"required endpoint unexercised: {ep}")
-    if rate > err_threshold:
-        critical.append(f"{ep} non_2xx_4xx_rate={rate:.4f} > {err_threshold:.4f}")
 
 status = "passed" if not critical else "failed"
 payload = {
@@ -435,7 +487,7 @@ payload = {
     "warnings": warnings,
     "thresholds": {
         "endpoint_non_2xx_4xx_rate": err_threshold,
-        "route_timeout_ms": 15000,
+        "route_timeout_ms": route_timeout_ms,
     },
     "artifacts": {
         "stress_summary": str(summary_path),

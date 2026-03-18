@@ -4,8 +4,18 @@ Python SDK for [Nexra](https://usenexra.com) — the control plane for AI agent 
 
 ## Installation
 
+`nexra-sdk` is not currently published on public PyPI.
+
+Install from source (current recommended path):
+
 ```bash
-pip install nexra-sdk
+pip install /absolute/path/to/nexra/sdk/nexra-py
+```
+
+If your organization publishes internal packages, install from your private index:
+
+```bash
+pip install --index-url https://<your-index>/simple nexra-sdk
 ```
 
 ## Quick Start
@@ -28,6 +38,7 @@ async with NexraClient(api_key="nx_live_...", agent_id="sales-agent-v1") as clie
 ### `NexraClient(api_key, agent_id, base_url, timeout)`
 
 - `register(**kwargs)` — Register an agent capability
+- `register_a2a(**agent_card)` — Register an A2A agent card
 - `discover(query, capability_type, budget_cap, max_latency_ms, limit)` — Semantic discovery
 - `delegate(agent_id, task, context_scope, budget_cap, timeout_ms, callback_url)` — Delegate to specific agent
 - `hire(capability, task, context_scope, budget_cap)` — Discover + delegate in one call

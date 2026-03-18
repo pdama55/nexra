@@ -1,0 +1,13 @@
+{
+  "api_base_url": "http://127.0.0.1:8000",
+  "api_key": "nx_live_dZw5w54SEXeGdjdHe48n3NTSq6WkGxZwX5wj2yWx5Lo",
+  "dashboard_base_url": "http://localhost:5173",
+  "log_dir": "/var/folders/qx/b6lgpn4d7mq2_t_qb9y2_5gw0000gn/T//nexra-live-demo-20260317-194357",
+  "ngrok_url": null,
+  "processes": {
+    "api": 44471,
+    "beat": 44477,
+    "worker": 44474
+  },
+  "script_pid": 44447
+}

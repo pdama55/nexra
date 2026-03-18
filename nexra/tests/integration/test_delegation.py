@@ -1,5 +1,6 @@
 """Integration tests for delegation — policy evaluation + record creation."""
 
+import os
 import uuid
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
@@ -28,6 +29,7 @@ from services.webhook_service import WebhookService
 
 
 TEST_ENC_KEY = "a" * 64
+TEST_REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/1")
 
 
 def _mock_openai() -> AsyncMock:
@@ -109,7 +111,7 @@ class TestDelegationPolicyBlocking:
         await _register_agent(db_session, str(org.id), "caller-agent")
         await _register_agent(db_session, str(org.id), "callee-agent", "analysis")
 
-        redis_client = aioredis.from_url("redis://localhost:6379/1", decode_responses=True)
+        redis_client = aioredis.from_url(TEST_REDIS_URL, decode_responses=True)
         try:
             policy_engine = PolicyEngine(redis_client, db_session)
             webhook_service = WebhookService()
@@ -158,7 +160,7 @@ class TestDelegationWithPolicy:
             "on_violation": "block_and_alert",
         })
 
-        redis_client = aioredis.from_url("redis://localhost:6379/1", decode_responses=True)
+        redis_client = aioredis.from_url(TEST_REDIS_URL, decode_responses=True)
         try:
             policy_engine = PolicyEngine(redis_client, db_session)
             budget_service = BudgetService(db_session)
@@ -223,7 +225,7 @@ class TestDelegationHiTL:
             "on_violation": "block_and_alert",
         })
 
-        redis_client = aioredis.from_url("redis://localhost:6379/1", decode_responses=True)
+        redis_client = aioredis.from_url(TEST_REDIS_URL, decode_responses=True)
         try:
             policy_engine = PolicyEngine(redis_client, db_session)
             webhook_service = WebhookService()
@@ -266,7 +268,7 @@ class TestDelegationDepth:
             "on_violation": "block_and_alert",
         })
 
-        redis_client = aioredis.from_url("redis://localhost:6379/1", decode_responses=True)
+        redis_client = aioredis.from_url(TEST_REDIS_URL, decode_responses=True)
         try:
             policy_engine = PolicyEngine(redis_client, db_session)
             budget_service = BudgetService(db_session)
@@ -325,7 +327,7 @@ class TestDelegationDepth:
             "on_violation": "block_and_alert",
         })
 
-        redis_client = aioredis.from_url("redis://localhost:6379/1", decode_responses=True)
+        redis_client = aioredis.from_url(TEST_REDIS_URL, decode_responses=True)
         try:
             policy_engine = PolicyEngine(redis_client, db_session)
             budget_service = BudgetService(db_session)
@@ -391,7 +393,7 @@ class TestDelegationDepth:
             "on_violation": "block_and_alert",
         })
 
-        redis_client = aioredis.from_url("redis://localhost:6379/1", decode_responses=True)
+        redis_client = aioredis.from_url(TEST_REDIS_URL, decode_responses=True)
         try:
             policy_engine = PolicyEngine(redis_client, db_session)
             budget_service = BudgetService(db_session)

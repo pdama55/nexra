@@ -137,6 +137,16 @@
   box-shadow: none;
 }
 
+.nav-mobile-docs {
+  display: none;
+}
+
+.nav-docs-btn {
+  background: rgba(19, 26, 36, 0.72);
+  color: rgba(244, 246, 248, 0.9);
+  border: 0.0625rem solid rgba(194, 202, 212, 0.28);
+}
+
 .nav-cta:hover,
 .nav-drawer-cta:hover {
   background: rgba(255, 255, 255, 0.9);
@@ -144,10 +154,19 @@
   opacity: 1;
 }
 
+.nav-docs-btn:hover {
+  background: rgba(23, 31, 43, 0.86);
+  border-color: rgba(194, 202, 212, 0.38);
+}
+
 .nav-cta:active,
 .nav-drawer-cta:active {
   transform: translateY(0);
   background: rgba(255, 255, 255, 0.8);
+}
+
+.nav-docs-btn:active {
+  background: rgba(17, 24, 34, 0.92);
 }
 
 .nav-toggle {
@@ -293,9 +312,5 @@ body.is-nav-open {
     font-size: 0.76rem;
     padding-left: 0.875rem;
     padding-right: 0.875rem;
-  }
-
-  .nav-right {
-    gap: 0.5rem;
   }
 }

@@ -3092,6 +3092,193 @@
         ]
       }
     },
+    "/v1/mcp/tools": {
+      "get": {
+        "operationId": "list_mcp_tools_v1_mcp_tools_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_str__Any__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Mcp Tools",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/v1/mcp/tools/delegate": {
+      "post": {
+        "operationId": "mcp_delegate_v1_mcp_tools_delegate_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Agent-ID",
+            "required": true,
+            "schema": {
+              "title": "X-Agent-Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DelegateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mcp Delegate",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/v1/mcp/tools/discover": {
+      "post": {
+        "operationId": "mcp_discover_v1_mcp_tools_discover_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Agent-ID",
+            "required": true,
+            "schema": {
+              "title": "X-Agent-Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Mcp Discover V1 Mcp Tools Discover Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mcp Discover",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
+    "/v1/mcp/tools/governance/read": {
+      "get": {
+        "operationId": "mcp_governance_read_v1_mcp_tools_governance_read_get",
+        "parameters": [
+          {
+            "description": "Bearer nx_live_...",
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "description": "Bearer nx_live_...",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_dict_str__Any__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mcp Governance Read",
+        "tags": [
+          "mcp"
+        ]
+      }
+    },
     "/v1/orgs/api-keys": {
       "get": {
         "operationId": "list_api_keys_v1_orgs_api_keys_get",

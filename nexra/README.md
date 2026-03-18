@@ -17,6 +17,66 @@ Services:
 - `postgres`: PostgreSQL + pgvector
 - `redis`: Redis broker/cache
 
+## One-Command MVP Demo (No Stress/Parity Sweep)
+
+From repo root:
+
+```bash
+./scripts/run_product_demo.sh
+```
+
+What it does by default:
+- Runs core verification checks:
+  - `pytest -q tests/unit`
+  - `pytest -q tests/contracts`
+  - `python scripts/check_openapi_snapshot.py`
+  - `npm run build` in `nexra/internal-dashboard`
+- Runs the VC demo suite in `attach` mode with `real` integrations
+- Auto-opens the dashboard in your browser
+
+Common variants:
+
+```bash
+# Fastest path: skip checks and run demo flow immediately.
+./scripts/run_product_demo.sh --verify none
+
+# Include integration + e2e (Neon/Upstash/external infra).
+./scripts/run_product_demo.sh --verify full
+
+# Start local API/worker stack via bootstrap mode.
+./scripts/run_product_demo.sh --mode bootstrap
+```
+
+## DB-Backed Test Bootstrap (Integration + E2E)
+
+If you use managed infra (Neon + Upstash, no Docker), run:
+
+```bash
+./scripts/run_db_backed_tests.sh --infra-mode external --prepare-only
+```
+
+Then run suites against those endpoints:
+
+```bash
+./scripts/run_db_backed_tests.sh --infra-mode external
+```
+
+For local Docker-backed infra, use:
+
+```bash
+./scripts/run_db_backed_tests.sh
+```
+
+Optional: pass custom pytest args after `--`:
+
+```bash
+./scripts/run_db_backed_tests.sh -- -k delegation -x
+```
+
+Defaults (CI-aligned) can be overridden:
+- `TEST_DATABASE_URL` (falls back to `DATABASE_URL`, then local default)
+- `REDIS_URL` (default `redis://localhost:6379/1`)
+
 ## Railway Deployment Notes
 
 MVP deployment uses Railway with at least:

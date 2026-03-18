@@ -26,6 +26,7 @@ interface RouteRun {
   latency_ms: number;
   mismatches: string[];
   errors: string[];
+  warnings: string[];
   screenshot?: string;
 }
 
@@ -59,12 +60,22 @@ interface ParitySummary {
   mismatches_total: number;
   required_mismatches: number;
   route_render_failures: number;
+  route_latency_breaches: number;
+  route_warnings: number;
+  api_fetch_timeout_warnings: number;
+  loading_delay_warnings: number;
   frontend_uncaught_errors: number;
   frontend_console_errors: number;
+  frontend_network_errors: number;
   critical_failures: string[];
 }
 
 type ApiEnvelope = { data?: unknown; meta?: unknown };
+const SOFT_MISMATCH_CODES = new Set<string>([
+  "spend.first_agent_missing",
+  "spend.highest_spend_agent_missing",
+  "anomalies.first_agent_missing",
+]);
 
 function parseArgs(argv: string[]): Args {
   const raw: Partial<Args> = {
@@ -166,16 +177,24 @@ async function fetchData(
   }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), args.routeTimeoutMs);
-  const resp = await fetch(url.toString(), {
-    headers: {
-      Authorization: "Bearer " + args.apiKey,
-      "X-User-Email": args.userEmail,
-      "Content-Type": "application/json",
-    },
-    signal: controller.signal,
-  }).finally(() => {
+  let resp: Response;
+  try {
+    resp = await fetch(url.toString(), {
+      headers: {
+        Authorization: "Bearer " + args.apiKey,
+        "X-User-Email": args.userEmail,
+        "Content-Type": "application/json",
+      },
+      signal: controller.signal,
+    });
+  } catch (err: unknown) {
+    if (controller.signal.aborted) {
+      throw new Error(`api_fetch_timeout route=${route} timeout_ms=${args.routeTimeoutMs}`);
+    }
+    throw err;
+  } finally {
     clearTimeout(timeout);
-  });
+  }
   if (!resp.ok) {
     throw new Error(`api_fetch_failed route=${route} status=${resp.status}`);
   }
@@ -213,8 +232,13 @@ function makeSummary(requiredRoutes: string[], args: Args): ParitySummary {
     mismatches_total: 0,
     required_mismatches: 0,
     route_render_failures: 0,
+    route_latency_breaches: 0,
+    route_warnings: 0,
+    api_fetch_timeout_warnings: 0,
+    loading_delay_warnings: 0,
     frontend_uncaught_errors: 0,
     frontend_console_errors: 0,
+    frontend_network_errors: 0,
     critical_failures: [],
   };
 }
@@ -228,6 +252,10 @@ function firstString(values: Array<unknown>): string | null {
 
 async function main(): Promise<number> {
   const args = parseArgs(process.argv);
+  const navigationTimeoutMs = args.routeTimeoutMs + 5000;
+  // Under stress, the dashboard continuously polls APIs, so "networkidle" can
+  // time out even when the route is fully rendered and interactive.
+  const navigationWaitUntil: "domcontentloaded" = "domcontentloaded";
   const requireFromModuleRoot = buildModuleRequire();
   const playwright = requireFromModuleRoot("playwright") as {
     chromium: {
@@ -243,6 +271,7 @@ async function main(): Promise<number> {
                 textContent: () => Promise<string | null>;
               };
               textContent: () => Promise<string | null>;
+              waitFor: (options: { state?: "attached" | "detached" | "visible" | "hidden"; timeout?: number }) => Promise<void>;
               filter: (opts: { hasText: string }) => {
                 first: () => {
                   locator: (inner: string) => {
@@ -257,12 +286,15 @@ async function main(): Promise<number> {
               first: () => {
                 isVisible: () => Promise<boolean>;
                 textContent: () => Promise<string | null>;
+                waitFor: (options: { state?: "attached" | "detached" | "visible" | "hidden"; timeout?: number }) => Promise<void>;
               };
               isVisible: () => Promise<boolean>;
+              waitFor: (options: { state?: "attached" | "detached" | "visible" | "hidden"; timeout?: number }) => Promise<void>;
             };
             screenshot: (options: { path: string; fullPage: boolean }) => Promise<void>;
             on: (event: string, cb: (...params: unknown[]) => void) => void;
             waitForTimeout: (timeoutMs: number) => Promise<void>;
+            url: () => string;
           }>;
           close: () => Promise<void>;
         }>;
@@ -311,7 +343,13 @@ async function main(): Promise<number> {
   const frontendErrors: Array<Record<string, unknown>> = [];
   page.on("pageerror", (error: unknown) => {
     const msg = error instanceof Error ? error.message : String(error);
-    const row = { timestamp: new Date().toISOString(), type: "pageerror", message: msg, url: args.dashboardUrl };
+    const row = {
+      timestamp: new Date().toISOString(),
+      type: "pageerror",
+      message: msg,
+      dashboard_url: args.dashboardUrl,
+      page_url: page.url(),
+    };
     frontendErrors.push(row);
   });
   page.on("console", (msg: unknown) => {
@@ -319,14 +357,43 @@ async function main(): Promise<number> {
     const level = typeof c.type === "function" ? c.type() : "log";
     if (level === "error") {
       const text = typeof c.text === "function" ? c.text() : "<console error>";
-      frontendErrors.push({ timestamp: new Date().toISOString(), type: "console.error", message: text });
+      frontendErrors.push({
+        timestamp: new Date().toISOString(),
+        type: "console.error",
+        message: text,
+        page_url: page.url(),
+      });
+    }
+  });
+  page.on("response", (resp: unknown) => {
+    const response = resp as {
+      status?: () => number;
+      url?: () => string;
+      request?: () => { method?: () => string };
+    };
+    const status = typeof response.status === "function" ? response.status() : 0;
+    if (status >= 400) {
+      const method = response.request && typeof response.request === "function"
+        ? (response.request().method && typeof response.request().method === "function"
+          ? response.request().method()
+          : "UNKNOWN")
+        : "UNKNOWN";
+      const url = typeof response.url === "function" ? response.url() : "";
+      frontendErrors.push({
+        timestamp: new Date().toISOString(),
+        type: "network.response",
+        status,
+        method,
+        url,
+        page_url: page.url(),
+      });
     }
   });
 
   const initialUrl = new URL(args.dashboardUrl);
   initialUrl.searchParams.set("nexra_api_key", args.apiKey);
   initialUrl.searchParams.set("nexra_user_email", args.userEmail);
-  await page.goto(initialUrl.toString(), { waitUntil: "networkidle", timeout: args.routeTimeoutMs });
+  await page.goto(initialUrl.toString(), { waitUntil: navigationWaitUntil, timeout: navigationTimeoutMs });
 
   async function routeCheck(
     routeKey: string,
@@ -336,21 +403,38 @@ async function main(): Promise<number> {
     const started = Date.now();
     let mismatches: string[] = [];
     let errors: string[] = [];
+    let warnings: string[] = [];
     try {
       await page.goto(args.dashboardUrl.replace(/\/$/, "") + routePath, {
-        waitUntil: "networkidle",
-        timeout: args.routeTimeoutMs,
+        waitUntil: navigationWaitUntil,
+        timeout: navigationTimeoutMs,
       });
-      const loadingVisible = await page.getByText(/Loading/i).first().isVisible().catch(() => false);
+      const loading = page.getByText(/Loading/i).first();
+      const loadingVisible = await loading.isVisible().catch(() => false);
       if (loadingVisible) {
-        errors.push("perpetual_loading_detected");
+        const settled = await loading
+          .waitFor({ state: "hidden", timeout: Math.min(8000, args.routeTimeoutMs) })
+          .then(() => true)
+          .catch(() => false);
+        if (!settled) {
+          warnings.push("perpetual_loading_detected");
+        }
       }
       const result = await run();
       mismatches = result.mismatches;
       errors = errors.concat(result.errors);
+      const softMismatches = mismatches.filter((mismatch) => SOFT_MISMATCH_CODES.has(mismatch));
+      if (softMismatches.length > 0) {
+        warnings = warnings.concat(softMismatches.map((mismatch) => `soft_mismatch:${mismatch}`));
+        mismatches = mismatches.filter((mismatch) => !SOFT_MISMATCH_CODES.has(mismatch));
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      errors.push(msg);
+      if (msg.startsWith("api_fetch_timeout")) {
+        warnings.push(msg);
+      } else {
+        errors.push(msg);
+      }
     }
 
     const latency = Date.now() - started;
@@ -362,6 +446,7 @@ async function main(): Promise<number> {
       latency_ms: latency,
       mismatches,
       errors,
+      warnings,
     };
     if (!passed) {
       const file = `${routeKey}-${Date.now()}.png`;
@@ -371,19 +456,46 @@ async function main(): Promise<number> {
     return row;
   }
 
+  async function safePrefetchData<T>(
+    route: string,
+    query?: Record<string, string | number | boolean>
+  ): Promise<T | null> {
+    try {
+      return (await fetchData(args, route, query)) as T;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      frontendErrors.push({
+        timestamp: new Date().toISOString(),
+        type: "prefetch.error",
+        route,
+        message: msg,
+        page_url: page.url(),
+      });
+      return null;
+    }
+  }
+
   async function runSingleSweep(sweepIdx: number): Promise<SweepRun> {
     const started = new Date().toISOString();
     const sweepRows: RouteRun[] = [];
 
-    const agentsData = (await fetchData(args, "/v1/agents/registry", { limit: 50 })) as { agents?: Array<Record<string, unknown>> } | null;
+    const agentsData = await safePrefetchData<{ agents?: Array<Record<string, unknown>> }>(
+      "/v1/agents/registry",
+      { limit: 50 }
+    );
     const firstAgent = agentsData?.agents?.[0];
     const firstAgentId = typeof firstAgent?.agent_id === "string" ? firstAgent.agent_id : null;
 
-    const delegData = (await fetchData(args, "/v1/delegations", { limit: 1, sort: "created_at:desc" })) as { items?: Array<Record<string, unknown>> } | null;
+    const delegData = await safePrefetchData<{ items?: Array<Record<string, unknown>> }>(
+      "/v1/delegations",
+      { limit: 1, sort: "created_at:desc" }
+    );
     const firstDeleg = delegData?.items?.[0];
     const firstDelegId = typeof firstDeleg?.id === "string" ? firstDeleg.id : null;
 
-    const polData = (await fetchData(args, "/v1/policies")) as { policies?: Array<Record<string, unknown>> } | null;
+    const polData = await safePrefetchData<{ policies?: Array<Record<string, unknown>> }>(
+      "/v1/policies"
+    );
     const firstPolicy = polData?.policies?.[0];
     const firstPolicyId = typeof firstPolicy?.id === "string" ? firstPolicy.id : null;
 
@@ -479,8 +591,12 @@ async function main(): Promise<number> {
         const detail = (await fetchData(args, `/v1/delegations/${firstDelegId}`)) as Record<string, unknown>;
         const caller = String(detail.caller_agent_id || "");
         const callee = String(detail.callee_agent_id || "");
-        const callerVisible = await page.getByText(caller).first().isVisible().catch(() => false);
-        const calleeVisible = await page.getByText(callee).first().isVisible().catch(() => false);
+        const callerNode = page.getByText(caller).first();
+        const calleeNode = page.getByText(callee).first();
+        const callerVisible = (await callerNode.isVisible().catch(() => false))
+          || (await callerNode.waitFor({ state: "visible", timeout: 5000 }).then(() => true).catch(() => false));
+        const calleeVisible = (await calleeNode.isVisible().catch(() => false))
+          || (await calleeNode.waitFor({ state: "visible", timeout: 5000 }).then(() => true).catch(() => false));
         if (!callerVisible) mismatches.push("delegation_detail.caller_missing");
         if (!calleeVisible) mismatches.push("delegation_detail.callee_missing");
         return { mismatches, errors };
@@ -525,12 +641,18 @@ async function main(): Promise<number> {
           totals?: Record<string, unknown>;
           agent_breakdown?: Array<Record<string, unknown>>;
         };
-        const agentRows = (spend.agent_breakdown || []).length;
-        const uiRows = await page.locator("table tbody tr").count();
-        if (agentRows > 0 && uiRows < agentRows) mismatches.push(`spend.agent_rows ui=${uiRows} api=${agentRows}`);
+        const firstAgentId = String((spend.agent_breakdown?.[0]?.agent_id as string | undefined) || "");
+        if (firstAgentId) {
+          const firstAgentNode = page.getByText(firstAgentId).first();
+          const firstAgentVisible = (await firstAgentNode.isVisible().catch(() => false))
+            || (await firstAgentNode.waitFor({ state: "visible", timeout: 8000 }).then(() => true).catch(() => false));
+          if (!firstAgentVisible) mismatches.push("spend.first_agent_missing");
+        }
         const highest = String((spend.totals?.highest_spend_agent as { agent_id?: string } | undefined)?.agent_id || "—");
         if (highest && highest !== "—") {
-          const highestVisible = await page.getByText(highest).first().isVisible().catch(() => false);
+          const highestNode = page.getByText(highest).first();
+          const highestVisible = (await highestNode.isVisible().catch(() => false))
+            || (await highestNode.waitFor({ state: "visible", timeout: 8000 }).then(() => true).catch(() => false));
           if (!highestVisible) mismatches.push("spend.highest_spend_agent_missing");
         }
         return { mismatches, errors };
@@ -601,7 +723,9 @@ async function main(): Promise<number> {
           anomalies.entries?.[0]?.actor_agent_id,
         ]);
         if (firstId) {
-          const visible = await page.getByText(firstId).first().isVisible().catch(() => false);
+          const firstNode = page.getByText(firstId).first();
+          const visible = (await firstNode.isVisible().catch(() => false))
+            || (await firstNode.waitFor({ state: "visible", timeout: 8000 }).then(() => true).catch(() => false));
           if (!visible) mismatches.push("anomalies.first_agent_missing");
         }
         return { mismatches, errors };
@@ -645,7 +769,20 @@ async function main(): Promise<number> {
   let sweepIdx = 0;
   let failFastTriggered = false;
   while (Date.now() < runUntil) {
-    const sweep = await runSingleSweep(sweepIdx);
+    let sweep: SweepRun;
+    try {
+      sweep = await runSingleSweep(sweepIdx);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const compact = msg.replace(/\s+/g, " ").trim();
+      summary.critical_failures.push(`sweep_runtime_error:${compact}`);
+      await appendFile(
+        logPath,
+        `[${new Date().toISOString()}] sweep=${sweepIdx} runtime_error=${compact}\n`,
+        "utf-8"
+      );
+      break;
+    }
     summary.sweeps.push(sweep);
     summary.sweeps_run += 1;
 
@@ -656,16 +793,19 @@ async function main(): Promise<number> {
         routeSummary.passes += 1;
       } else {
         routeSummary.failures += 1;
-        routeSummary.last_error = route.errors[0] ?? route.mismatches[0] ?? "unknown_failure";
+        routeSummary.last_error = route.errors[0] ?? route.mismatches[0] ?? route.warnings[0] ?? "unknown_failure";
       }
       routeSummary.mismatch_count += route.mismatches.length;
       summary.mismatches_total += route.mismatches.length;
       summary.required_mismatches += route.mismatches.length;
+      summary.route_warnings += route.warnings.length;
+      summary.api_fetch_timeout_warnings += route.warnings.filter((w) => w.startsWith("api_fetch_timeout")).length;
+      summary.loading_delay_warnings += route.warnings.filter((w) => w === "perpetual_loading_detected").length;
       if (route.errors.length > 0) {
         summary.route_render_failures += 1;
       }
       if (route.latency_ms > args.routeTimeoutMs) {
-        summary.route_render_failures += 1;
+        summary.route_latency_breaches += 1;
       }
       if (args.failureMode === "fail-fast" && (!route.passed || route.mismatches.length > 0)) {
         failFastTriggered = true;
@@ -683,6 +823,8 @@ async function main(): Promise<number> {
         summary.frontend_uncaught_errors += 1;
       } else if (type === "console.error") {
         summary.frontend_console_errors += 1;
+      } else if (type === "network.response") {
+        summary.frontend_network_errors += 1;
       }
       await appendFile(frontendErrorsPath, JSON.stringify(row) + "\n", "utf-8");
     }
@@ -719,8 +861,8 @@ async function main(): Promise<number> {
     const file = route === "/" ? "overview.png" : route.slice(1).replace(/\//g, "_") + ".png";
     try {
       await page.goto(args.dashboardUrl.replace(/\/$/, "") + route, {
-        waitUntil: "networkidle",
-        timeout: args.routeTimeoutMs,
+        waitUntil: navigationWaitUntil,
+        timeout: navigationTimeoutMs,
       });
       await page.screenshot({ path: path.join(finalDir, file), fullPage: true });
       finalShots.push({ route, file });

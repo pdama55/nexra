@@ -1,0 +1,641 @@
+{
+  "generated_at": "2026-03-18T05:32:48.412Z",
+  "dashboard_url": "http://localhost:5175",
+  "api_base_url": "http://127.0.0.1:8000",
+  "duration_min": 90,
+  "sweep_interval_sec": 120,
+  "route_timeout_ms": 15000,
+  "failure_mode": "fail-fast",
+  "sweeps_run": 4,
+  "required_routes": [
+    "overview",
+    "agents",
+    "agent_detail",
+    "delegations",
+    "delegation_detail",
+    "policies",
+    "policy_detail",
+    "spend",
+    "audit",
+    "hitl",
+    "trust",
+    "anomalies",
+    "compliance",
+    "settings"
+  ],
+  "route_summaries": {
+    "overview": {
+      "checks": 4,
+      "passes": 4,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "agents": {
+      "checks": 4,
+      "passes": 4,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "agent_detail": {
+      "checks": 4,
+      "passes": 3,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/agents/suite-a2a-1773810431\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "delegations": {
+      "checks": 4,
+      "passes": 4,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "delegation_detail": {
+      "checks": 4,
+      "passes": 3,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/delegations/b09b8c5c-92f6-4f94-98fa-e00e7c7961b8\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "policies": {
+      "checks": 4,
+      "passes": 4,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "policy_detail": {
+      "checks": 4,
+      "passes": 4,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "spend": {
+      "checks": 4,
+      "passes": 3,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/spend\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "audit": {
+      "checks": 4,
+      "passes": 3,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/audit\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "hitl": {
+      "checks": 4,
+      "passes": 3,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/hitl\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "trust": {
+      "checks": 4,
+      "passes": 3,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/trust\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "anomalies": {
+      "checks": 4,
+      "passes": 3,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/anomalies\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "compliance": {
+      "checks": 4,
+      "passes": 3,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/compliance\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "settings": {
+      "checks": 4,
+      "passes": 3,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/settings\", waiting until \"networkidle\"\u001b[22m\n"
+    }
+  },
+  "sweeps": [
+    {
+      "sweep_index": 0,
+      "started_at": "2026-03-18T05:08:41.067Z",
+      "finished_at": "2026-03-18T05:11:58.475Z",
+      "routes": [
+        {
+          "route_key": "overview",
+          "path": "/",
+          "passed": true,
+          "latency_ms": 8313,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "agents",
+          "path": "/agents",
+          "passed": true,
+          "latency_ms": 4357,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "agent_detail",
+          "path": "/agents/suite-a2a-1773810431",
+          "passed": true,
+          "latency_ms": 13176,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "delegations",
+          "path": "/delegations",
+          "passed": true,
+          "latency_ms": 14350,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "delegation_detail",
+          "path": "/delegations/b09b8c5c-92f6-4f94-98fa-e00e7c7961b8",
+          "passed": true,
+          "latency_ms": 14812,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "policies",
+          "path": "/policies",
+          "passed": true,
+          "latency_ms": 13826,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "policy_detail",
+          "path": "/policies/47a9ac5f-70ca-49f7-9de4-1f9cc5837505",
+          "passed": true,
+          "latency_ms": 14113,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "spend",
+          "path": "/spend",
+          "passed": true,
+          "latency_ms": 17872,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "audit",
+          "path": "/audit",
+          "passed": true,
+          "latency_ms": 12914,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "hitl",
+          "path": "/hitl",
+          "passed": true,
+          "latency_ms": 15083,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "trust",
+          "path": "/trust",
+          "passed": true,
+          "latency_ms": 21653,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "anomalies",
+          "path": "/anomalies",
+          "passed": true,
+          "latency_ms": 18372,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "compliance",
+          "path": "/compliance",
+          "passed": true,
+          "latency_ms": 9765,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "settings",
+          "path": "/settings",
+          "passed": true,
+          "latency_ms": 16120,
+          "mismatches": [],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "sweep_index": 1,
+      "started_at": "2026-03-18T05:13:58.479Z",
+      "finished_at": "2026-03-18T05:17:50.776Z",
+      "routes": [
+        {
+          "route_key": "overview",
+          "path": "/",
+          "passed": true,
+          "latency_ms": 25521,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "agents",
+          "path": "/agents",
+          "passed": true,
+          "latency_ms": 13926,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "agent_detail",
+          "path": "/agents/suite-a2a-1773810431",
+          "passed": true,
+          "latency_ms": 14210,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "delegations",
+          "path": "/delegations",
+          "passed": true,
+          "latency_ms": 17091,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "delegation_detail",
+          "path": "/delegations/b09b8c5c-92f6-4f94-98fa-e00e7c7961b8",
+          "passed": true,
+          "latency_ms": 13513,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "policies",
+          "path": "/policies",
+          "passed": true,
+          "latency_ms": 14480,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "policy_detail",
+          "path": "/policies/47a9ac5f-70ca-49f7-9de4-1f9cc5837505",
+          "passed": true,
+          "latency_ms": 15636,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "spend",
+          "path": "/spend",
+          "passed": true,
+          "latency_ms": 13970,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "audit",
+          "path": "/audit",
+          "passed": true,
+          "latency_ms": 15021,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "hitl",
+          "path": "/hitl",
+          "passed": true,
+          "latency_ms": 12559,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "trust",
+          "path": "/trust",
+          "passed": true,
+          "latency_ms": 22502,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "anomalies",
+          "path": "/anomalies",
+          "passed": true,
+          "latency_ms": 18134,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "compliance",
+          "path": "/compliance",
+          "passed": true,
+          "latency_ms": 9109,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "settings",
+          "path": "/settings",
+          "passed": true,
+          "latency_ms": 16186,
+          "mismatches": [],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "sweep_index": 2,
+      "started_at": "2026-03-18T05:19:50.782Z",
+      "finished_at": "2026-03-18T05:23:45.836Z",
+      "routes": [
+        {
+          "route_key": "overview",
+          "path": "/",
+          "passed": true,
+          "latency_ms": 25534,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "agents",
+          "path": "/agents",
+          "passed": true,
+          "latency_ms": 14359,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "agent_detail",
+          "path": "/agents/suite-a2a-1773810431",
+          "passed": true,
+          "latency_ms": 13258,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "delegations",
+          "path": "/delegations",
+          "passed": true,
+          "latency_ms": 16852,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "delegation_detail",
+          "path": "/delegations/b09b8c5c-92f6-4f94-98fa-e00e7c7961b8",
+          "passed": true,
+          "latency_ms": 14065,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "policies",
+          "path": "/policies",
+          "passed": true,
+          "latency_ms": 14212,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "policy_detail",
+          "path": "/policies/47a9ac5f-70ca-49f7-9de4-1f9cc5837505",
+          "passed": true,
+          "latency_ms": 12939,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "spend",
+          "path": "/spend",
+          "passed": true,
+          "latency_ms": 16462,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "audit",
+          "path": "/audit",
+          "passed": true,
+          "latency_ms": 13380,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "hitl",
+          "path": "/hitl",
+          "passed": true,
+          "latency_ms": 15233,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "trust",
+          "path": "/trust",
+          "passed": true,
+          "latency_ms": 21630,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "anomalies",
+          "path": "/anomalies",
+          "passed": true,
+          "latency_ms": 19132,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "compliance",
+          "path": "/compliance",
+          "passed": true,
+          "latency_ms": 8606,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "settings",
+          "path": "/settings",
+          "passed": true,
+          "latency_ms": 16636,
+          "mismatches": [],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "sweep_index": 3,
+      "started_at": "2026-03-18T05:25:45.841Z",
+      "finished_at": "2026-03-18T05:31:03.210Z",
+      "routes": [
+        {
+          "route_key": "overview",
+          "path": "/",
+          "passed": true,
+          "latency_ms": 21974,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "agents",
+          "path": "/agents",
+          "passed": true,
+          "latency_ms": 13516,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "agent_detail",
+          "path": "/agents/suite-a2a-1773810431",
+          "passed": false,
+          "latency_ms": 20009,
+          "mismatches": [],
+          "errors": [
+            "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/agents/suite-a2a-1773810431\", waiting until \"networkidle\"\u001b[22m\n"
+          ],
+          "screenshot": "agent_detail-1773811616606.png"
+        },
+        {
+          "route_key": "delegations",
+          "path": "/delegations",
+          "passed": true,
+          "latency_ms": 33906,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "delegation_detail",
+          "path": "/delegations/b09b8c5c-92f6-4f94-98fa-e00e7c7961b8",
+          "passed": false,
+          "latency_ms": 20007,
+          "mismatches": [],
+          "errors": [
+            "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/delegations/b09b8c5c-92f6-4f94-98fa-e00e7c7961b8\", waiting until \"networkidle\"\u001b[22m\n"
+          ],
+          "screenshot": "delegation_detail-1773811670603.png"
+        },
+        {
+          "route_key": "policies",
+          "path": "/policies",
+          "passed": true,
+          "latency_ms": 24869,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "policy_detail",
+          "path": "/policies/47a9ac5f-70ca-49f7-9de4-1f9cc5837505",
+          "passed": true,
+          "latency_ms": 26876,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "spend",
+          "path": "/spend",
+          "passed": false,
+          "latency_ms": 20006,
+          "mismatches": [],
+          "errors": [
+            "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/spend\", waiting until \"networkidle\"\u001b[22m\n"
+          ],
+          "screenshot": "spend-1773811742468.png"
+        },
+        {
+          "route_key": "audit",
+          "path": "/audit",
+          "passed": false,
+          "latency_ms": 20005,
+          "mismatches": [],
+          "errors": [
+            "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/audit\", waiting until \"networkidle\"\u001b[22m\n"
+          ],
+          "screenshot": "audit-1773811762602.png"
+        },
+        {
+          "route_key": "hitl",
+          "path": "/hitl",
+          "passed": false,
+          "latency_ms": 20005,
+          "mismatches": [],
+          "errors": [
+            "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/hitl\", waiting until \"networkidle\"\u001b[22m\n"
+          ],
+          "screenshot": "hitl-1773811782857.png"
+        },
+        {
+          "route_key": "trust",
+          "path": "/trust",
+          "passed": false,
+          "latency_ms": 20004,
+          "mismatches": [],
+          "errors": [
+            "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/trust\", waiting until \"networkidle\"\u001b[22m\n"
+          ],
+          "screenshot": "trust-1773811802939.png"
+        },
+        {
+          "route_key": "anomalies",
+          "path": "/anomalies",
+          "passed": false,
+          "latency_ms": 20004,
+          "mismatches": [],
+          "errors": [
+            "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/anomalies\", waiting until \"networkidle\"\u001b[22m\n"
+          ],
+          "screenshot": "anomalies-1773811823003.png"
+        },
+        {
+          "route_key": "compliance",
+          "path": "/compliance",
+          "passed": false,
+          "latency_ms": 20001,
+          "mismatches": [],
+          "errors": [
+            "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/compliance\", waiting until \"networkidle\"\u001b[22m\n"
+          ],
+          "screenshot": "compliance-1773811843067.png"
+        },
+        {
+          "route_key": "settings",
+          "path": "/settings",
+          "passed": false,
+          "latency_ms": 20002,
+          "mismatches": [],
+          "errors": [
+            "page.goto: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5175/settings\", waiting until \"networkidle\"\u001b[22m\n"
+          ],
+          "screenshot": "settings-1773811863149.png"
+        }
+      ]
+    }
+  ],
+  "mismatches_total": 0,
+  "required_mismatches": 0,
+  "route_render_failures": 9,
+  "route_latency_breaches": 32,
+  "frontend_uncaught_errors": 0,
+  "frontend_console_errors": 0,
+  "frontend_network_errors": 0,
+  "critical_failures": [
+    "route_render_failures:9"
+  ]
+}

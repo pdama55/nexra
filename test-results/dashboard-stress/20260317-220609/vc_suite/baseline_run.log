@@ -1,0 +1,2 @@
+Spend anomaly detected: {'agent_id': 'suite-callee-1773810221', 'org_id': '203fafd1-9070-4461-a82b-088ff676ef74', 'current_hour_spend': 250.42, 'mean_hourly_spend': 0.968, 'stddev': 0.0993, 'threshold': 1.2658, 'sigma_deviation': 2512.68}
+Spend anomaly detected: {'agent_id': 'suite-callee-1773810431', 'org_id': 'd9dbcc79-c743-425f-acda-5c595fa29914', 'current_hour_spend': 250.42, 'mean_hourly_spend': 0.968, 'stddev': 0.0993, 'threshold': 1.2658, 'sigma_deviation': 2512.68}

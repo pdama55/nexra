@@ -1,0 +1,34 @@
+# Dashboard Stress Validation Report
+- Generated: 2026-03-18T04:53:49.616740+00:00
+- Status: **FAILED**
+- Results Directory: `/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-214432`
+
+## Critical Failures
+- missing endpoint_metrics.json
+- dashboard_api_load exit=143
+- dashboard_parity_sweep exit=1
+- route render failures=1
+- required endpoint missing metrics: analytics_usage
+- required endpoint missing metrics: agents_registry
+- required endpoint missing metrics: delegations_list
+- required endpoint missing metrics: audit_log
+- required endpoint missing metrics: spend_summary
+- required endpoint missing metrics: policies_list
+- required endpoint missing metrics: org_me
+- required endpoint missing metrics: org_session
+- required endpoint missing metrics: org_api_keys
+- required endpoint missing metrics: org_members
+- required endpoint missing metrics: org_webhooks
+- required endpoint missing metrics: siem_config
+- required endpoint missing metrics: marketplace_connect_status
+
+## Warnings
+- route latency breaches=5 (threshold_ms=15000)
+
+## Key Artifacts
+- stress_summary: `/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-214432/stress_summary.json`
+- endpoint_metrics: `/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-214432/endpoint_metrics.json`
+- ui_parity_results: `/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-214432/ui_parity_results.json`
+- frontend_errors: `/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-214432/frontend_errors.jsonl`
+- api_failures: `/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-214432/api_failures.jsonl`
+- vc_capability_matrix: `/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-214432/vc_suite/capability_matrix_result.json`

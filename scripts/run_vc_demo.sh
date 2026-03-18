@@ -99,8 +99,10 @@ AUTOPLAY_DEPS_LOG="$RESULTS_DIR/autoplay-deps.log"
 PHASE_STATUS_FILE="$RESULTS_DIR/phase_status.json"
 EXIT_CODE_FILE="$RESULTS_DIR/exit_code.txt"
 EVENTS_FILE="$RESULTS_DIR/integration_events.jsonl"
+PREFLIGHT_OUT="$RESULTS_DIR/preflight.json"
 CHECKPOINT_SUMMARY_FILE="$RESULTS_DIR/checkpoint_summary.json"
 POLICY_FLIP_FILE="$RESULTS_DIR/prd_policy_flip.json"
+GO_NO_GO_FILE="$RESULTS_DIR/go_no_go.json"
 
 MOCK_SINK_PORT="${NEXRA_MOCK_SINK_PORT:-8800}"
 MOCK_SINK_BASE_URL="http://127.0.0.1:${MOCK_SINK_PORT}"
@@ -236,6 +238,28 @@ open_dashboard_url() {
     return 0
   fi
   return 1
+}
+
+build_dashboard_session_url() {
+  local base_url="$1"
+  local api_key="$2"
+  local user_email="$3"
+  python3 - <<'PY' "$base_url" "$api_key" "$user_email"
+import sys
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+
+base_url, api_key, user_email = sys.argv[1], sys.argv[2], sys.argv[3]
+parsed = urlparse(base_url)
+pairs = [
+    (key, value)
+    for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+    if key not in {"nexra_api_key", "api_key", "nexra_user_email", "user_email"}
+]
+pairs.append(("nexra_api_key", api_key))
+pairs.append(("nexra_user_email", user_email))
+query = urlencode(pairs)
+print(urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, query, parsed.fragment)))
+PY
 }
 
 cleanup_processes() {
@@ -473,8 +497,30 @@ print((((obj.get('orgs') or {}).get('buyer') or {}).get('api_key')) or '')
 PY
 )"
 
+BUYER_USER_EMAIL="$(python3 - <<'PY' "$ORG_PROFILE"
+import json, sys
+obj = json.load(open(sys.argv[1], 'r', encoding='utf-8'))
+print((((obj.get('orgs') or {}).get('buyer') or {}).get('owner_email')) or '')
+PY
+)"
+if [[ -z "$BUYER_USER_EMAIL" ]]; then
+  BUYER_USER_EMAIL="admin@nexra.local"
+fi
+
 if [[ -n "$BUYER_API_KEY" ]]; then
+  DASHBOARD_SESSION_URL="$(build_dashboard_session_url "$DASHBOARD_URL" "$BUYER_API_KEY" "$BUYER_USER_EMAIL")"
   emit_event "dashboard_session_synced"
+  echo "[info] dashboard session URL: $DASHBOARD_SESSION_URL"
+  if [[ "$OPEN_DASHBOARD" == "1" ]]; then
+    if open_dashboard_url "$DASHBOARD_SESSION_URL"; then
+      echo "[info] reopened dashboard with seeded buyer session."
+    else
+      echo "[warn] could not auto-open seeded dashboard session; open manually: $DASHBOARD_SESSION_URL" >&2
+    fi
+  else
+    echo "[info] dashboard auto-open disabled; use this URL to sync your browser session:"
+    echo "       $DASHBOARD_SESSION_URL"
+  fi
 fi
 
 update_phase "suite" "in_progress" "running vc_demo_suite.py"
@@ -622,7 +668,7 @@ if [[ -n "$BUYER_API_KEY" ]]; then
       "$ROOT_DIR/scripts/vc_dashboard_autoplay.ts"
       --base-url "$DASHBOARD_URL"
       --api-key "$BUYER_API_KEY"
-      --user-email "admin@nexra.local"
+      --user-email "$BUYER_USER_EMAIL"
       --timeline "$ROOT_DIR/demo/vc_timeline.yaml"
       --events-path "$EVENTS_FILE"
       --out-dir "$RESULTS_DIR/screenshots"
@@ -692,12 +738,136 @@ fi
 
 update_phase "runner" "$([[ "$OVERALL_EXIT" -eq 0 ]] && echo passed || echo failed)" "suite_exit=$SUITE_EXIT autoplay_exit=$AUTOPLAY_EXIT policy_exit=$POLICY_EXIT"
 
+python3 - <<'PY' \
+"$GO_NO_GO_FILE" \
+"$PREFLIGHT_OUT" \
+"$SUMMARY_PATH" \
+"$CAP_MATRIX_RESULT" \
+"$CHECKPOINT_SUMMARY_FILE" \
+"$POLICY_FLIP_FILE" \
+"$PHASE_STATUS_FILE" \
+"$OVERALL_EXIT" \
+"$SUITE_EXIT" \
+"$POLICY_EXIT" \
+"$AUTOPLAY_EXIT" \
+"$STRICT" \
+"$FAILURE_POLICY" \
+"$INTEGRATIONS" \
+"$MODE" \
+"$PROFILE"
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+(
+    out_path,
+    preflight_path,
+    suite_summary_path,
+    capability_path,
+    checkpoint_path,
+    policy_path,
+    phase_path,
+    overall_exit,
+    suite_exit,
+    policy_exit,
+    autoplay_exit,
+    strict_mode,
+    failure_policy,
+    integrations,
+    mode,
+    profile,
+) = sys.argv[1:]
+
+def _read_json(path: str) -> dict:
+    file = Path(path)
+    if not file.exists():
+        return {}
+    try:
+        return json.loads(file.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+preflight = _read_json(preflight_path)
+suite_summary = _read_json(suite_summary_path)
+capability = _read_json(capability_path)
+checkpoint = _read_json(checkpoint_path)
+policy = _read_json(policy_path)
+phase = _read_json(phase_path)
+
+required_failed = int(capability.get("required_failed", 9999)) if capability else 9999
+preflight_required_failed = int(preflight.get("required_failed", 9999)) if preflight else 9999
+checkpoints_ok = bool(checkpoint.get("strict_gate_passed")) if checkpoint else False
+policy_ok = bool(policy.get("passed")) if policy else False
+suite_ok = bool(suite_summary) and int(suite_exit) == 0
+strict_enabled = int(strict_mode) == 1
+
+reasons: list[str] = []
+if int(overall_exit) != 0:
+    reasons.append(f"overall_exit={overall_exit}")
+if preflight_required_failed != 0:
+    reasons.append(f"preflight.required_failed={preflight_required_failed}")
+if required_failed != 0:
+    reasons.append(f"capability.required_failed={required_failed}")
+if not policy_ok:
+    reasons.append("prd_policy_flip_failed")
+if strict_enabled and not checkpoints_ok:
+    reasons.append("checkpoint_strict_gate_failed")
+if strict_enabled and int(autoplay_exit) != 0:
+    reasons.append(f"autoplay_exit={autoplay_exit}")
+if not suite_ok:
+    reasons.append(f"suite_exit={suite_exit}")
+if int(policy_exit) != 0:
+    reasons.append(f"policy_exit={policy_exit}")
+
+status = "go" if not reasons else "no-go"
+payload = {
+    "generated_at": datetime.now(timezone.utc).isoformat(),
+    "status": status,
+    "mode": mode,
+    "profile": profile,
+    "integrations": integrations,
+    "failure_policy": failure_policy,
+    "strict": strict_enabled,
+    "gates": {
+        "preflight_required_failed": preflight_required_failed,
+        "capability_required_failed": required_failed,
+        "policy_flip_passed": policy_ok,
+        "checkpoint_strict_gate_passed": checkpoints_ok if checkpoint else None,
+        "suite_exit": int(suite_exit),
+        "policy_exit": int(policy_exit),
+        "autoplay_exit": int(autoplay_exit),
+        "overall_exit": int(overall_exit),
+    },
+    "artifacts": {
+        "preflight": preflight_path,
+        "suite_summary": suite_summary_path,
+        "capability_matrix_result": capability_path,
+        "checkpoint_summary": checkpoint_path,
+        "policy_flip": policy_path,
+        "phase_status": phase_path,
+    },
+    "reasons": reasons,
+    "phase_snapshot": phase.get("phases", {}),
+}
+
+Path(out_path).write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+print(json.dumps({"go_no_go": status, "reasons": reasons, "artifact": out_path}, indent=2, sort_keys=True))
+PY
+emit_event "go_no_go_written" "{\"status\": \"$(python3 - <<'PY' "$GO_NO_GO_FILE"
+import json, sys
+obj = json.load(open(sys.argv[1], 'r', encoding='utf-8'))
+print(obj.get('status', 'unknown'))
+PY
+)\"}"
+
 echo "VC suite exit code: $SUITE_EXIT"
 echo "Policy flip exit:   $POLICY_EXIT"
 echo "Autoplay exit:      $AUTOPLAY_EXIT"
 echo "Summary:            $SUMMARY_PATH"
 echo "Capability result:  $CAP_MATRIX_RESULT"
 echo "Report:             $REPORT_PATH"
+echo "Go/No-Go:           $GO_NO_GO_FILE"
 
 FINAL_EXIT_CODE="$OVERALL_EXIT"
 exit "$OVERALL_EXIT"

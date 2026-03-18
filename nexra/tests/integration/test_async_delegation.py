@@ -1,5 +1,6 @@
 """Integration tests for async callback delegation mode."""
 
+import os
 import uuid
 from unittest.mock import AsyncMock, MagicMock
 
@@ -27,6 +28,7 @@ from services.trust_service import CircuitBreakerService, TrustService
 from services.webhook_service import WebhookService
 
 TEST_ENC_KEY = "a" * 64
+TEST_REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/1")
 
 
 def _mock_openai() -> AsyncMock:
@@ -100,7 +102,7 @@ async def test_callback_url_queues_async_delivery(db_session: AsyncSession) -> N
     db_session.add(policy)
     await db_session.flush()
 
-    redis_client = aioredis.from_url("redis://localhost:6379/1", decode_responses=True)
+    redis_client = aioredis.from_url(TEST_REDIS_URL, decode_responses=True)
     try:
         policy_engine = PolicyEngine(redis_client, db_session)
         webhook_service = WebhookService()
@@ -203,7 +205,7 @@ async def test_callback_completion_appends_callback_audit_events(
     db_session.add(policy)
     await db_session.flush()
 
-    redis_client = aioredis.from_url("redis://localhost:6379/1", decode_responses=True)
+    redis_client = aioredis.from_url(TEST_REDIS_URL, decode_responses=True)
     try:
         policy_engine = PolicyEngine(redis_client, db_session)
         webhook_service = WebhookService()

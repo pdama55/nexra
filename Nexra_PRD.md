@@ -792,6 +792,15 @@ Policy conditions are evaluated against a delegation context object containing: 
 | Deploy              | Railway (single service).                                                           | AWS ECS Fargate. ALB. Separate task definitions for API and Celery workers.                    |
 | Monitoring          | Railway logs + Sentry error tracking.                                               | Datadog APM. CloudWatch metrics. PagerDuty for P0 alerts (5xx spike, delegation queue depth).  |
 
+**MVP PRESENTATION RUNTIME PROFILE (CURRENT)**
+
+- Presentation and rehearsal runs are executed against managed external services, not local Docker.
+- API runtime: Railway deployment (attach mode for demo validation).
+- Database: Neon Postgres (pgvector-enabled where required by capability discovery path).
+- Cache/token/rate-limit store: Upstash Redis.
+- Billing/usage metering: Stripe (same integration path used in product flow).
+- Local scripts and tests MUST support external infra endpoints via environment configuration (`DATABASE_URL`, `REDIS_URL`, Stripe keys) and MUST NOT assume Docker availability for presentation readiness.
+
 **DISCOVERY RANKING - COMPOSITE SCORE ALGORITHM**
 
 Every discovery result is ranked by a composite score computed in the database layer (not application layer - to avoid N+1 queries). Score formula:

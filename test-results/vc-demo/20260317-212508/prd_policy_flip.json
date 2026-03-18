@@ -1,0 +1,19 @@
+{
+  "allow_error_code": null,
+  "allow_error_message": null,
+  "allow_policy_decision": "allow",
+  "allow_policy_version": 1,
+  "allow_status_code": 202,
+  "base_url": "http://127.0.0.1:8000",
+  "block_error_code": "POLICY_BLOCKED",
+  "block_error_message": "Condition failed: callee_agent_id == __non_matching_target_for_flip_check__",
+  "block_policy_version": 2,
+  "block_status_code": 403,
+  "callee_agent_id": "buyer-risk",
+  "caller_agent_id": "buyer-ops",
+  "flip_duration_seconds": 4.4392,
+  "generated_at": "2026-03-18T04:28:06.573864+00:00",
+  "passed": true,
+  "policy_id": "a15d6244-55f3-403b-ac11-d8a5e7e7f710",
+  "total_duration_seconds": 8.9919
+}

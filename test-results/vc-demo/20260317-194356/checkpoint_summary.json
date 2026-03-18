@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-03-18T02:49:24.804Z",
+  "checkpoints_total": 8,
+  "checkpoints_seen": 8,
+  "checkpoints_missing": 0,
+  "coverage_ratio": 1,
+  "min_required_coverage": 1,
+  "strict_mode": false,
+  "strict_gate_passed": true,
+  "missing_by_act": []
+}

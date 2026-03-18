@@ -24,48 +24,6 @@
     window.addEventListener('scroll', setScrolledState, { passive: true });
   }
 
-  function initMobileNavDrawer() {
-    var toggle = document.getElementById('nav-toggle');
-    var drawer = document.getElementById('nav-drawer');
-    var overlay = document.getElementById('nav-overlay');
-    if (!toggle || !drawer || !overlay) return;
-
-    function setOpen(next) {
-      toggle.setAttribute('aria-expanded', next ? 'true' : 'false');
-      drawer.setAttribute('aria-hidden', next ? 'false' : 'true');
-      drawer.classList.toggle('open', next);
-      overlay.hidden = !next;
-      document.body.classList.toggle('is-nav-open', next);
-    }
-
-    toggle.addEventListener('click', function() {
-      var isOpen = toggle.getAttribute('aria-expanded') === 'true';
-      setOpen(!isOpen);
-    });
-
-    overlay.addEventListener('click', function() {
-      setOpen(false);
-    });
-
-    drawer.querySelectorAll('[data-nav-close]').forEach(function(link) {
-      link.addEventListener('click', function() {
-        setOpen(false);
-      });
-    });
-
-    document.addEventListener('keydown', function(event) {
-      if (event.key === 'Escape') {
-        setOpen(false);
-      }
-    });
-
-    window.addEventListener('resize', function() {
-      if (window.innerWidth > 900) {
-        setOpen(false);
-      }
-    });
-  }
-
   function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   }
@@ -114,7 +72,6 @@
 
     initNavFadeIn(nav);
     initNavScrollState(nav);
-    initMobileNavDrawer();
     initSmoothScroll();
   }
 

@@ -42,6 +42,8 @@ jobs:
       PYTHONUNBUFFERED: "1"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -93,6 +95,15 @@ jobs:
         run: |
           cd nexra
           poetry run python ../scripts/check_openapi_snapshot.py
+      - name: OpenAPI snapshot freshness guard
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          cd nexra
+          if [[ -z "${BASE_SHA:-}" || "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+            BASE_SHA="$(git rev-parse HEAD~1)"
+          fi
+          poetry run python ../scripts/check_openapi_snapshot_freshness.py --base "$BASE_SHA"
       - name: Run unit tests
         run: |
           cd nexra
@@ -123,6 +134,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'

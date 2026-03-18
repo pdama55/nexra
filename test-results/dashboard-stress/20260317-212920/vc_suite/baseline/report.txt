@@ -1,0 +1,16 @@
+Nexra Live Demo Full Suite Report
+Generated: 2026-03-18T04:32:50.828279+00:00
+Base URL: http://127.0.0.1:8000
+
+[PASS] health_org_bootstrap (required)
+[SKIP] org_admin_surface (required) :: mock sink not configured; skipped webhook test calls
+[PASS] agents_and_discovery (required)
+[PASS] policies_lifecycle (required)
+[PASS] delegation_async_callback (required)
+[PASS] hitl_flows (required)
+[PASS] depth_guardrail (required)
+[PASS] audit_and_compliance (required)
+[PASS] analytics_dashboard (required)
+[SKIP] siem_export (required) :: mock sink not configured; skipping SIEM export assertions
+[SKIP] anomaly_fanout (required) :: mock sink not configured; skipped channel capture assertions
+[SKIP] marketplace (optional) :: connect-onboard is optional; enable with --enable-stripe-onboard

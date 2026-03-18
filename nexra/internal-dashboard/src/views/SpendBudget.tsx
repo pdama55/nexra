@@ -13,6 +13,16 @@ interface Props {
   timeRange: TimeRange;
 }
 
+type AuditEventEntry = {
+  actor_agent_id: string | null;
+  target_agent_id: string | null;
+};
+
+type AuditEventPage = {
+  entries: AuditEventEntry[];
+  next_cursor: string | null;
+};
+
 export function SpendBudget({ timeRange }: Props) {
   const params = getTimeRangeParams(timeRange);
   const { data: spendPayload } = useQuery<{
@@ -62,16 +72,33 @@ export function SpendBudget({ timeRange }: Props) {
   const { data: anomalyCounts } = useQuery<Record<string, number>>({
     queryKey: ['spend-anomaly-counts', params.window],
     queryFn: async () => {
-      const events = await apiGet<{ entries: Array<{ actor_agent_id: string | null; target_agent_id: string | null }> }>(
-        '/audit/log',
-        { event_type: 'anomaly_detected', limit: 500 },
-      );
       const counts: Record<string, number> = {};
-      for (const entry of events.entries) {
-        const key = entry.target_agent_id ?? entry.actor_agent_id ?? '';
-        if (!key) continue;
-        counts[key] = (counts[key] ?? 0) + 1;
+      let cursor: string | null = null;
+      const pageLimit = 100;
+      const maxPages = 5;
+
+      for (let page = 0; page < maxPages; page += 1) {
+        const pageData: AuditEventPage = await apiGet<AuditEventPage>(
+          '/audit/log',
+          {
+            event_type: 'anomaly_detected',
+            limit: pageLimit,
+            cursor: cursor ?? undefined,
+          },
+        );
+
+        for (const entry of pageData.entries) {
+          const key = entry.target_agent_id ?? entry.actor_agent_id ?? '';
+          if (!key) continue;
+          counts[key] = (counts[key] ?? 0) + 1;
+        }
+
+        if (!pageData.next_cursor) {
+          break;
+        }
+        cursor = pageData.next_cursor;
       }
+
       return counts;
     },
     refetchInterval: 300_000,

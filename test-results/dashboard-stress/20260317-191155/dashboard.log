@@ -7,3 +7,6 @@
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
+8:03:58 PM [vite] (client) hmr update /src/views/SpendBudget.tsx
+8:04:24 PM [vite] (client) hmr update /src/views/SpendBudget.tsx
+8:25:52 PM [vite] (client) hmr update /src/views/SpendBudget.tsx

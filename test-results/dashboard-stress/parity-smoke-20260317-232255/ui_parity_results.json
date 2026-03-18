@@ -1,0 +1,272 @@
+{
+  "generated_at": "2026-03-18T06:23:58.683Z",
+  "dashboard_url": "http://localhost:5175",
+  "api_base_url": "http://127.0.0.1:8000",
+  "duration_min": 1,
+  "sweep_interval_sec": 120,
+  "route_timeout_ms": 15000,
+  "failure_mode": "fail-fast",
+  "sweeps_run": 1,
+  "required_routes": [
+    "overview",
+    "agents",
+    "agent_detail",
+    "delegations",
+    "delegation_detail",
+    "policies",
+    "policy_detail",
+    "spend",
+    "audit",
+    "hitl",
+    "trust",
+    "anomalies",
+    "compliance",
+    "settings"
+  ],
+  "route_summaries": {
+    "overview": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "agents": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "agent_detail": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "delegations": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "delegation_detail": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "policies": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "policy_detail": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "spend": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "audit": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "hitl": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "trust": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "anomalies": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "compliance": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "settings": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    }
+  },
+  "sweeps": [
+    {
+      "sweep_index": 0,
+      "started_at": "2026-03-18T06:22:57.832Z",
+      "finished_at": "2026-03-18T06:23:48.359Z",
+      "routes": [
+        {
+          "route_key": "overview",
+          "path": "/",
+          "passed": true,
+          "latency_ms": 5597,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "agents",
+          "path": "/agents",
+          "passed": true,
+          "latency_ms": 3224,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "agent_detail",
+          "path": "/agents/suite-a2a-1773814716",
+          "passed": true,
+          "latency_ms": 2592,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "delegations",
+          "path": "/delegations",
+          "passed": true,
+          "latency_ms": 3081,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "delegation_detail",
+          "path": "/delegations/b0d49681-0145-4335-be7b-5ae9186c318c",
+          "passed": true,
+          "latency_ms": 2198,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "policies",
+          "path": "/policies",
+          "passed": true,
+          "latency_ms": 3178,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "policy_detail",
+          "path": "/policies/263ea39f-025b-471b-96d4-f7d0976a8bc1",
+          "passed": true,
+          "latency_ms": 2607,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "spend",
+          "path": "/spend",
+          "passed": true,
+          "latency_ms": 2845,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "audit",
+          "path": "/audit",
+          "passed": true,
+          "latency_ms": 2967,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "hitl",
+          "path": "/hitl",
+          "passed": true,
+          "latency_ms": 4005,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "trust",
+          "path": "/trust",
+          "passed": true,
+          "latency_ms": 5263,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "anomalies",
+          "path": "/anomalies",
+          "passed": true,
+          "latency_ms": 3580,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "compliance",
+          "path": "/compliance",
+          "passed": true,
+          "latency_ms": 830,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "route_key": "settings",
+          "path": "/settings",
+          "passed": true,
+          "latency_ms": 3391,
+          "mismatches": [],
+          "errors": [],
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "mismatches_total": 0,
+  "required_mismatches": 0,
+  "route_render_failures": 0,
+  "route_latency_breaches": 0,
+  "route_warnings": 0,
+  "api_fetch_timeout_warnings": 0,
+  "loading_delay_warnings": 0,
+  "frontend_uncaught_errors": 0,
+  "frontend_console_errors": 0,
+  "frontend_network_errors": 0,
+  "critical_failures": []
+}

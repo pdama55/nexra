@@ -44,21 +44,312 @@ a { color: inherit; text-decoration: none; }
 
 .sidebar-toggle {
   display: none;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: auto;
+  min-width: 4rem;
+  height: 2.75rem;
+  padding: 0 0.95rem;
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;
   border: 0.0625rem solid rgba(194, 202, 212, 0.24);
   background: rgba(19, 26, 36, 0.72);
   font-family: 'Space Grotesk', var(--font-body);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
   color: rgba(244, 246, 248, 0.9);
   cursor: pointer;
+}
+
+body.is-waitlist-open {
+  overflow: hidden;
+}
+
+.waitlist-honeypot {
+  position: absolute;
+  left: -624.9375rem;
+  width: 0.0625rem;
+  height: 0.0625rem;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.waitlist-message {
+  margin-top: 0.75rem;
+  min-height: 1.25rem;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.waitlist-message.success {
+  color: #74e39f;
+}
+
+.waitlist-message.error {
+  color: #ffcc80;
+}
+
+.waitlist-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.waitlist-modal.open {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.waitlist-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 5, 9, 0.72);
+  backdrop-filter: blur(0.2rem);
+  opacity: 0;
+  transition: opacity 0.24s ease;
+}
+
+.waitlist-modal.open .waitlist-modal-backdrop {
+  opacity: 1;
+}
+
+.waitlist-modal-dialog {
+  position: relative;
+  width: min(100%, 25rem);
+  border: 0.0625rem solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.875rem;
+  background:
+    linear-gradient(180deg, rgba(17, 24, 34, 0.96), rgba(10, 14, 20, 0.96));
+  box-shadow:
+    0 1rem 2.5rem rgba(0, 0, 0, 0.45),
+    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.04);
+  padding: 1.25rem;
+  opacity: 0;
+  transform: translateY(0.875rem) scale(0.98);
+  transition: transform 0.24s ease, opacity 0.24s ease;
+}
+
+.waitlist-modal.open .waitlist-modal-dialog {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.waitlist-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  border: 0.0625rem solid rgba(194, 202, 212, 0.24);
+  background: rgba(19, 26, 36, 0.72);
+  color: rgba(244, 246, 248, 0.9);
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.waitlist-modal-label {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: rgba(169, 176, 186, 0.64);
+}
+
+.waitlist-modal-title {
+  margin-top: 0.65rem;
+  font-family: "Space Grotesk", var(--font-body);
+  font-size: clamp(1.5rem, 5vw, 1.95rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.waitlist-modal-subtitle {
+  margin-top: 0.75rem;
+  max-width: 42ch;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  font-weight: 400;
+  color: rgba(244, 246, 248, 0.92);
+}
+
+.waitlist-modal-form {
+  width: 100%;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.65rem;
+}
+
+.waitlist-modal-form .waitlist-input {
+  width: 100%;
+  min-height: 2.5rem;
+  height: 2.5rem;
+  padding: 0 0.9rem;
+  border: 0.0625rem solid rgba(194, 202, 212, 0.28);
+  border-radius: 0.625rem;
+  background: rgba(19, 26, 36, 0.75);
+  color: #ffffff;
+  font-family: "Space Grotesk", var(--font-body);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.waitlist-modal-form .waitlist-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.waitlist-modal-form .waitlist-input:focus-visible {
+  border: 0.0625rem solid rgba(194, 202, 212, 0.42);
+  background: rgba(19, 26, 36, 0.78);
+  outline: none;
+  box-shadow: none;
+}
+
+.waitlist-btn.btn-primary {
+  display: inline-flex;
+  width: auto;
+  min-width: 0;
+  align-self: center;
+  min-height: 2.5rem;
+  height: 2.5rem;
+  padding: 0 1.1rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  border: none;
+  background: #ffffff;
+  color: #000000;
+  font-family: "Space Grotesk", var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.waitlist-btn.btn-primary[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.waitlist-modal-success-view {
+  display: none;
+  text-align: center;
+}
+
+.waitlist-modal.is-success .waitlist-modal-form-view {
+  display: none;
+}
+
+.waitlist-modal.is-success .waitlist-modal-success-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1.1rem 0.5rem 0.2rem;
+  animation: waitlist-success-fade 0.28s ease;
+}
+
+.waitlist-modal-check {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 999rem;
+  border: 0.0625rem solid rgba(118, 216, 255, 0.38);
+  background: rgba(118, 216, 255, 0.12);
+  position: relative;
+}
+
+.waitlist-modal-check::after {
+  content: "";
+  position: absolute;
+  top: 0.84rem;
+  left: 1.28rem;
+  width: 0.7rem;
+  height: 1.35rem;
+  border-right: 0.14rem solid #ffffff;
+  border-bottom: 0.14rem solid #ffffff;
+  transform: rotate(45deg) scale(0.75);
+  opacity: 0;
+}
+
+.waitlist-modal.is-success .waitlist-modal-check::after {
+  animation: waitlist-checkmark 0.3s ease forwards 0.08s;
+}
+
+.waitlist-modal-success-title {
+  font-family: "Space Grotesk", var(--font-body);
+  font-size: 1.25rem;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.waitlist-modal-success-subtitle {
+  max-width: 30ch;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(194, 202, 212, 0.82);
+  font-family: var(--font-body);
+}
+
+.waitlist-modal-done {
+  min-height: 2.75rem;
+  width: 100%;
+  margin-top: 0.3rem;
+}
+
+@keyframes waitlist-success-fade {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes waitlist-checkmark {
+  from {
+    opacity: 0;
+    transform: rotate(45deg) scale(0.75);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(45deg) scale(1);
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 0.0625rem;
+  height: 0.0625rem;
+  padding: 0;
+  margin: -0.0625rem;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .docs-shell { position: relative; }
@@ -329,6 +620,7 @@ li + li { margin-top: 0.35rem; }
   }
   .nav-left { flex-basis: auto; }
   .nav-center { display: none; }
+  .nav-right { gap: 0.55rem; }
 
   .sidebar {
     transform: translateX(-100%);
@@ -342,6 +634,22 @@ li + li { margin-top: 0.35rem; }
 
   .content-wrap {
     padding: 4.5rem 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waitlist-modal,
+  .waitlist-modal-backdrop,
+  .waitlist-modal-dialog,
+  .waitlist-modal.is-success .waitlist-modal-success-view {
+    transition: none;
+    animation: none;
+  }
+
+  .waitlist-modal.is-success .waitlist-modal-check::after {
+    opacity: 1;
+    transform: rotate(45deg) scale(1);
+    animation: none;
   }
 }
 </style>
@@ -361,10 +669,34 @@ li + li { margin-top: 0.35rem; }
     </div>
     <div class="nav-right">
       <button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-expanded="false" aria-controls="sidebar" aria-label="Toggle docs menu">MENU</button>
-      <a href="/#waitlist-form-hero" class="nav-cta">JOIN WAITLIST</a>
+      <a href="#waitlist-modal" class="nav-cta" data-waitlist-open data-waitlist-source="nav" aria-controls="waitlist-modal">JOIN WAITLIST</a>
     </div>
   </div>
 </nav>
+<div class="waitlist-modal" id="waitlist-modal" aria-hidden="true">
+  <div class="waitlist-modal-backdrop" data-waitlist-close></div>
+  <div class="waitlist-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="waitlist-modal-title">
+    <button type="button" class="waitlist-modal-close" data-waitlist-close aria-label="Close waitlist form">×</button>
+    <div class="waitlist-modal-form-view">
+      <span class="waitlist-modal-label">WAITLIST</span>
+      <h2 class="waitlist-modal-title" id="waitlist-modal-title">Join the waitlist</h2>
+      <p class="waitlist-modal-subtitle">Get early access and architecture updates as we onboard production teams.</p>
+      <form id="waitlist-form-modal" class="waitlist-modal-form" data-source="nav" data-success-mode="modal" novalidate>
+        <label class="sr-only" for="waitlist-email-modal">Work email</label>
+        <input id="waitlist-email-modal" type="email" class="waitlist-input" placeholder="you@company.com" autocomplete="email" required>
+        <input type="text" name="website" class="waitlist-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button type="submit" class="waitlist-btn btn-primary" data-default-label="JOIN WAITLIST" data-busy-label="SUBMITTING...">JOIN WAITLIST</button>
+      </form>
+      <p class="waitlist-message" aria-live="polite"></p>
+    </div>
+    <div class="waitlist-modal-success-view" aria-live="polite">
+      <span class="waitlist-modal-check" aria-hidden="true"></span>
+      <h3 class="waitlist-modal-success-title">Successfully submitted</h3>
+      <p class="waitlist-modal-success-subtitle">You're on the list. We'll reach out soon.</p>
+      <button type="button" class="waitlist-modal-done waitlist-btn btn-primary" data-waitlist-close>Done</button>
+    </div>
+  </div>
+</div>
 
 <div class="docs-shell">
   <aside class="sidebar" id="sidebar">
@@ -1000,6 +1332,173 @@ def handle_delegation(request):
 <!-- Navbar source of truth: edit shared behavior in /shared/navbar.js -->
 <script src="/shared/navbar.js"></script>
 <script>
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function collectUtmParams() {
+  var params = new URLSearchParams(window.location.search);
+  return {
+    utm_source: params.get('utm_source') || undefined,
+    utm_medium: params.get('utm_medium') || undefined,
+    utm_campaign: params.get('utm_campaign') || undefined
+  };
+}
+
+function setWaitlistMessage(form, text, type) {
+  var message = form.parentElement ? form.parentElement.querySelector('.waitlist-message') : null;
+  if (!message) return;
+  message.textContent = text;
+  message.classList.remove('success', 'error');
+  if (type) message.classList.add(type);
+}
+
+function setWaitlistBusy(form, busy) {
+  var button = form.querySelector('.waitlist-btn');
+  var input = form.querySelector('.waitlist-input');
+  if (!button || !input) return;
+  var defaultLabel = button.getAttribute('data-default-label') || 'JOIN WAITLIST';
+  var busyLabel = button.getAttribute('data-busy-label') || 'SUBMITTING...';
+  button.disabled = busy;
+  input.disabled = busy;
+  button.textContent = busy ? busyLabel : defaultLabel;
+}
+
+async function handleWaitlist(e, form) {
+  e.preventDefault();
+  var input = form.querySelector('.waitlist-input');
+  var honeypot = form.querySelector('.waitlist-honeypot');
+  if (!input) return false;
+
+  var email = input.value.trim();
+  var source = form.getAttribute('data-source') || 'nav';
+  var successMode = form.getAttribute('data-success-mode') || '';
+  var website = honeypot ? honeypot.value.trim() : '';
+
+  if (!isValidEmail(email)) {
+    setWaitlistMessage(form, 'Enter a valid work email address.', 'error');
+    return false;
+  }
+
+  if (website) {
+    setWaitlistMessage(form, 'Submission blocked. Please try again.', 'error');
+    return false;
+  }
+
+  var utm = collectUtmParams();
+  setWaitlistBusy(form, true);
+  setWaitlistMessage(form, '');
+
+  try {
+    var response = await fetch('/api/waitlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email,
+        source: source,
+        utm_source: utm.utm_source,
+        utm_medium: utm.utm_medium,
+        utm_campaign: utm.utm_campaign,
+        website: '',
+        timestamp: new Date().toISOString()
+      })
+    });
+
+    if (response.status === 202) {
+      form.reset();
+      if (successMode === 'modal') {
+        setWaitlistMessage(form, '', '');
+        var modal = document.getElementById('waitlist-modal');
+        if (modal) modal.classList.add('is-success');
+        return false;
+      }
+      setWaitlistMessage(form, "You're on the list. We'll reach out soon.", 'success');
+      return false;
+    }
+
+    if (response.status === 429) {
+      setWaitlistMessage(form, 'Too many attempts. Please retry in a few minutes.', 'error');
+      return false;
+    }
+
+    setWaitlistMessage(form, 'Could not submit right now. Please retry.', 'error');
+    return false;
+  } catch (_error) {
+    setWaitlistMessage(form, 'Network issue. Please retry in a moment.', 'error');
+    return false;
+  } finally {
+    setWaitlistBusy(form, false);
+  }
+}
+
+function initWaitlistModal() {
+  var modal = document.getElementById('waitlist-modal');
+  var modalForm = document.getElementById('waitlist-form-modal');
+  if (!modal || !modalForm) return;
+
+  var modalInput = modalForm.querySelector('.waitlist-input');
+  var openButtons = document.querySelectorAll('[data-waitlist-open]');
+  var closeButtons = modal.querySelectorAll('[data-waitlist-close]');
+
+  function openModal(options) {
+    var nextSource = options && options.source ? options.source : 'nav';
+    var prefillValue = options && typeof options.prefill === 'string' ? options.prefill : '';
+    modal.classList.add('open');
+    modal.classList.remove('is-success');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('is-waitlist-open');
+    modalForm.setAttribute('data-source', nextSource);
+    modalForm.reset();
+    setWaitlistBusy(modalForm, false);
+    setWaitlistMessage(modalForm, '');
+    if (modalInput) {
+      modalInput.value = prefillValue;
+      setTimeout(function() {
+        modalInput.focus();
+      }, 40);
+    }
+  }
+
+  function closeModal() {
+    modal.classList.remove('open');
+    modal.classList.remove('is-success');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('is-waitlist-open');
+    setWaitlistBusy(modalForm, false);
+    setWaitlistMessage(modalForm, '');
+  }
+
+  openButtons.forEach(function(btn) {
+    btn.addEventListener('click', function(event) {
+      event.preventDefault();
+      var source = btn.getAttribute('data-waitlist-source') || 'nav';
+      openModal({ source: source, prefill: '' });
+    });
+  });
+
+  modalForm.addEventListener('submit', function(event) {
+    handleWaitlist(event, modalForm);
+  });
+
+  closeButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      closeModal();
+    });
+  });
+
+  modal.addEventListener('click', function(event) {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && modal.classList.contains('open')) {
+      closeModal();
+    }
+  });
+}
+
 (function() {
   var sidebar = document.getElementById('sidebar');
   var toggle = document.getElementById('sidebar-toggle');
@@ -1017,6 +1516,7 @@ def handle_delegation(request):
     });
   }
   setSidebarOpen(false);
+  initWaitlistModal();
 
   var sidebarLinks = Array.from(document.querySelectorAll('.sidebar-link'));
   var onPageLinks = Array.from(document.querySelectorAll('.on-page a'));

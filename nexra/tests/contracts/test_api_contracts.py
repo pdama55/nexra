@@ -68,6 +68,10 @@ def test_required_dashboard_paths_and_methods_present() -> None:
         "/v1/orgs/api-keys": "get",
         "/v1/orgs/members": "get",
         "/v1/compliance/export/package": "get",
+        "/v1/mcp/tools": "get",
+        "/v1/mcp/tools/discover": "post",
+        "/v1/mcp/tools/delegate": "post",
+        "/v1/mcp/tools/governance/read": "get",
     }
     for path, method in required.items():
         assert path in paths, f"Missing required API path in OpenAPI: {path}"
@@ -139,6 +143,10 @@ def test_openapi_snapshot_contains_required_paths() -> None:
     assert "/v1/analytics/usage" in paths
     assert "/v1/delegations" in paths
     assert "/v1/delegations/{delegation_id}" in paths
+    assert "/v1/mcp/tools" in paths
+    assert "/v1/mcp/tools/discover" in paths
+    assert "/v1/mcp/tools/delegate" in paths
+    assert "/v1/mcp/tools/governance/read" in paths
 
 
 def test_delegations_list_query_contract_includes_dashboard_filters() -> None:
@@ -207,3 +215,37 @@ def test_compliance_package_query_contract_present() -> None:
     required = {"set", "date_from", "date_to"}
     missing = required - names
     assert not missing, f"/v1/compliance/export/package missing query params: {sorted(missing)}"
+
+
+def test_mcp_path_contracts_present() -> None:
+    spec = _openapi()
+    paths = spec.get("paths", {})
+
+    required_methods = {
+        "/v1/mcp/tools": {"get"},
+        "/v1/mcp/tools/discover": {"post"},
+        "/v1/mcp/tools/delegate": {"post"},
+        "/v1/mcp/tools/governance/read": {"get"},
+    }
+    for path, methods in required_methods.items():
+        assert path in paths, f"Missing required MCP path: {path}"
+        present = set(paths[path].keys())
+        missing = methods - present
+        assert not missing, f"{path} missing required methods: {sorted(missing)}"
+
+    discover_params = _parameter_names(spec, "/v1/mcp/tools/discover", "post")
+    delegate_params = _parameter_names(spec, "/v1/mcp/tools/delegate", "post")
+    governance_params = _parameter_names(spec, "/v1/mcp/tools/governance/read", "get")
+
+    assert {"authorization", "X-Agent-ID"}.issubset(discover_params)
+    assert {"authorization", "X-Agent-ID"}.issubset(delegate_params)
+    assert {"authorization"}.issubset(governance_params)
+
+    discover_body_ref = spec["paths"]["/v1/mcp/tools/discover"]["post"]["requestBody"]["content"]["application/json"][
+        "schema"
+    ].get("$ref")
+    delegate_body_ref = spec["paths"]["/v1/mcp/tools/delegate"]["post"]["requestBody"]["content"]["application/json"][
+        "schema"
+    ].get("$ref")
+    assert discover_body_ref == "#/components/schemas/DiscoverRequest"
+    assert delegate_body_ref == "#/components/schemas/DelegateRequest"

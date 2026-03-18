@@ -1,0 +1,5 @@
+{
+  "api_failures": "/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-232558/api_failures.jsonl",
+  "critical_endpoint_failures": 0,
+  "endpoint_metrics": "/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-232558/endpoint_metrics.json"
+}

@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/Users/parthdama/Documents/Nexra/scripts/live_demo_mock_sink.py", line 264, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/parthdama/Documents/Nexra/scripts/live_demo_mock_sink.py", line 247, in main
+    server = ThreadingHTTPServer(("127.0.0.1", args.port), SinkHandler)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socketserver.py", line 457, in __init__
+    self.server_bind()
+    ~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 144, in server_bind
+    socketserver.TCPServer.server_bind(self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socketserver.py", line 478, in server_bind
+    self.socket.bind(self.server_address)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use

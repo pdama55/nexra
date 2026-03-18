@@ -1,0 +1,313 @@
+{
+  "generated_at": "2026-03-18T05:38:01.122Z",
+  "dashboard_url": "http://localhost:5175",
+  "api_base_url": "http://127.0.0.1:8000",
+  "duration_min": 12,
+  "sweep_interval_sec": 120,
+  "route_timeout_ms": 15000,
+  "failure_mode": "fail-fast",
+  "sweeps_run": 1,
+  "required_routes": [
+    "overview",
+    "agents",
+    "agent_detail",
+    "delegations",
+    "delegation_detail",
+    "policies",
+    "policy_detail",
+    "spend",
+    "audit",
+    "hitl",
+    "trust",
+    "anomalies",
+    "compliance",
+    "settings"
+  ],
+  "route_summaries": {
+    "overview": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "perpetual_loading_detected"
+    },
+    "agents": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "perpetual_loading_detected"
+    },
+    "agent_detail": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "perpetual_loading_detected"
+    },
+    "delegations": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "perpetual_loading_detected"
+    },
+    "delegation_detail": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 2,
+      "last_error": "perpetual_loading_detected"
+    },
+    "policies": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 1,
+      "last_error": "perpetual_loading_detected"
+    },
+    "policy_detail": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "perpetual_loading_detected"
+    },
+    "spend": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "perpetual_loading_detected"
+    },
+    "audit": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "perpetual_loading_detected"
+    },
+    "hitl": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 0,
+      "last_error": "perpetual_loading_detected"
+    },
+    "trust": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 1,
+      "last_error": "perpetual_loading_detected"
+    },
+    "anomalies": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 1,
+      "last_error": "perpetual_loading_detected"
+    },
+    "compliance": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 1,
+      "last_error": "perpetual_loading_detected"
+    },
+    "settings": {
+      "checks": 1,
+      "passes": 0,
+      "failures": 1,
+      "mismatch_count": 1,
+      "last_error": "perpetual_loading_detected"
+    }
+  },
+  "sweeps": [
+    {
+      "sweep_index": 0,
+      "started_at": "2026-03-18T05:36:39.970Z",
+      "finished_at": "2026-03-18T05:37:59.882Z",
+      "routes": [
+        {
+          "route_key": "overview",
+          "path": "/",
+          "passed": false,
+          "latency_ms": 5849,
+          "mismatches": [],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "overview-1773812213096.png"
+        },
+        {
+          "route_key": "agents",
+          "path": "/agents",
+          "passed": false,
+          "latency_ms": 2651,
+          "mismatches": [],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "agents-1773812215883.png"
+        },
+        {
+          "route_key": "agent_detail",
+          "path": "/agents/suite-a2a-1773812111",
+          "passed": false,
+          "latency_ms": 3054,
+          "mismatches": [],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "agent_detail-1773812218985.png"
+        },
+        {
+          "route_key": "delegations",
+          "path": "/delegations",
+          "passed": false,
+          "latency_ms": 2805,
+          "mismatches": [],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "delegations-1773812221851.png"
+        },
+        {
+          "route_key": "delegation_detail",
+          "path": "/delegations/952afca8-8aa7-4ffc-8107-a10441f91e8d",
+          "passed": false,
+          "latency_ms": 2783,
+          "mismatches": [
+            "delegation_detail.caller_missing",
+            "delegation_detail.callee_missing"
+          ],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "delegation_detail-1773812224757.png"
+        },
+        {
+          "route_key": "policies",
+          "path": "/policies",
+          "passed": false,
+          "latency_ms": 2663,
+          "mismatches": [
+            "policies.rows ui=0 api=5"
+          ],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "policies-1773812227446.png"
+        },
+        {
+          "route_key": "policy_detail",
+          "path": "/policies/a1145d1b-e617-46d8-b9f7-478799062a8b",
+          "passed": false,
+          "latency_ms": 3112,
+          "mismatches": [],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "policy_detail-1773812230608.png"
+        },
+        {
+          "route_key": "spend",
+          "path": "/spend",
+          "passed": false,
+          "latency_ms": 6121,
+          "mismatches": [],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "spend-1773812236779.png"
+        },
+        {
+          "route_key": "audit",
+          "path": "/audit",
+          "passed": false,
+          "latency_ms": 4954,
+          "mismatches": [],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "audit-1773812241857.png"
+        },
+        {
+          "route_key": "hitl",
+          "path": "/hitl",
+          "passed": false,
+          "latency_ms": 6914,
+          "mismatches": [],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "hitl-1773812248992.png"
+        },
+        {
+          "route_key": "trust",
+          "path": "/trust",
+          "passed": false,
+          "latency_ms": 7696,
+          "mismatches": [
+            "trust.rows ui=0 api=7"
+          ],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "trust-1773812256722.png"
+        },
+        {
+          "route_key": "anomalies",
+          "path": "/anomalies",
+          "passed": false,
+          "latency_ms": 16787,
+          "mismatches": [
+            "anomalies.first_agent_missing"
+          ],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "anomalies-1773812273591.png"
+        },
+        {
+          "route_key": "compliance",
+          "path": "/compliance",
+          "passed": false,
+          "latency_ms": 199,
+          "mismatches": [
+            "compliance.heading_missing"
+          ],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "compliance-1773812273878.png"
+        },
+        {
+          "route_key": "settings",
+          "path": "/settings",
+          "passed": false,
+          "latency_ms": 5934,
+          "mismatches": [
+            "settings.org_identity_missing"
+          ],
+          "errors": [
+            "perpetual_loading_detected"
+          ],
+          "screenshot": "settings-1773812279854.png"
+        }
+      ]
+    }
+  ],
+  "mismatches_total": 7,
+  "required_mismatches": 7,
+  "route_render_failures": 14,
+  "route_latency_breaches": 1,
+  "frontend_uncaught_errors": 0,
+  "frontend_console_errors": 0,
+  "frontend_network_errors": 0,
+  "critical_failures": [
+    "required_mismatches:7",
+    "route_render_failures:14"
+  ]
+}

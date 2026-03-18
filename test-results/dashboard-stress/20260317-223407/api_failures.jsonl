@@ -1,0 +1,2 @@
+{"endpoint": "policies_list", "latency_ms": 15003.14, "method": "GET", "path": "/v1/policies", "timestamp": "2026-03-18T05:37:54.200318+00:00", "type": "timeout"}
+{"endpoint": "delegations_list", "latency_ms": 15001.89, "method": "GET", "path": "/v1/delegations", "timestamp": "2026-03-18T05:37:54.580838+00:00", "type": "timeout"}

@@ -1,0 +1,113 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "checks": [
+    {
+      "details": "GET http://127.0.0.1:8000/health -> 200",
+      "latency_ms": 306.75,
+      "mode": "network",
+      "name": "api_health",
+      "passed": true,
+      "required": true
+    },
+    {
+      "details": "OPENAI_API_KEY set",
+      "latency_ms": null,
+      "mode": "env",
+      "name": "openai_key",
+      "passed": true,
+      "required": true
+    },
+    {
+      "details": "GET https://api.openai.com/v1/models -> 200",
+      "latency_ms": 343.16,
+      "mode": "network",
+      "name": "openai_models",
+      "passed": true,
+      "required": true
+    },
+    {
+      "details": "STRIPE_SECRET_KEY set",
+      "latency_ms": null,
+      "mode": "env",
+      "name": "stripe_secret",
+      "passed": true,
+      "required": true
+    },
+    {
+      "details": "GET https://api.stripe.com/v1/account -> 200",
+      "latency_ms": 665.56,
+      "mode": "network",
+      "name": "stripe_account",
+      "passed": true,
+      "required": true
+    },
+    {
+      "details": "SENDGRID_API_KEY missing",
+      "latency_ms": null,
+      "mode": "env",
+      "name": "sendgrid_key",
+      "passed": false,
+      "required": false
+    },
+    {
+      "details": "ANOMALY_SLACK_WEBHOOK_URL missing",
+      "latency_ms": null,
+      "mode": "env",
+      "name": "slack_webhook",
+      "passed": false,
+      "required": false
+    },
+    {
+      "details": "ANOMALY_PAGERDUTY_ROUTING_KEY missing",
+      "latency_ms": null,
+      "mode": "env",
+      "name": "pagerduty_routing",
+      "passed": false,
+      "required": false
+    },
+    {
+      "details": "SIEM_WEBHOOK_ENDPOINT missing",
+      "latency_ms": null,
+      "mode": "env",
+      "name": "siem_endpoint",
+      "passed": false,
+      "required": false
+    },
+    {
+      "details": "POST /v1/orgs/register -> 201",
+      "latency_ms": 1048.21,
+      "mode": "api-smoke",
+      "name": "embedding_probe_org_register",
+      "passed": true,
+      "required": true
+    },
+    {
+      "details": "POST /v1/agents/register -> 200",
+      "latency_ms": 1637.52,
+      "mode": "api-smoke",
+      "name": "embedding_probe_agent_register",
+      "passed": true,
+      "required": true
+    },
+    {
+      "details": "GET /v1/agents/{agent_id} -> 200",
+      "latency_ms": 770.66,
+      "mode": "api-smoke",
+      "name": "embedding_probe_agent_readback",
+      "passed": true,
+      "required": true
+    },
+    {
+      "details": "POST /v1/agents/{agent_ref}/quarantine -> 200",
+      "latency_ms": 1351.41,
+      "mode": "api-smoke",
+      "name": "embedding_probe_agent_cleanup",
+      "passed": true,
+      "required": false
+    }
+  ],
+  "failed_total": 4,
+  "failure_policy": "fail-fast",
+  "integrations": "real",
+  "required_failed": 0
+}

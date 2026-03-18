@@ -1,0 +1,70 @@
+{
+  "artifacts": {
+    "capability_matrix_result": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-212508/capability_matrix_result.json",
+    "checkpoint_summary": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-212508/checkpoint_summary.json",
+    "phase_status": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-212508/phase_status.json",
+    "policy_flip": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-212508/prd_policy_flip.json",
+    "preflight": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-212508/preflight.json",
+    "suite_summary": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-212508/summary.json"
+  },
+  "failure_policy": "fail-fast",
+  "gates": {
+    "autoplay_exit": 0,
+    "capability_required_failed": 0,
+    "checkpoint_strict_gate_passed": true,
+    "overall_exit": 0,
+    "policy_exit": 0,
+    "policy_flip_passed": true,
+    "preflight_required_failed": 0,
+    "suite_exit": 0
+  },
+  "generated_at": "2026-03-18T04:29:08.194565+00:00",
+  "integrations": "real",
+  "mode": "attach",
+  "phase_snapshot": {
+    "autoplay": {
+      "details": "autoplay completed",
+      "status": "passed",
+      "updated_at": "2026-03-18T04:29:08.080998+00:00"
+    },
+    "mock_sink": {
+      "details": "mock sink ready at http://127.0.0.1:8800",
+      "status": "passed",
+      "updated_at": "2026-03-18T04:25:08.940095+00:00"
+    },
+    "prd_policy_flip": {
+      "details": "policy flip check passed",
+      "status": "passed",
+      "updated_at": "2026-03-18T04:28:15.662896+00:00"
+    },
+    "preflight": {
+      "details": "preflight completed",
+      "status": "passed",
+      "updated_at": "2026-03-18T04:25:34.252192+00:00"
+    },
+    "runner": {
+      "details": "suite_exit=0 autoplay_exit=0 policy_exit=0",
+      "status": "passed",
+      "updated_at": "2026-03-18T04:29:08.157761+00:00"
+    },
+    "seed": {
+      "details": "seed completed",
+      "status": "passed",
+      "updated_at": "2026-03-18T04:26:23.125379+00:00"
+    },
+    "stack": {
+      "details": "api+dashboard ready",
+      "status": "passed",
+      "updated_at": "2026-03-18T04:25:26.115830+00:00"
+    },
+    "suite": {
+      "details": "vc_demo_suite passed",
+      "status": "passed",
+      "updated_at": "2026-03-18T04:28:06.225235+00:00"
+    }
+  },
+  "profile": "vc-12m",
+  "reasons": [],
+  "status": "go",
+  "strict": true
+}

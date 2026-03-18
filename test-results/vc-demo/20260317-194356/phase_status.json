@@ -1,0 +1,56 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "dashboard_url": "http://127.0.0.1:5173",
+  "failure_policy": "fail-fast",
+  "generated_at": "2026-03-18T02:43:56.946816+00:00",
+  "integrations": "mock",
+  "mode": "bootstrap",
+  "phases": {
+    "autoplay": {
+      "details": "autoplay completed",
+      "status": "passed",
+      "updated_at": "2026-03-18T02:49:24.948016+00:00"
+    },
+    "mock_sink": {
+      "details": "mock sink ready at http://127.0.0.1:8800",
+      "status": "passed",
+      "updated_at": "2026-03-18T02:43:57.122861+00:00"
+    },
+    "prd_policy_flip": {
+      "details": "policy flip check passed",
+      "status": "passed",
+      "updated_at": "2026-03-18T02:48:34.070107+00:00"
+    },
+    "preflight": {
+      "details": "preflight completed",
+      "status": "passed",
+      "updated_at": "2026-03-18T02:45:33.624587+00:00"
+    },
+    "runner": {
+      "details": "suite_exit=0 autoplay_exit=0 policy_exit=0",
+      "status": "passed",
+      "updated_at": "2026-03-18T02:49:25.045139+00:00"
+    },
+    "seed": {
+      "details": "seed completed",
+      "status": "passed",
+      "updated_at": "2026-03-18T02:46:21.105933+00:00"
+    },
+    "stack": {
+      "details": "api+dashboard ready",
+      "status": "passed",
+      "updated_at": "2026-03-18T02:45:32.138540+00:00"
+    },
+    "suite": {
+      "details": "vc_demo_suite passed",
+      "status": "passed",
+      "updated_at": "2026-03-18T02:48:26.064501+00:00"
+    },
+    "terminal": {
+      "details": "exit_code=0",
+      "status": "passed",
+      "updated_at": "2026-03-18T02:49:25.094166+00:00"
+    }
+  },
+  "profile": "vc-12m"
+}

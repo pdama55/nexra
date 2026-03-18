@@ -10,6 +10,7 @@ This test exercises the complete flow:
 7. Verify trust score event
 """
 
+import os
 import uuid
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
@@ -38,6 +39,7 @@ from services.webhook_service import WebhookService
 
 
 TEST_ENC_KEY = "a" * 64
+TEST_REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/1")
 
 
 def _mock_openai() -> AsyncMock:
@@ -129,7 +131,7 @@ class TestFullDelegationFlow:
         await db_session.flush()
 
         # ─── Step 5: Initiate Delegation ────────────────────────
-        redis_client = aioredis.from_url("redis://localhost:6379/1", decode_responses=True)
+        redis_client = aioredis.from_url(TEST_REDIS_URL, decode_responses=True)
         try:
             policy_engine = PolicyEngine(redis_client, db_session)
             budget_service = BudgetService(db_session)
