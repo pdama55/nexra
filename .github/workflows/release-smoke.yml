@@ -3,6 +3,9 @@ name: release-smoke
 on:
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   migration-and-smoke:
     runs-on: ubuntu-latest
@@ -40,7 +43,7 @@ jobs:
       API_BASE_URL: http://127.0.0.1:8000
       PYTHONUNBUFFERED: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -70,7 +73,7 @@ jobs:
           curl -fsS http://127.0.0.1:8000/v1/delegations -H "Authorization: Bearer $API_KEY"
           curl -fsS "http://127.0.0.1:8000/v1/analytics/usage?window=last_24h" -H "Authorization: Bearer $API_KEY"
           kill $PID
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'

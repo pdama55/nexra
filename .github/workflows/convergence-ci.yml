@@ -5,6 +5,9 @@ on:
   push:
     branches: [ main ]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   python-quality:
     runs-on: ubuntu-latest
@@ -41,7 +44,7 @@ jobs:
       SECRET_KEY_ENCRYPTION_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
       PYTHONUNBUFFERED: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: actions/setup-python@v5
@@ -133,10 +136,10 @@ jobs:
   ts-quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -156,8 +159,25 @@ jobs:
       - name: TS SDK package smoke
         run: |
           cd nexra/sdk/nexra-ts
-          npm pack --dry-run >/tmp/nexra-ts-pack.txt
-          cat /tmp/nexra-ts-pack.txt
-          rg -q "README\\.md" /tmp/nexra-ts-pack.txt
-          rg -q "LICENSE" /tmp/nexra-ts-pack.txt
-          rg -q "dist/index\\.js" /tmp/nexra-ts-pack.txt
+          npm pack --dry-run --json >/tmp/nexra-ts-pack.json
+          cat /tmp/nexra-ts-pack.json
+          node --input-type=module <<'EOF'
+          import fs from 'node:fs';
+
+          const raw = fs.readFileSync('/tmp/nexra-ts-pack.json', 'utf8');
+          const packMeta = JSON.parse(raw);
+          if (!Array.isArray(packMeta) || packMeta.length === 0 || !Array.isArray(packMeta[0]?.files)) {
+            console.error('Unexpected npm pack --json output shape');
+            process.exit(1);
+          }
+
+          const packedPaths = new Set(packMeta[0].files.map((entry) => entry.path));
+          const requiredPaths = ['README.md', 'LICENSE', 'dist/index.js', 'dist/index.d.ts'];
+          const missingPaths = requiredPaths.filter((path) => !packedPaths.has(path));
+          if (missingPaths.length > 0) {
+            console.error('TS SDK package smoke failed. Missing files:', missingPaths.join(', '));
+            process.exit(1);
+          }
+
+          console.log('TS SDK package smoke passed. Required files present:', requiredPaths.join(', '));
+          EOF
