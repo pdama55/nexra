@@ -1,0 +1,78 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "baseline_exit_code": 1,
+  "baseline_summary": "/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-184824/vc_suite/baseline/summary.json",
+  "dashboard_url": "http://localhost:5173",
+  "generated_at": "2026-03-18T01:53:16.525539+00:00",
+  "org_profile": "/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-184824/vc_org_profile.json",
+  "scenario_results": {
+    "a2a_registration": true,
+    "billing_metering": true,
+    "compliance_exports": true,
+    "coordination_discovery": true,
+    "coordination_registry": true,
+    "dashboard_governance_views": true,
+    "delegation_context_scope": true,
+    "delegation_sync_async": true,
+    "framework_adapters": true,
+    "governance_anomaly_detection": true,
+    "governance_audit_immutability": true,
+    "governance_budget_caps": true,
+    "governance_circuit_breakers": true,
+    "governance_hitl": true,
+    "governance_policy_engine": true,
+    "governance_policy_versions": true,
+    "governance_schema_validation": true,
+    "governance_siem_export": false,
+    "governance_trust_scores": true,
+    "marketplace_connect_settlement": true,
+    "marketplace_cross_org_hire": true,
+    "protocol_mcp_surface": true
+  },
+  "scenarios": [
+    {
+      "details": {},
+      "error": null,
+      "id": "protocol_mcp_surface",
+      "passed": true
+    },
+    {
+      "details": {},
+      "error": null,
+      "id": "framework_adapters",
+      "passed": true
+    },
+    {
+      "details": {},
+      "error": null,
+      "id": "governance_budget_caps",
+      "passed": true
+    },
+    {
+      "details": {},
+      "error": null,
+      "id": "governance_schema_validation",
+      "passed": true
+    },
+    {
+      "details": {
+        "callee_agent_id": "vendor-vc-1773798789"
+      },
+      "error": null,
+      "id": "marketplace_cross_org_hire",
+      "passed": true
+    },
+    {
+      "details": {},
+      "error": null,
+      "id": "marketplace_connect_settlement",
+      "passed": true
+    },
+    {
+      "details": {},
+      "error": null,
+      "id": "governance_circuit_breakers",
+      "passed": true
+    }
+  ]
+}

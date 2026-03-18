@@ -1,0 +1,128 @@
+[
+  {
+    "act_id": "act_1_platform_boot",
+    "minute": "00:00-01:30",
+    "panel": "Overview",
+    "route": "/",
+    "screenshot": "01-act_1_platform_boot.png",
+    "checkpoint": "platform_ready",
+    "checkpoint_seen": true,
+    "expected_events": [
+      "preflight_passed",
+      "seeded_data_loaded",
+      "dashboard_session_synced"
+    ],
+    "missing_events": [],
+    "talking_point": "Nexra is the control plane over heterogeneous agent networks"
+  },
+  {
+    "act_id": "act_2_coordination",
+    "minute": "01:30-03:30",
+    "panel": "Agents",
+    "route": "/agents",
+    "screenshot": "02-act_2_coordination.png",
+    "checkpoint": "coordination_flow",
+    "checkpoint_seen": true,
+    "expected_events": [
+      "coordination_registry_passed",
+      "coordination_discovery_passed",
+      "delegation_sync_async_passed"
+    ],
+    "missing_events": [],
+    "talking_point": "Agents register typed capabilities, discover at runtime, and delegate without hardcoded links"
+  },
+  {
+    "act_id": "act_3_governance_controls",
+    "minute": "03:30-05:30",
+    "panel": "Policies",
+    "route": "/policies",
+    "screenshot": "03-act_3_governance_controls.png",
+    "checkpoint": "governance_controls",
+    "checkpoint_seen": true,
+    "expected_events": [
+      "governance_policy_engine_passed",
+      "governance_budget_caps_passed",
+      "governance_hitl_passed",
+      "governance_circuit_breakers_passed"
+    ],
+    "missing_events": [],
+    "talking_point": "Policy, budget, depth, and HiTL gates enforce safe-by-default behavior"
+  },
+  {
+    "act_id": "act_4_trust_anomaly",
+    "minute": "05:30-07:00",
+    "panel": "Trust + Anomalies",
+    "route": "/trust",
+    "screenshot": "04-act_4_trust_anomaly.png",
+    "checkpoint": "trust_and_anomaly",
+    "checkpoint_seen": true,
+    "expected_events": [
+      "governance_trust_scores_passed",
+      "governance_anomaly_detection_passed"
+    ],
+    "missing_events": [],
+    "talking_point": "Trust scoring and anomaly fanout catch and contain runtime risk"
+  },
+  {
+    "act_id": "act_5_audit_siem_compliance",
+    "minute": "07:00-08:30",
+    "panel": "Audit + Compliance",
+    "route": "/audit",
+    "screenshot": "05-act_5_audit_siem_compliance.png",
+    "checkpoint": "audit_compliance",
+    "checkpoint_seen": true,
+    "expected_events": [
+      "governance_audit_immutability_passed",
+      "governance_siem_export_passed",
+      "compliance_exports_passed"
+    ],
+    "missing_events": [],
+    "talking_point": "Every action is auditable and exportable for security and compliance teams"
+  },
+  {
+    "act_id": "act_6_marketplace",
+    "minute": "08:30-10:00",
+    "panel": "Marketplace / Settings",
+    "route": "/settings",
+    "screenshot": "06-act_6_marketplace.png",
+    "checkpoint": "marketplace_billing",
+    "checkpoint_seen": true,
+    "expected_events": [
+      "marketplace_cross_org_hire_passed",
+      "marketplace_connect_settlement_passed"
+    ],
+    "missing_events": [],
+    "talking_point": "Cross-org hiring and settlement prove marketplace monetization"
+  },
+  {
+    "act_id": "act_7_protocol_surface",
+    "minute": "10:00-11:00",
+    "panel": "Delegations + API trace",
+    "route": "/delegations",
+    "screenshot": "07-act_7_protocol_surface.png",
+    "checkpoint": "protocol_surface",
+    "checkpoint_seen": true,
+    "expected_events": [
+      "a2a_registration_passed",
+      "protocol_mcp_surface_passed",
+      "framework_adapters_passed"
+    ],
+    "missing_events": [],
+    "talking_point": "A2A and MCP surfaces let existing ecosystems plug into Nexra governance"
+  },
+  {
+    "act_id": "act_8_closeout",
+    "minute": "11:00-12:00",
+    "panel": "Overview",
+    "route": "/",
+    "screenshot": "08-act_8_closeout.png",
+    "checkpoint": "closeout_bundle",
+    "checkpoint_seen": true,
+    "expected_events": [
+      "capability_matrix_passed",
+      "vc_bundle_written"
+    ],
+    "missing_events": [],
+    "talking_point": "Every claim in the demo maps to machine-verifiable artifacts"
+  }
+]

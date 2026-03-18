@@ -1,0 +1,114 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "generated_at": "2026-03-18T00:54:06.515558+00:00",
+  "results": [
+    {
+      "error": null,
+      "finished_at": "2026-03-18T00:52:37.544982+00:00",
+      "name": "health_org_bootstrap",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-18T00:52:35.892371+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-18T00:52:47.318831+00:00",
+      "name": "org_admin_surface",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-18T00:52:37.545000+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-18T00:52:54.756711+00:00",
+      "name": "agents_and_discovery",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-18T00:52:47.318846+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-18T00:53:00.736156+00:00",
+      "name": "policies_lifecycle",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-18T00:52:54.756738+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-18T00:53:09.619624+00:00",
+      "name": "delegation_async_callback",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-18T00:53:00.736181+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-18T00:53:23.992418+00:00",
+      "name": "hitl_flows",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-18T00:53:09.619641+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-18T00:53:30.512695+00:00",
+      "name": "depth_guardrail",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-18T00:53:23.992455+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-18T00:53:35.513383+00:00",
+      "name": "audit_and_compliance",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-18T00:53:30.512712+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-18T00:53:43.405051+00:00",
+      "name": "analytics_dashboard",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-18T00:53:35.513421+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-18T00:53:48.033332+00:00",
+      "name": "siem_export",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-18T00:53:43.405070+00:00"
+    },
+    {
+      "error": null,
+      "finished_at": "2026-03-18T00:54:05.945928+00:00",
+      "name": "anomaly_fanout",
+      "passed": true,
+      "required": true,
+      "skipped": false,
+      "started_at": "2026-03-18T00:53:48.033358+00:00"
+    },
+    {
+      "error": "connect-onboard is optional; enable with --enable-stripe-onboard",
+      "finished_at": "2026-03-18T00:54:06.515548+00:00",
+      "name": "marketplace",
+      "passed": true,
+      "required": false,
+      "skipped": true,
+      "started_at": "2026-03-18T00:54:05.945944+00:00"
+    }
+  ]
+}

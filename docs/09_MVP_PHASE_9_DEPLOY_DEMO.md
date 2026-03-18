@@ -212,14 +212,11 @@ async def register():
             },
             pricing={"per_call_usd": 0.15},
             sla={"p99_latency_ms": 8000, "availability": 0.99},
-            # For local demo, use http:// — the HTTPS CHECK constraint in the DB
-            # must be temporarily relaxed, OR use a tunnel like ngrok.
-            # Option 1: Use ngrok (recommended for demo):
-            #   ngrok http 8001 → use the https://xxx.ngrok.io/webhook URL
-            # Option 2: For local-only testing, temporarily disable the CHECK constraint:
-            #   ALTER TABLE agents DROP CONSTRAINT ck_agents_webhook_https;
-            # Option 3: Use the env var NEXRA_RESEARCH_WEBHOOK_URL
-            webhook_url=os.environ.get("NEXRA_RESEARCH_WEBHOOK_URL", "https://localhost:8001/webhook"),
+            # HTTPS-only: use an ngrok/tunnel URL or trusted local TLS endpoint.
+            # Helper:
+            #   ngrok http 8001
+            #   eval "$(./scripts/export_research_webhook_url.sh)"
+            webhook_url=os.environ["NEXRA_RESEARCH_WEBHOOK_URL"],
             webhook_secret=WEBHOOK_SECRET,
         )
         print("[Research Agent] Registered with Nexra.")
@@ -265,6 +262,8 @@ curl -X POST http://localhost:8000/v1/orgs/register \
 # SAVE the api_key — it is shown only once
 
 # Terminal 3: Start Research Agent
+ngrok http 8001
+eval "$(./scripts/export_research_webhook_url.sh)"
 export NEXRA_API_KEY=nx_live_...
 export NEXRA_BASE_URL=http://localhost:8000/v1
 python demo/research_agent.py

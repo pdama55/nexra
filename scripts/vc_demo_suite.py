@@ -283,7 +283,20 @@ def _run_live_suite(
 
     run_log = results_dir / "baseline_run.log"
     with run_log.open("w", encoding="utf-8") as fh:
-        proc = subprocess.run(cmd, cwd=str(ROOT_DIR), stdout=fh, stderr=subprocess.STDOUT, check=False)
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(ROOT_DIR),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            fh.write(line)
+            fh.flush()
+            print(f"[baseline] {line}", end="", flush=True)
+        proc.wait()
 
     return proc.returncode, baseline_dir / "summary.json", run_log
 
@@ -333,6 +346,7 @@ def main() -> int:
 
     _append_event(event_path, {"event": "vc_suite_start", "base_url": args.base_url})
 
+    print(f"[vc-suite] baseline run log: {args.results_dir / 'baseline_run.log'}", flush=True)
     baseline_exit, baseline_summary_path, baseline_log_path = _run_live_suite(
         base_url=args.base_url,
         results_dir=args.results_dir,
@@ -342,6 +356,7 @@ def main() -> int:
         strict=args.strict,
         enable_stripe_onboard=args.enable_stripe_onboard,
     )
+    print(f"[vc-suite] baseline suite finished (exit={baseline_exit})", flush=True)
     _append_event(
         event_path,
         {

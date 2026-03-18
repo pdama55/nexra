@@ -1,0 +1,46 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "dashboard_url": "http://127.0.0.1:5173",
+  "failure_policy": "fail-fast",
+  "generated_at": "2026-03-18T01:21:13.355514+00:00",
+  "integrations": "mock",
+  "mode": "bootstrap",
+  "phases": {
+    "mock_sink": {
+      "details": "mock sink ready at http://127.0.0.1:8800",
+      "status": "passed",
+      "updated_at": "2026-03-18T01:21:13.528233+00:00"
+    },
+    "preflight": {
+      "details": "preflight completed",
+      "status": "passed",
+      "updated_at": "2026-03-18T01:22:54.523022+00:00"
+    },
+    "runner": {
+      "details": "bootstrapping vc runner",
+      "status": "in_progress",
+      "updated_at": "2026-03-18T01:21:13.392303+00:00"
+    },
+    "seed": {
+      "details": "seed completed",
+      "status": "passed",
+      "updated_at": "2026-03-18T01:23:47.665737+00:00"
+    },
+    "stack": {
+      "details": "api+dashboard ready",
+      "status": "passed",
+      "updated_at": "2026-03-18T01:22:53.634467+00:00"
+    },
+    "suite": {
+      "details": "running vc_demo_suite.py",
+      "status": "in_progress",
+      "updated_at": "2026-03-18T01:23:47.844229+00:00"
+    },
+    "terminal": {
+      "details": "exit_code=130",
+      "status": "failed",
+      "updated_at": "2026-03-18T01:24:45.533799+00:00"
+    }
+  },
+  "profile": "vc-12m"
+}

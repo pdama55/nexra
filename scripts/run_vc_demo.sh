@@ -5,14 +5,19 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 MODE="attach"
 PROFILE="vc-12m"
-INTEGRATIONS="real"
+INTEGRATIONS="mock"
 FAILURE_POLICY="fail-fast"
 BASE_URL="http://127.0.0.1:8000"
 DASHBOARD_URL="http://127.0.0.1:5173"
 RESULTS_DIR="$ROOT_DIR/test-results/vc-demo/$(date +%Y%m%d-%H%M%S)"
 STRICT=0
 HEADED=0
-OPEN_DASHBOARD=0
+if [[ -t 1 ]]; then
+  OPEN_DASHBOARD="${NEXRA_OPEN_DASHBOARD:-1}"
+else
+  OPEN_DASHBOARD="${NEXRA_OPEN_DASHBOARD:-0}"
+fi
+CHECKPOINT_MIN_COVERAGE="${NEXRA_CHECKPOINT_MIN_COVERAGE:-1.0}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -84,11 +89,19 @@ mkdir -p "$RESULTS_DIR"
 
 echo "VC demo results: $RESULTS_DIR"
 
+echo "Mode: $MODE | Integrations: $INTEGRATIONS | Failure policy: $FAILURE_POLICY"
+
 STACK_STATE_FILE="$RESULTS_DIR/live-stack-state.json"
 STACK_LOG_FILE="$RESULTS_DIR/live-stack.log"
 MOCK_SINK_LOG="$RESULTS_DIR/mock-sink.log"
 DASHBOARD_LOG="$RESULTS_DIR/dashboard.log"
 AUTOPLAY_DEPS_LOG="$RESULTS_DIR/autoplay-deps.log"
+PHASE_STATUS_FILE="$RESULTS_DIR/phase_status.json"
+EXIT_CODE_FILE="$RESULTS_DIR/exit_code.txt"
+EVENTS_FILE="$RESULTS_DIR/integration_events.jsonl"
+CHECKPOINT_SUMMARY_FILE="$RESULTS_DIR/checkpoint_summary.json"
+POLICY_FLIP_FILE="$RESULTS_DIR/prd_policy_flip.json"
+
 MOCK_SINK_PORT="${NEXRA_MOCK_SINK_PORT:-8800}"
 MOCK_SINK_BASE_URL="http://127.0.0.1:${MOCK_SINK_PORT}"
 INTERNAL_DASHBOARD_DIR="$ROOT_DIR/nexra/internal-dashboard"
@@ -96,6 +109,104 @@ INTERNAL_DASHBOARD_DIR="$ROOT_DIR/nexra/internal-dashboard"
 BOOTSTRAPPED=0
 MOCK_SINK_PID=""
 DASHBOARD_PID=""
+FINAL_EXIT_CODE=""
+INTERRUPTED=0
+
+python3 - <<'PY' "$PHASE_STATUS_FILE" "$BASE_URL" "$DASHBOARD_URL" "$MODE" "$PROFILE" "$INTEGRATIONS" "$FAILURE_POLICY"
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+path = Path(sys.argv[1])
+payload = {
+    "generated_at": datetime.now(timezone.utc).isoformat(),
+    "base_url": sys.argv[2],
+    "dashboard_url": sys.argv[3],
+    "mode": sys.argv[4],
+    "profile": sys.argv[5],
+    "integrations": sys.argv[6],
+    "failure_policy": sys.argv[7],
+    "phases": {},
+}
+path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+PY
+
+: > "$EVENTS_FILE"
+
+update_phase() {
+  local phase="$1"
+  local status="$2"
+  local details="${3:-}"
+
+  python3 - <<'PY' "$PHASE_STATUS_FILE" "$phase" "$status" "$details"
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+path = Path(sys.argv[1])
+phase = sys.argv[2]
+status = sys.argv[3]
+details = sys.argv[4]
+obj = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"phases": {}}
+phases = obj.setdefault("phases", {})
+entry = phases.get(phase, {})
+entry["status"] = status
+entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+if details:
+  entry["details"] = details
+phases[phase] = entry
+path.write_text(json.dumps(obj, indent=2, sort_keys=True), encoding="utf-8")
+PY
+}
+
+emit_event() {
+  local event_name="$1"
+  local extra_json="${2:-{}}"
+
+  python3 - <<'PY' "$EVENTS_FILE" "$event_name" "$extra_json"
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+path = Path(sys.argv[1])
+event = sys.argv[2]
+extra_raw = sys.argv[3]
+try:
+    extra = json.loads(extra_raw) if extra_raw else {}
+except json.JSONDecodeError:
+    extra = {"details": extra_raw}
+
+payload = {"timestamp": datetime.now(timezone.utc).isoformat(), "event": event}
+if isinstance(extra, dict):
+    payload.update(extra)
+else:
+    payload["details"] = extra
+
+with path.open("a", encoding="utf-8") as fh:
+    fh.write(json.dumps(payload, sort_keys=True))
+    fh.write("\n")
+PY
+}
+
+wait_for_http_ok() {
+  local url="$1"
+  local timeout_s="${2:-60}"
+  local started
+  started="$(date +%s)"
+
+  while true; do
+    if curl -sf "$url" >/dev/null 2>&1; then
+      return 0
+    fi
+    if (( $(date +%s) - started > timeout_s )); then
+      return 1
+    fi
+    sleep 1
+  done
+}
 
 alternate_loopback_url() {
   local url="$1"
@@ -127,7 +238,7 @@ open_dashboard_url() {
   return 1
 }
 
-cleanup() {
+cleanup_processes() {
   if [[ -n "$DASHBOARD_PID" ]] && kill -0 "$DASHBOARD_PID" >/dev/null 2>&1; then
     kill "$DASHBOARD_PID" >/dev/null 2>&1 || true
     wait "$DASHBOARD_PID" 2>/dev/null || true
@@ -142,27 +253,59 @@ cleanup() {
     wait "$MOCK_SINK_PID" 2>/dev/null || true
   fi
 }
-trap cleanup EXIT INT TERM
+
+finalize() {
+  local trap_exit="$?"
+  local rc="$trap_exit"
+
+  if [[ -n "$FINAL_EXIT_CODE" ]]; then
+    rc="$FINAL_EXIT_CODE"
+  fi
+  if [[ "$INTERRUPTED" == "1" ]]; then
+    rc=130
+  fi
+
+  echo "$rc" > "$EXIT_CODE_FILE"
+
+  if [[ "$rc" == "0" ]]; then
+    update_phase "terminal" "passed" "exit_code=$rc"
+    emit_event "vc_bundle_written"
+  else
+    update_phase "terminal" "failed" "exit_code=$rc"
+  fi
+
+  cleanup_processes
+
+  echo "Exit code:          $rc"
+  echo "Phase status:       $PHASE_STATUS_FILE"
+  echo "Integration events: $EVENTS_FILE"
+  echo "Exit artifact:      $EXIT_CODE_FILE"
+}
+
+trap finalize EXIT
+trap 'INTERRUPTED=1; FINAL_EXIT_CODE=130; exit 130' INT TERM
+
+update_phase "runner" "in_progress" "bootstrapping vc runner"
+emit_event "vc_runner_started" "{\"mode\": \"$MODE\", \"integrations\": \"$INTEGRATIONS\"}"
 
 # Start sink for webhook/email/slack/pagerduty/siem captures.
+update_phase "mock_sink" "in_progress" "starting local mock sink"
 python3 "$ROOT_DIR/scripts/live_demo_mock_sink.py" \
   --port "$MOCK_SINK_PORT" \
   --out-dir "$RESULTS_DIR" >"$MOCK_SINK_LOG" 2>&1 &
 MOCK_SINK_PID=$!
 
-for _ in {1..30}; do
-  if curl -sf "$MOCK_SINK_BASE_URL/_health" >/dev/null 2>&1; then
-    break
-  fi
-  sleep 1
-done
-if ! curl -sf "$MOCK_SINK_BASE_URL/_health" >/dev/null 2>&1; then
-  echo "Mock sink failed to start. Log: $MOCK_SINK_LOG" >&2
+if ! wait_for_http_ok "$MOCK_SINK_BASE_URL/_health" 30; then
+  update_phase "mock_sink" "failed" "mock sink failed to start (log: $MOCK_SINK_LOG)"
+  echo "Mock sink failed to start. Check log: $MOCK_SINK_LOG" >&2
+  FINAL_EXIT_CODE=1
   exit 1
 fi
+update_phase "mock_sink" "passed" "mock sink ready at $MOCK_SINK_BASE_URL"
 
 export NEXRA_MOCK_SINK_BASE_URL="$MOCK_SINK_BASE_URL"
 
+update_phase "stack" "in_progress" "mode=$MODE"
 if [[ "$MODE" == "bootstrap" ]]; then
   BOOTSTRAPPED=1
   export NEXRA_SKIP_NGROK=1
@@ -179,10 +322,30 @@ if [[ "$MODE" == "bootstrap" ]]; then
     export ANOMALY_EMAIL_RECIPIENTS="${ANOMALY_EMAIL_RECIPIENTS:-admin@nexra.local}"
   fi
 
-  "$ROOT_DIR/scripts/start_live_stack.sh" \
+  if ! "$ROOT_DIR/scripts/start_live_stack.sh" \
     --base-url "$BASE_URL" \
     --state-file "$STACK_STATE_FILE" \
-    --log-file "$STACK_LOG_FILE"
+    --log-file "$STACK_LOG_FILE"; then
+    update_phase "stack" "failed" "start_live_stack failed (log: $STACK_LOG_FILE)"
+    echo "Live stack bootstrap failed. Check: $STACK_LOG_FILE" >&2
+    FINAL_EXIT_CODE=1
+    exit 1
+  fi
+
+  if [[ ! -f "$STACK_STATE_FILE" ]]; then
+    update_phase "stack" "failed" "state file missing after bootstrap"
+    echo "Expected stack state file not found: $STACK_STATE_FILE" >&2
+    FINAL_EXIT_CODE=1
+    exit 1
+  fi
+
+  if ! wait_for_http_ok "$BASE_URL/health" 30; then
+    update_phase "stack" "failed" "api not healthy at $BASE_URL/health"
+    echo "API failed readiness check in bootstrap mode: $BASE_URL/health" >&2
+    echo "Inspect stack log: $STACK_LOG_FILE" >&2
+    FINAL_EXIT_CODE=1
+    exit 1
+  fi
 
   (
     cd "$ROOT_DIR/nexra/internal-dashboard"
@@ -190,19 +353,16 @@ if [[ "$MODE" == "bootstrap" ]]; then
   ) >"$DASHBOARD_LOG" 2>&1 &
   DASHBOARD_PID=$!
 
-  for _ in {1..90}; do
-    if curl -sf "$DASHBOARD_URL" >/dev/null 2>&1; then
-      break
-    fi
-    sleep 1
-  done
-  if ! curl -sf "$DASHBOARD_URL" >/dev/null 2>&1; then
+  if ! wait_for_http_ok "$DASHBOARD_URL" 90; then
     ALT_DASHBOARD_URL="$(alternate_loopback_url "$DASHBOARD_URL")"
-    if [[ -n "$ALT_DASHBOARD_URL" ]] && curl -sf "$ALT_DASHBOARD_URL" >/dev/null 2>&1; then
+    if [[ -n "$ALT_DASHBOARD_URL" ]] && wait_for_http_ok "$ALT_DASHBOARD_URL" 8; then
       DASHBOARD_URL="$ALT_DASHBOARD_URL"
       echo "[info] dashboard reachable via alternate loopback URL: $DASHBOARD_URL"
     else
-      echo "Dashboard failed to start in bootstrap mode. Log: $DASHBOARD_LOG" >&2
+      update_phase "stack" "failed" "dashboard failed readiness in bootstrap mode"
+      echo "Dashboard failed readiness in bootstrap mode: $DASHBOARD_URL" >&2
+      echo "Inspect dashboard log: $DASHBOARD_LOG" >&2
+      FINAL_EXIT_CODE=1
       exit 1
     fi
   fi
@@ -213,11 +373,36 @@ if [[ "$MODE" == "bootstrap" ]]; then
     else
       echo "[warn] could not auto-open dashboard; open manually: $DASHBOARD_URL" >&2
     fi
+  else
+    echo "[info] dashboard auto-open disabled; use --open-dashboard (or NEXRA_OPEN_DASHBOARD=1)"
   fi
 else
-  echo "Attach mode: expecting stack at $BASE_URL and dashboard at $DASHBOARD_URL"
-fi
+  echo "Attach mode: validating stack at $BASE_URL and dashboard at $DASHBOARD_URL"
+  if ! wait_for_http_ok "$BASE_URL/health" 15; then
+    update_phase "stack" "failed" "attach mode api health failed"
+    echo "Attach mode failed: API is not reachable at $BASE_URL/health" >&2
+    echo "Start stack with: ./scripts/run_vc_demo.sh --mode bootstrap" >&2
+    FINAL_EXIT_CODE=1
+    exit 1
+  fi
 
+  if ! wait_for_http_ok "$DASHBOARD_URL" 15; then
+    ALT_DASHBOARD_URL="$(alternate_loopback_url "$DASHBOARD_URL")"
+    if [[ -n "$ALT_DASHBOARD_URL" ]] && wait_for_http_ok "$ALT_DASHBOARD_URL" 8; then
+      DASHBOARD_URL="$ALT_DASHBOARD_URL"
+      echo "[info] dashboard reachable via alternate loopback URL: $DASHBOARD_URL"
+    else
+      update_phase "stack" "failed" "attach mode dashboard readiness failed"
+      echo "Attach mode failed: dashboard not reachable at $DASHBOARD_URL" >&2
+      echo "Either run bootstrap mode or start dashboard manually (cd nexra/internal-dashboard && npm run dev)." >&2
+      FINAL_EXIT_CODE=1
+      exit 1
+    fi
+  fi
+fi
+update_phase "stack" "passed" "api+dashboard ready"
+
+update_phase "preflight" "in_progress" "running vc_demo_preflight.py"
 PREFLIGHT_CMD=(
   "$ROOT_DIR/nexra/venv/bin/python"
   "$ROOT_DIR/scripts/vc_demo_preflight.py"
@@ -227,8 +412,19 @@ PREFLIGHT_CMD=(
   --mock-sink-base-url "$MOCK_SINK_BASE_URL"
   --results-dir "$RESULTS_DIR"
 )
+set +e
 "${PREFLIGHT_CMD[@]}"
+PREFLIGHT_EXIT=$?
+set -e
+if [[ "$PREFLIGHT_EXIT" -ne 0 ]]; then
+  update_phase "preflight" "failed" "preflight exit=$PREFLIGHT_EXIT"
+  FINAL_EXIT_CODE="$PREFLIGHT_EXIT"
+  exit "$PREFLIGHT_EXIT"
+fi
+update_phase "preflight" "passed" "preflight completed"
+emit_event "preflight_passed"
 
+update_phase "seed" "in_progress" "running vc_seed_enterprise_data.py"
 SEED_CMD=(
   "$ROOT_DIR/nexra/venv/bin/python"
   "$ROOT_DIR/scripts/vc_seed_enterprise_data.py"
@@ -238,14 +434,52 @@ SEED_CMD=(
 if [[ "$PROFILE" == "full" ]]; then
   SEED_CMD+=(--days 30 --seed-per-day 20)
 fi
+set +e
 "${SEED_CMD[@]}"
+SEED_EXIT=$?
+set -e
+if [[ "$SEED_EXIT" -ne 0 ]]; then
+  update_phase "seed" "failed" "seed exit=$SEED_EXIT"
+  FINAL_EXIT_CODE="$SEED_EXIT"
+  exit "$SEED_EXIT"
+fi
+update_phase "seed" "passed" "seed completed"
 
 ORG_PROFILE="$RESULTS_DIR/vc_org_profile.json"
 if [[ ! -f "$ORG_PROFILE" ]]; then
+  update_phase "seed" "failed" "missing org profile artifact"
   echo "Missing org profile after seeding: $ORG_PROFILE" >&2
+  FINAL_EXIT_CODE=1
   exit 1
 fi
 
+SEED_HISTORY_JSON="$(python3 - <<'PY' "$ORG_PROFILE"
+import json
+import sys
+obj = json.load(open(sys.argv[1], 'r', encoding='utf-8'))
+h = obj.get('history') or {}
+print(json.dumps({
+  'inserted_delegations': h.get('inserted_delegations', 0),
+  'inserted_audit_events': h.get('inserted_audit_events', 0),
+}))
+PY
+)"
+emit_event "seeded_data_loaded" "$SEED_HISTORY_JSON"
+
+BUYER_API_KEY="$(python3 - <<'PY' "$ORG_PROFILE"
+import json, sys
+obj = json.load(open(sys.argv[1], 'r', encoding='utf-8'))
+print((((obj.get('orgs') or {}).get('buyer') or {}).get('api_key')) or '')
+PY
+)"
+
+if [[ -n "$BUYER_API_KEY" ]]; then
+  emit_event "dashboard_session_synced"
+fi
+
+update_phase "suite" "in_progress" "running vc_demo_suite.py"
+echo "[info] running vc_demo_suite.py (this may take a few minutes)"
+echo "[info] baseline suite log: $RESULTS_DIR/baseline_run.log"
 SUITE_CMD=(
   "$ROOT_DIR/nexra/venv/bin/python"
   "$ROOT_DIR/scripts/vc_demo_suite.py"
@@ -267,14 +501,99 @@ set +e
 "${SUITE_CMD[@]}"
 SUITE_EXIT=$?
 set -e
+if [[ "$SUITE_EXIT" -ne 0 ]]; then
+  update_phase "suite" "failed" "vc_demo_suite exit=$SUITE_EXIT"
+else
+  update_phase "suite" "passed" "vc_demo_suite passed"
+fi
 
-BUYER_API_KEY="$(python3 - <<'PY' "$ORG_PROFILE"
+SUMMARY_PATH="$RESULTS_DIR/summary.json"
+CAP_MATRIX_RESULT="$RESULTS_DIR/capability_matrix_result.json"
+REPORT_PATH="$RESULTS_DIR/report.md"
+
+if [[ -f "$SUMMARY_PATH" ]]; then
+  python3 - <<'PY' "$SUMMARY_PATH" "$EVENTS_FILE"
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+summary = json.load(open(sys.argv[1], 'r', encoding='utf-8'))
+out = Path(sys.argv[2])
+scenarios = summary.get('scenario_results') or {}
+for scenario_id, passed in scenarios.items():
+    if passed is not True:
+        continue
+    event = f"{scenario_id}_passed"
+    payload = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "event": event,
+        "scenario_id": scenario_id,
+    }
+    with out.open('a', encoding='utf-8') as fh:
+        fh.write(json.dumps(payload, sort_keys=True))
+        fh.write("\n")
+PY
+fi
+
+if [[ -f "$CAP_MATRIX_RESULT" ]]; then
+  REQUIRED_FAILED="$(python3 - <<'PY' "$CAP_MATRIX_RESULT"
 import json, sys
 obj = json.load(open(sys.argv[1], 'r', encoding='utf-8'))
-print((((obj.get('orgs') or {}).get('buyer') or {}).get('api_key')) or '')
+print(int(obj.get('required_failed', 9999)))
 PY
 )"
+  if [[ "$REQUIRED_FAILED" == "0" ]]; then
+    emit_event "capability_matrix_passed"
+  fi
+fi
 
+update_phase "prd_policy_flip" "in_progress" "running policy flip check"
+POLICY_CMD=(
+  "$ROOT_DIR/nexra/venv/bin/python"
+  "$ROOT_DIR/scripts/vc_prd_policy_flip_check.py"
+  --base-url "$BASE_URL"
+  --org-profile "$ORG_PROFILE"
+  --out "$POLICY_FLIP_FILE"
+)
+set +e
+"${POLICY_CMD[@]}"
+POLICY_EXIT=$?
+set -e
+if [[ "$POLICY_EXIT" -ne 0 ]]; then
+  update_phase "prd_policy_flip" "failed" "policy flip check exit=$POLICY_EXIT"
+else
+  update_phase "prd_policy_flip" "passed" "policy flip check passed"
+  emit_event "prd_policy_flip_passed"
+fi
+
+python3 - <<'PY' "$REPORT_PATH" "$POLICY_FLIP_FILE"
+import json
+import sys
+from pathlib import Path
+
+report_path = Path(sys.argv[1])
+policy_path = Path(sys.argv[2])
+if not report_path.exists() or not policy_path.exists():
+    raise SystemExit(0)
+
+report = report_path.read_text(encoding='utf-8').rstrip() + "\n\n## PRD 90s Policy Flip\n"
+policy = json.load(policy_path.open('r', encoding='utf-8'))
+status = "PASS" if policy.get('passed') else "FAIL"
+report += f"- Status: {status}\n"
+report += f"- Allow Status Code: {policy.get('allow_status_code')}\n"
+report += f"- Block Status Code: {policy.get('block_status_code')}\n"
+report += f"- Block Error Code: {policy.get('block_error_code')}\n"
+report += f"- Flip Duration Seconds: {policy.get('flip_duration_seconds')}\n"
+report_path.write_text(report + "\n", encoding='utf-8')
+PY
+
+if [[ "$SUITE_EXIT" -eq 0 && "$POLICY_EXIT" -eq 0 && -f "$SUMMARY_PATH" && -f "$REPORT_PATH" ]]; then
+  emit_event "vc_bundle_written" '{"phase":"pre_autoplay","status":"prepared"}'
+fi
+
+AUTOPLAY_EXIT=0
+update_phase "autoplay" "in_progress" "running dashboard autoplay"
 if [[ -n "$BUYER_API_KEY" ]]; then
   if [[ ! -x "$INTERNAL_DASHBOARD_DIR/node_modules/.bin/tsx" ]] || [[ ! -d "$INTERNAL_DASHBOARD_DIR/node_modules/playwright" ]] || [[ ! -d "$INTERNAL_DASHBOARD_DIR/node_modules/yaml" ]]; then
     echo "[info] installing dashboard autoplay dependencies (tsx, playwright, yaml)..."
@@ -290,37 +609,95 @@ if [[ -n "$BUYER_API_KEY" ]]; then
   ) >>"$AUTOPLAY_DEPS_LOG" 2>&1; then
     echo "[warn] playwright chromium install failed; see $AUTOPLAY_DEPS_LOG" >&2
     if [[ "$STRICT" == "1" ]]; then
-      exit 1
+      update_phase "autoplay" "failed" "playwright install failed in strict mode"
+      AUTOPLAY_EXIT=1
     fi
   fi
 
-  AUTOPLAY_CMD=(
-    env
-    "NEXRA_DASHBOARD_DIR=$INTERNAL_DASHBOARD_DIR"
-    "$INTERNAL_DASHBOARD_DIR/node_modules/.bin/tsx"
-    "$ROOT_DIR/scripts/vc_dashboard_autoplay.ts"
-    --base-url "$DASHBOARD_URL"
-    --api-key "$BUYER_API_KEY"
-    --user-email "admin@nexra.local"
-    --timeline "$ROOT_DIR/demo/vc_timeline.yaml"
-    --events-path "$RESULTS_DIR/integration_events.jsonl"
-    --out-dir "$RESULTS_DIR/screenshots"
-  )
-  if [[ "$HEADED" == "1" ]]; then
-    AUTOPLAY_CMD+=(--headed)
-  fi
-  if ! "${AUTOPLAY_CMD[@]}"; then
-    echo "[warn] dashboard autoplay failed; see logs/artifacts in $RESULTS_DIR" >&2
-    if [[ "$STRICT" == "1" ]]; then
-      exit 1
+  if [[ "$AUTOPLAY_EXIT" -eq 0 ]]; then
+    AUTOPLAY_CMD=(
+      env
+      "NEXRA_DASHBOARD_DIR=$INTERNAL_DASHBOARD_DIR"
+      "$INTERNAL_DASHBOARD_DIR/node_modules/.bin/tsx"
+      "$ROOT_DIR/scripts/vc_dashboard_autoplay.ts"
+      --base-url "$DASHBOARD_URL"
+      --api-key "$BUYER_API_KEY"
+      --user-email "admin@nexra.local"
+      --timeline "$ROOT_DIR/demo/vc_timeline.yaml"
+      --events-path "$EVENTS_FILE"
+      --out-dir "$RESULTS_DIR/screenshots"
+      --summary-path "$CHECKPOINT_SUMMARY_FILE"
+      --min-checkpoint-coverage "$CHECKPOINT_MIN_COVERAGE"
+    )
+    if [[ "$HEADED" == "1" ]]; then
+      AUTOPLAY_CMD+=(--headed)
     fi
+    if [[ "$STRICT" == "1" ]]; then
+      AUTOPLAY_CMD+=(--strict-checkpoints)
+    fi
+
+    set +e
+    "${AUTOPLAY_CMD[@]}"
+    AUTOPLAY_EXIT=$?
+    set -e
+
+    if [[ "$AUTOPLAY_EXIT" -eq 0 ]]; then
+      update_phase "autoplay" "passed" "autoplay completed"
+    else
+      update_phase "autoplay" "failed" "autoplay exit=$AUTOPLAY_EXIT"
+      echo "[warn] dashboard autoplay failed; see artifacts in $RESULTS_DIR" >&2
+    fi
+  fi
+else
+  update_phase "autoplay" "failed" "buyer api key missing; skipped autoplay"
+  AUTOPLAY_EXIT=1
+fi
+
+if [[ -f "$CHECKPOINT_SUMMARY_FILE" ]]; then
+  python3 - <<'PY' "$CHECKPOINT_SUMMARY_FILE" "$REPORT_PATH"
+import json
+import sys
+from pathlib import Path
+
+summary = json.load(open(sys.argv[1], 'r', encoding='utf-8'))
+report_path = Path(sys.argv[2])
+if not report_path.exists():
+    raise SystemExit(0)
+
+report = report_path.read_text(encoding='utf-8').rstrip()
+report += "\n\n## Timeline Checkpoints\n"
+report += f"- Seen: {summary.get('checkpoints_seen')}/{summary.get('checkpoints_total')}\n"
+report += f"- Coverage: {summary.get('coverage_ratio')}\n"
+report += f"- Min Required: {summary.get('min_required_coverage')}\n"
+report += f"- Strict Gate: {'PASS' if summary.get('strict_gate_passed') else 'FAIL'}\n"
+report_path.write_text(report + "\n", encoding='utf-8')
+PY
+else
+  if [[ "$STRICT" == "1" ]]; then
+    echo "[warn] checkpoint summary missing in strict mode" >&2
+    AUTOPLAY_EXIT=1
   fi
 fi
 
-echo "VC suite exit code: $SUITE_EXIT"
-echo "Summary:            $RESULTS_DIR/summary.json"
-echo "Capability result:  $RESULTS_DIR/capability_matrix_result.json"
-echo "Report:             $RESULTS_DIR/report.md"
-echo "$SUITE_EXIT" > "$RESULTS_DIR/exit_code.txt"
+OVERALL_EXIT=0
+if [[ "$SUITE_EXIT" -ne 0 ]]; then
+  OVERALL_EXIT="$SUITE_EXIT"
+fi
+if [[ "$POLICY_EXIT" -ne 0 && "$OVERALL_EXIT" -eq 0 ]]; then
+  OVERALL_EXIT="$POLICY_EXIT"
+fi
+if [[ "$STRICT" == "1" && "$AUTOPLAY_EXIT" -ne 0 && "$OVERALL_EXIT" -eq 0 ]]; then
+  OVERALL_EXIT=1
+fi
 
-exit "$SUITE_EXIT"
+update_phase "runner" "$([[ "$OVERALL_EXIT" -eq 0 ]] && echo passed || echo failed)" "suite_exit=$SUITE_EXIT autoplay_exit=$AUTOPLAY_EXIT policy_exit=$POLICY_EXIT"
+
+echo "VC suite exit code: $SUITE_EXIT"
+echo "Policy flip exit:   $POLICY_EXIT"
+echo "Autoplay exit:      $AUTOPLAY_EXIT"
+echo "Summary:            $SUMMARY_PATH"
+echo "Capability result:  $CAP_MATRIX_RESULT"
+echo "Report:             $REPORT_PATH"
+
+FINAL_EXIT_CODE="$OVERALL_EXIT"
+exit "$OVERALL_EXIT"

@@ -1,0 +1,24 @@
+{
+  "artifacts": {
+    "api_failures": "/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-191155/api_failures.jsonl",
+    "endpoint_metrics": "/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-191155/endpoint_metrics.json",
+    "frontend_errors": "/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-191155/frontend_errors.jsonl",
+    "stress_summary": "/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-191155/stress_summary.json",
+    "ui_parity_results": "/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-191155/ui_parity_results.json",
+    "vc_capability_matrix": "/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-191155/vc_suite/capability_matrix_result.json"
+  },
+  "critical_failures": [
+    "dashboard_parity_sweep exit=1",
+    "route render failures=1"
+  ],
+  "generated_at": "2026-03-18T02:19:16.352494+00:00",
+  "results_dir": "/Users/parthdama/Documents/Nexra/test-results/dashboard-stress/20260317-191155",
+  "status": "failed",
+  "thresholds": {
+    "endpoint_non_2xx_4xx_rate": 0.01,
+    "route_timeout_ms": 15000
+  },
+  "warnings": [
+    "frontend console errors=3"
+  ]
+}

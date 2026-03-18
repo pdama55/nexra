@@ -14,9 +14,30 @@ SKIP_NGROK="${NEXRA_SKIP_NGROK:-0}"
 SKIP_DEMO_AGENTS="${NEXRA_SKIP_DEMO_AGENTS:-0}"
 SKIP_DASHBOARD="${NEXRA_SKIP_DASHBOARD:-0}"
 NO_TAIL="${NEXRA_NO_TAIL:-0}"
+API_RELOAD="${NEXRA_API_RELOAD:-0}"
+
+SYSTEM_NAME="$(uname -s)"
+CELERY_POOL="${NEXRA_CELERY_POOL:-}"
+if [[ -z "$CELERY_POOL" ]]; then
+  if [[ "$SYSTEM_NAME" == "Darwin" ]]; then
+    CELERY_POOL="solo"
+  else
+    CELERY_POOL="prefork"
+  fi
+fi
+CELERY_CONCURRENCY="${NEXRA_CELERY_CONCURRENCY:-1}"
 
 PIDS=()
 PID_NAMES=()
+
+print_https_webhook_help() {
+  cat >&2 <<'EOF'
+[remediation] Research agent webhook must be HTTPS (ngrok or trusted local TLS).
+[remediation] 1) Start tunnel: ngrok http 8001
+[remediation] 2) Export URL: eval "$(./scripts/export_research_webhook_url.sh)"
+[remediation] 3) Re-run the demo startup.
+EOF
+}
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -223,8 +244,18 @@ if [[ "$CELERY_REDIS_URL" == rediss://* ]] && [[ "$CELERY_REDIS_URL" != *ssl_cer
 fi
 
 echo "[info] starting core services..."
-start_bg "api" "cd '$APP_DIR' && ./venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload"
-start_bg "worker" "cd '$APP_DIR' && export REDIS_URL='$CELERY_REDIS_URL' CELERY_BROKER_URL='$CELERY_REDIS_URL' && ./venv/bin/celery -A workers.celery_app worker --loglevel=info -Q webhooks,billing,anomaly,hitl,siem -I workers.webhook_worker,workers.billing_worker,workers.anomaly_worker,workers.hitl_worker,workers.siem_worker"
+echo "[info] api reload: $API_RELOAD | celery pool: $CELERY_POOL | celery concurrency: $CELERY_CONCURRENCY"
+if [[ "$API_RELOAD" == "1" ]]; then
+  start_bg "api" "cd '$APP_DIR' && ./venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload"
+else
+  start_bg "api" "cd '$APP_DIR' && ./venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000"
+fi
+
+if [[ "$SYSTEM_NAME" == "Darwin" && "$CELERY_POOL" != "solo" ]]; then
+  export OBJC_DISABLE_INITIALIZE_FORK_SAFETY="${OBJC_DISABLE_INITIALIZE_FORK_SAFETY:-YES}"
+fi
+
+start_bg "worker" "cd '$APP_DIR' && export REDIS_URL='$CELERY_REDIS_URL' CELERY_BROKER_URL='$CELERY_REDIS_URL' && ./venv/bin/celery -A workers.celery_app worker --loglevel=info --pool '$CELERY_POOL' --concurrency '$CELERY_CONCURRENCY' -Q webhooks,billing,anomaly,hitl,siem -I workers.webhook_worker,workers.billing_worker,workers.anomaly_worker,workers.hitl_worker,workers.siem_worker"
 start_bg "beat" "cd '$APP_DIR' && export REDIS_URL='$CELERY_REDIS_URL' CELERY_BROKER_URL='$CELERY_REDIS_URL' && ./venv/bin/celery -A workers.celery_app beat --loglevel=info"
 
 if ! poll_http_ok "$API_BASE_URL/health" 60; then
@@ -246,6 +277,7 @@ if [[ "$SKIP_NGROK" != "1" ]]; then
 
   if [[ -z "$NGROK_URL" ]]; then
     echo "[error] could not resolve ngrok public URL. Check $LOG_DIR/ngrok.log" >&2
+    print_https_webhook_help
     exit 1
   fi
 
@@ -287,14 +319,26 @@ fi
 if [[ "$SKIP_DEMO_AGENTS" != "1" ]]; then
   if [[ "$SKIP_NGROK" == "1" ]]; then
     if [[ -z "${NEXRA_RESEARCH_WEBHOOK_URL_OVERRIDE:-}" ]]; then
-      echo "[error] NEXRA_SKIP_NGROK=1 requires NEXRA_RESEARCH_WEBHOOK_URL_OVERRIDE when demo agents are enabled" >&2
+      echo "[error] NEXRA_SKIP_NGROK=1 requires NEXRA_RESEARCH_WEBHOOK_URL_OVERRIDE when demo agents are enabled." >&2
+      print_https_webhook_help
       exit 1
     fi
     NGROK_URL="$NEXRA_RESEARCH_WEBHOOK_URL_OVERRIDE"
   fi
 
+  if [[ "$NGROK_URL" != https://* ]]; then
+    echo "[error] research webhook base URL must use HTTPS: $NGROK_URL" >&2
+    print_https_webhook_help
+    exit 1
+  fi
+
+  RESEARCH_WEBHOOK_URL="$NGROK_URL"
+  if [[ "$RESEARCH_WEBHOOK_URL" != */webhook ]]; then
+    RESEARCH_WEBHOOK_URL="${RESEARCH_WEBHOOK_URL%/}/webhook"
+  fi
+
   echo "[info] starting demo agents..."
-  start_bg "research-agent" "cd '$APP_DIR' && export NEXRA_API_KEY='$API_KEY' NEXRA_BASE_URL='$API_BASE_URL/v1' NEXRA_RESEARCH_WEBHOOK_URL='$NGROK_URL/webhook' && PYTHONPATH='./sdk/nexra-py' ./venv/bin/python demo/research_agent.py"
+  start_bg "research-agent" "cd '$APP_DIR' && export NEXRA_API_KEY='$API_KEY' NEXRA_BASE_URL='$API_BASE_URL/v1' NEXRA_RESEARCH_WEBHOOK_URL='$RESEARCH_WEBHOOK_URL' && PYTHONPATH='./sdk/nexra-py' ./venv/bin/python demo/research_agent.py"
 
   sleep 3
 
@@ -340,6 +384,9 @@ if [[ "$SKIP_DASHBOARD" != "1" ]]; then
 fi
 if [[ -n "$NGROK_URL" ]]; then
   echo "ngrok:      $NGROK_URL"
+fi
+if [[ -n "${RESEARCH_WEBHOOK_URL:-}" ]]; then
+  echo "Webhook:    $RESEARCH_WEBHOOK_URL"
 fi
 echo "Logs dir:   $LOG_DIR"
 if [[ -n "$STATE_FILE" ]]; then

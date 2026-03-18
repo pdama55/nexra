@@ -26,6 +26,9 @@ curl -X POST http://localhost:8000/v1/orgs/register \
   -d '{"name": "Demo Org", "plan": "growth"}'
 
 # Terminal 3: Start Research Agent
+# Requires HTTPS webhook URL (ngrok or trusted local TLS)
+ngrok http 8001
+eval "$(./scripts/export_research_webhook_url.sh)"
 export NEXRA_API_KEY=nx_live_...
 export NEXRA_BASE_URL=http://localhost:8000/v1
 python demo/research_agent.py
@@ -35,6 +38,8 @@ export NEXRA_API_KEY=nx_live_...
 export NEXRA_BASE_URL=http://localhost:8000/v1
 python demo/sales_agent.py
 ```
+
+`NEXRA_RESEARCH_WEBHOOK_URL` must be HTTPS. HTTP webhook endpoints are rejected by Nexra.
 
 ## Expected Output
 

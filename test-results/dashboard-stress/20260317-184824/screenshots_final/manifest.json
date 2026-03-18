@@ -1,0 +1,46 @@
+[
+  {
+    "route": "/",
+    "file": "overview.png"
+  },
+  {
+    "route": "/agents",
+    "file": "agents.png"
+  },
+  {
+    "route": "/delegations",
+    "file": "delegations.png"
+  },
+  {
+    "route": "/policies",
+    "file": "policies.png"
+  },
+  {
+    "route": "/spend",
+    "file": "spend.png"
+  },
+  {
+    "route": "/audit",
+    "file": "audit.png"
+  },
+  {
+    "route": "/hitl",
+    "file": "hitl.png"
+  },
+  {
+    "route": "/trust",
+    "file": "trust.png"
+  },
+  {
+    "route": "/anomalies",
+    "file": "anomalies.png"
+  },
+  {
+    "route": "/compliance",
+    "file": "compliance.png"
+  },
+  {
+    "route": "/settings",
+    "file": "settings.png"
+  }
+]

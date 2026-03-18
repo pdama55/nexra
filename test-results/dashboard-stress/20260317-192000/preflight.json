@@ -1,0 +1,129 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "checks": [
+    {
+      "details": "GET http://127.0.0.1:8000/health -> 200",
+      "latency_ms": 388.22,
+      "mode": "network",
+      "name": "api_health",
+      "passed": true,
+      "required": true
+    },
+    {
+      "details": "OPENAI_API_KEY set",
+      "latency_ms": null,
+      "mode": "env",
+      "name": "openai_key",
+      "passed": true,
+      "required": false
+    },
+    {
+      "details": "GET https://api.openai.com/v1/models -> 200",
+      "latency_ms": 432.03,
+      "mode": "network",
+      "name": "openai_models",
+      "passed": true,
+      "required": false
+    },
+    {
+      "details": "STRIPE_SECRET_KEY set",
+      "latency_ms": null,
+      "mode": "env",
+      "name": "stripe_secret",
+      "passed": true,
+      "required": false
+    },
+    {
+      "details": "GET https://api.stripe.com/v1/account -> 200",
+      "latency_ms": 408.65,
+      "mode": "network",
+      "name": "stripe_account",
+      "passed": true,
+      "required": false
+    },
+    {
+      "details": "SENDGRID_API_KEY set",
+      "latency_ms": null,
+      "mode": "env",
+      "name": "sendgrid_key",
+      "passed": true,
+      "required": false
+    },
+    {
+      "details": "GET http://127.0.0.1:8800/v3/user/account -> 404; expected [200]; body={\"error\": \"NOT_FOUND\", \"ok\": false}",
+      "latency_ms": 16.73,
+      "mode": "network",
+      "name": "sendgrid_account",
+      "passed": false,
+      "required": false
+    },
+    {
+      "details": "ANOMALY_SLACK_WEBHOOK_URL set",
+      "latency_ms": null,
+      "mode": "env",
+      "name": "slack_webhook",
+      "passed": true,
+      "required": false
+    },
+    {
+      "details": "POST http://127.0.0.1:8800/mock/slack -> 200",
+      "latency_ms": 10.56,
+      "mode": "network",
+      "name": "slack_webhook_post",
+      "passed": true,
+      "required": false
+    },
+    {
+      "details": "ANOMALY_PAGERDUTY_ROUTING_KEY set",
+      "latency_ms": null,
+      "mode": "env",
+      "name": "pagerduty_routing",
+      "passed": true,
+      "required": false
+    },
+    {
+      "details": "POST http://127.0.0.1:8800/mock/pagerduty/v2/enqueue -> 200",
+      "latency_ms": 8.71,
+      "mode": "network",
+      "name": "pagerduty_event",
+      "passed": true,
+      "required": false
+    },
+    {
+      "details": "SIEM_WEBHOOK_ENDPOINT missing",
+      "latency_ms": null,
+      "mode": "env",
+      "name": "siem_endpoint",
+      "passed": false,
+      "required": false
+    },
+    {
+      "details": "GET http://127.0.0.1:8000/health -> 200",
+      "latency_ms": 257.01,
+      "mode": "network",
+      "name": "api_health",
+      "passed": true,
+      "required": true
+    },
+    {
+      "details": "GET http://127.0.0.1:8800/_health -> 200",
+      "latency_ms": 13.21,
+      "mode": "network",
+      "name": "mock_sink_health",
+      "passed": true,
+      "required": false
+    },
+    {
+      "details": "mock mode selected; external integrations mocked by sink",
+      "latency_ms": null,
+      "mode": "config",
+      "name": "integration_mode",
+      "passed": true,
+      "required": false
+    }
+  ],
+  "failed_total": 2,
+  "failure_policy": "fallback",
+  "integrations": "hybrid",
+  "required_failed": 0
+}

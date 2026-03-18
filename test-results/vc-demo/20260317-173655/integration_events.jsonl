@@ -1,0 +1,34 @@
+{"details": "{\"mode\": \"bootstrap\", \"integrations\": \"mock\"}}", "event": "vc_runner_started", "timestamp": "2026-03-18T00:36:55.664253+00:00"}
+{"event": "preflight_passed", "timestamp": "2026-03-18T00:38:35.642278+00:00"}
+{"details": "{\"inserted_delegations\": 150, \"inserted_audit_events\": 430}}", "event": "seeded_data_loaded", "timestamp": "2026-03-18T00:39:21.001771+00:00"}
+{"event": "dashboard_session_synced", "timestamp": "2026-03-18T00:39:21.134640+00:00"}
+{"base_url": "http://127.0.0.1:8000", "event": "vc_suite_start", "timestamp": "2026-03-18T00:39:23.077088+00:00"}
+{"event": "baseline_suite_finished", "exit_code": 0, "log": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-173655/baseline_run.log", "summary": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-173655/baseline/summary.json", "timestamp": "2026-03-18T00:40:55.462054+00:00"}
+{"callee_agent_id": "vendor-vc-1773794463", "delegation_id": "42806a28-bfd5-4577-aa22-f3d0e441249b", "event": "cross_org_delegation", "status": "in_flight", "timestamp": "2026-03-18T00:41:07.169869+00:00"}
+{"event": "capability_validator", "exit_code": 0, "stderr": "", "stdout": "{\n  \"optional_failed\": 0,\n  \"out\": \"/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-173655/capability_matrix_result.json\",\n  \"required_failed\": 0,\n  \"required_total\": 22\n}", "timestamp": "2026-03-18T00:41:10.764042+00:00"}
+{"event": "a2a_registration_passed", "scenario_id": "a2a_registration", "timestamp": "2026-03-18T00:41:10.977243+00:00"}
+{"event": "billing_metering_passed", "scenario_id": "billing_metering", "timestamp": "2026-03-18T00:41:10.977626+00:00"}
+{"event": "compliance_exports_passed", "scenario_id": "compliance_exports", "timestamp": "2026-03-18T00:41:10.977713+00:00"}
+{"event": "coordination_discovery_passed", "scenario_id": "coordination_discovery", "timestamp": "2026-03-18T00:41:10.977777+00:00"}
+{"event": "coordination_registry_passed", "scenario_id": "coordination_registry", "timestamp": "2026-03-18T00:41:10.977836+00:00"}
+{"event": "dashboard_governance_views_passed", "scenario_id": "dashboard_governance_views", "timestamp": "2026-03-18T00:41:10.977896+00:00"}
+{"event": "delegation_context_scope_passed", "scenario_id": "delegation_context_scope", "timestamp": "2026-03-18T00:41:10.977955+00:00"}
+{"event": "delegation_sync_async_passed", "scenario_id": "delegation_sync_async", "timestamp": "2026-03-18T00:41:10.978015+00:00"}
+{"event": "framework_adapters_passed", "scenario_id": "framework_adapters", "timestamp": "2026-03-18T00:41:10.978073+00:00"}
+{"event": "governance_anomaly_detection_passed", "scenario_id": "governance_anomaly_detection", "timestamp": "2026-03-18T00:41:10.978132+00:00"}
+{"event": "governance_audit_immutability_passed", "scenario_id": "governance_audit_immutability", "timestamp": "2026-03-18T00:41:10.978187+00:00"}
+{"event": "governance_budget_caps_passed", "scenario_id": "governance_budget_caps", "timestamp": "2026-03-18T00:41:10.978245+00:00"}
+{"event": "governance_circuit_breakers_passed", "scenario_id": "governance_circuit_breakers", "timestamp": "2026-03-18T00:41:10.978301+00:00"}
+{"event": "governance_hitl_passed", "scenario_id": "governance_hitl", "timestamp": "2026-03-18T00:41:10.978355+00:00"}
+{"event": "governance_policy_engine_passed", "scenario_id": "governance_policy_engine", "timestamp": "2026-03-18T00:41:10.978404+00:00"}
+{"event": "governance_policy_versions_passed", "scenario_id": "governance_policy_versions", "timestamp": "2026-03-18T00:41:10.978455+00:00"}
+{"event": "governance_schema_validation_passed", "scenario_id": "governance_schema_validation", "timestamp": "2026-03-18T00:41:10.978502+00:00"}
+{"event": "governance_siem_export_passed", "scenario_id": "governance_siem_export", "timestamp": "2026-03-18T00:41:10.978549+00:00"}
+{"event": "governance_trust_scores_passed", "scenario_id": "governance_trust_scores", "timestamp": "2026-03-18T00:41:10.978598+00:00"}
+{"event": "marketplace_connect_settlement_passed", "scenario_id": "marketplace_connect_settlement", "timestamp": "2026-03-18T00:41:10.978653+00:00"}
+{"event": "marketplace_cross_org_hire_passed", "scenario_id": "marketplace_cross_org_hire", "timestamp": "2026-03-18T00:41:10.978780+00:00"}
+{"event": "protocol_mcp_surface_passed", "scenario_id": "protocol_mcp_surface", "timestamp": "2026-03-18T00:41:10.978842+00:00"}
+{"event": "capability_matrix_passed", "timestamp": "2026-03-18T00:41:11.070507+00:00"}
+{"event": "prd_policy_flip_passed", "timestamp": "2026-03-18T00:41:18.865149+00:00"}
+{"details": "{\"phase\":\"pre_autoplay\",\"status\":\"prepared\"}}", "event": "vc_bundle_written", "timestamp": "2026-03-18T00:41:18.940871+00:00"}
+{"event": "vc_bundle_written", "timestamp": "2026-03-18T00:42:08.728967+00:00"}

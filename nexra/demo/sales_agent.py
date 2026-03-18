@@ -9,7 +9,7 @@ import asyncio
 import json
 import os
 
-from nexra_sdk import NexraClient
+from nexra_sdk import NexraAPIError, NexraClient
 
 
 async def main():
@@ -61,17 +61,30 @@ async def main():
 
         best = matches[0]
         print(f"\n[Sales Agent] Delegating to {best.agent_id}...")
-        result = await client.delegate(
-            agent_id=best.agent_id,
-            task={
-                "input": {
-                    "company_name": "Acme Corp",
-                    "focus_areas": ["pricing", "competitors", "market_size"],
-                }
-            },
-            context_scope=["deal_metadata"],
-            budget_cap=0.50,
-        )
+        try:
+            result = await client.delegate(
+                agent_id=best.agent_id,
+                task={
+                    "input": {
+                        "company_name": "Acme Corp",
+                        "focus_areas": ["pricing", "competitors", "market_size"],
+                    }
+                },
+                context_scope=["deal_metadata"],
+                budget_cap=0.50,
+            )
+        except NexraAPIError as exc:
+            if exc.code in {
+                "CALLEE_WEBHOOK_FAILED",
+                "INVALID_WEBHOOK_URL",
+                "WEBHOOK_SIGNATURE_REJECTED",
+            }:
+                print(
+                    "[Sales Agent] Delegation failed due to webhook/TLS configuration. "
+                    "Ensure the research agent is registered with an HTTPS webhook URL "
+                    "(ngrok or trusted local TLS) and rerun."
+                )
+            raise
 
         print(f"[Sales Agent] Delegation {result.delegation_id}: {result.status}")
         if result.result:
@@ -84,4 +97,8 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as exc:  # noqa: BLE001
+        print(f"[Sales Agent] Run failed: {exc}")
+        raise SystemExit(1) from exc

@@ -1,0 +1,5 @@
+{"details": "{\"mode\": \"bootstrap\", \"integrations\": \"mock\"}}", "event": "vc_runner_started", "timestamp": "2026-03-18T01:21:13.429691+00:00"}
+{"event": "preflight_passed", "timestamp": "2026-03-18T01:22:54.568491+00:00"}
+{"details": "{\"inserted_delegations\": 150, \"inserted_audit_events\": 430}}", "event": "seeded_data_loaded", "timestamp": "2026-03-18T01:23:47.735667+00:00"}
+{"event": "dashboard_session_synced", "timestamp": "2026-03-18T01:23:47.805682+00:00"}
+{"base_url": "http://127.0.0.1:8000", "event": "vc_suite_start", "timestamp": "2026-03-18T01:23:48.034054+00:00"}

@@ -1,0 +1,4 @@
+Spend anomaly detected: {'agent_id': 'suite-callee-1773799284', 'org_id': 'f61ac5fb-0950-484c-9351-9d8145f93813', 'current_hour_spend': 250.42, 'mean_hourly_spend': 0.968, 'stddev': 0.0993, 'threshold': 1.2658, 'sigma_deviation': 2512.68}
+Spend anomaly detected: {'agent_id': 'suite-callee-1773800074', 'org_id': '1107131c-b0c7-438d-aa34-0bed44a9534b', 'current_hour_spend': 250.42, 'mean_hourly_spend': 0.968, 'stddev': 0.0993, 'threshold': 1.2658, 'sigma_deviation': 2512.68}
+Spend anomaly detected: {'agent_id': 'suite-callee-1773798659', 'org_id': '4b0e8e18-a74b-4561-ae50-25418a1b2b82', 'current_hour_spend': 250.42, 'mean_hourly_spend': 0.968, 'stddev': 0.0993, 'threshold': 1.2658, 'sigma_deviation': 2512.68}
+Spend anomaly detected: {'agent_id': 'suite-callee-1773800555', 'org_id': '2c0ea22b-4c2e-4b77-bbe8-dc47e6b4a5d0', 'current_hour_spend': 250.42, 'mean_hourly_spend': 0.968, 'stddev': 0.0993, 'threshold': 1.2658, 'sigma_deviation': 2512.68}

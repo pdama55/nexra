@@ -1,0 +1,44 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "created_at": "2026-03-18T00:39:20.734581+00:00",
+  "history": {
+    "inserted_audit_events": 430,
+    "inserted_delegations": 150
+  },
+  "orgs": {
+    "buyer": {
+      "agents": [
+        "buyer-sales",
+        "buyer-ops",
+        "buyer-risk",
+        "buyer-finance"
+      ],
+      "api_key": "nx_live_KNLK3Zsf3WD2B_uaNjSCLIZ83lfhu6ReJN8GnqwvZmk",
+      "org_id": "1a1af6ba-e8b5-4d68-8efc-29786acccbcd",
+      "owner_email": "admin@nexra.local"
+    },
+    "compliance": {
+      "agents": [
+        "compliance-gdpr",
+        "compliance-soc2",
+        "compliance-hipaa",
+        "compliance-audit"
+      ],
+      "api_key": "nx_live_lc2egHsekwnyRPKjpN-PnLQAdP08lOJZwg5Ge7V_fag",
+      "org_id": "6fc2258c-31f6-424c-a19e-bfd924aae765",
+      "owner_email": "admin@nexra.local"
+    },
+    "vendor": {
+      "agents": [
+        "vendor-research",
+        "vendor-analytics",
+        "vendor-execution",
+        "vendor-support",
+        "a2a-vc-specialist"
+      ],
+      "api_key": "nx_live_v_iVoqkBsW9lA4wbz92U-xqUjeB7GTDn6tyeewMxf7Q",
+      "org_id": "8d986126-3295-4383-ba7c-cf4b42baccf0",
+      "owner_email": "admin@nexra.local"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+Nexra Live Demo Full Suite Report
+Generated: 2026-03-18T01:53:02.270677+00:00
+Base URL: http://127.0.0.1:8000
+
+[PASS] health_org_bootstrap (required)
+[PASS] org_admin_surface (required)
+[PASS] agents_and_discovery (required)
+[PASS] policies_lifecycle (required)
+[PASS] delegation_async_callback (required)
+[PASS] hitl_flows (required)
+[PASS] depth_guardrail (required)
+[PASS] audit_and_compliance (required)
+[PASS] analytics_dashboard (required)
+[FAIL] siem_export (required) :: [Errno 60] Operation timed out
+[PASS] anomaly_fanout (required)
+[SKIP] marketplace (optional) :: connect-onboard is optional; enable with --enable-stripe-onboard

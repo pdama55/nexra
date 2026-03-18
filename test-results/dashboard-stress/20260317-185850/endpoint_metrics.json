@@ -1,0 +1,283 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "critical_endpoint_failures": [],
+  "duration_min": 1,
+  "endpoint_count": 17,
+  "endpoints": {
+    "agent_detail": {
+      "latency": {
+        "p50_ms": 1666.4,
+        "p95_ms": 1852.79,
+        "p99_ms": 1852.79
+      },
+      "name": "agent_detail",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 4,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 4
+    },
+    "agent_trust": {
+      "latency": {
+        "p50_ms": 2001.43,
+        "p95_ms": 3252.07,
+        "p99_ms": 3252.07
+      },
+      "name": "agent_trust",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 3,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 3
+    },
+    "agents_registry": {
+      "latency": {
+        "p50_ms": 2235.76,
+        "p95_ms": 2920.89,
+        "p99_ms": 2920.89
+      },
+      "name": "agents_registry",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 3,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 3
+    },
+    "analytics_usage": {
+      "latency": {
+        "p50_ms": 1079.69,
+        "p95_ms": 1079.69,
+        "p99_ms": 1079.69
+      },
+      "name": "analytics_usage",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 1,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 1
+    },
+    "audit_log": {
+      "latency": {
+        "p50_ms": 706.22,
+        "p95_ms": 999.21,
+        "p99_ms": 999.21
+      },
+      "name": "audit_log",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 5,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 5
+    },
+    "delegation_detail": {
+      "latency": {
+        "p50_ms": 610.38,
+        "p95_ms": 1477.49,
+        "p99_ms": 1477.49
+      },
+      "name": "delegation_detail",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 2,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 2
+    },
+    "delegations_list": {
+      "latency": {
+        "p50_ms": 1403.18,
+        "p95_ms": 2510.01,
+        "p99_ms": 2510.01
+      },
+      "name": "delegations_list",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 3,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 3
+    },
+    "marketplace_connect_status": {
+      "latency": {
+        "p50_ms": 915.7,
+        "p95_ms": 1926.09,
+        "p99_ms": 1926.09
+      },
+      "name": "marketplace_connect_status",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 3,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 3
+    },
+    "org_api_keys": {
+      "latency": {
+        "p50_ms": 1003.16,
+        "p95_ms": 1003.16,
+        "p99_ms": 1003.16
+      },
+      "name": "org_api_keys",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 1,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 1
+    },
+    "org_me": {
+      "latency": {
+        "p50_ms": 977.46,
+        "p95_ms": 3081.25,
+        "p99_ms": 3081.25
+      },
+      "name": "org_me",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 3,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 3
+    },
+    "org_members": {
+      "latency": {
+        "p50_ms": 973.75,
+        "p95_ms": 3102.23,
+        "p99_ms": 3102.23
+      },
+      "name": "org_members",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 2,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 2
+    },
+    "org_session": {
+      "latency": {
+        "p50_ms": 1492.17,
+        "p95_ms": 3223.94,
+        "p99_ms": 3223.94
+      },
+      "name": "org_session",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 2,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 2
+    },
+    "org_webhooks": {
+      "latency": {
+        "p50_ms": 1100.78,
+        "p95_ms": 1229.1,
+        "p99_ms": 1229.1
+      },
+      "name": "org_webhooks",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 3,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 3
+    },
+    "policies_list": {
+      "latency": {
+        "p50_ms": 1191.8,
+        "p95_ms": 1793.41,
+        "p99_ms": 1793.41
+      },
+      "name": "policies_list",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 4,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 4
+    },
+    "policy_detail": {
+      "latency": {
+        "p50_ms": 720.56,
+        "p95_ms": 720.56,
+        "p99_ms": 720.56
+      },
+      "name": "policy_detail",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 1,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 1
+    },
+    "siem_config": {
+      "latency": {
+        "p50_ms": 995.2,
+        "p95_ms": 2369.91,
+        "p99_ms": 2369.91
+      },
+      "name": "siem_config",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 2,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 2
+    },
+    "spend_summary": {
+      "latency": {
+        "p50_ms": 2056.55,
+        "p95_ms": 2111.69,
+        "p99_ms": 2111.69
+      },
+      "name": "spend_summary",
+      "non_2xx_4xx": 0,
+      "non_2xx_4xx_rate": 0.0,
+      "shape_validation_failures": 0,
+      "success_2xx": 5,
+      "success_4xx": 0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "total_requests": 5
+    }
+  },
+  "error_rate_threshold": 0.01,
+  "generated_at": "2026-03-18T02:04:01.840608+00:00",
+  "peak_vus": 2
+}

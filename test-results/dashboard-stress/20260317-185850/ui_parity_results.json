@@ -1,0 +1,253 @@
+{
+  "generated_at": "2026-03-18T02:05:09.767Z",
+  "dashboard_url": "http://localhost:5173",
+  "api_base_url": "http://127.0.0.1:8000",
+  "duration_min": 1,
+  "sweep_interval_sec": 30,
+  "route_timeout_ms": 15000,
+  "failure_mode": "collect-all",
+  "sweeps_run": 1,
+  "required_routes": [
+    "overview",
+    "agents",
+    "agent_detail",
+    "delegations",
+    "delegation_detail",
+    "policies",
+    "policy_detail",
+    "spend",
+    "audit",
+    "hitl",
+    "trust",
+    "anomalies",
+    "compliance",
+    "settings"
+  ],
+  "route_summaries": {
+    "overview": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "agents": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "agent_detail": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "delegations": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "delegation_detail": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "policies": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "policy_detail": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "spend": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "audit": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "hitl": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "trust": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "anomalies": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "compliance": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    },
+    "settings": {
+      "checks": 1,
+      "passes": 1,
+      "failures": 0,
+      "mismatch_count": 0,
+      "last_error": null
+    }
+  },
+  "sweeps": [
+    {
+      "sweep_index": 0,
+      "started_at": "2026-03-18T02:03:09.450Z",
+      "finished_at": "2026-03-18T02:04:27.011Z",
+      "routes": [
+        {
+          "route_key": "overview",
+          "path": "/",
+          "passed": true,
+          "latency_ms": 9993,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "agents",
+          "path": "/agents",
+          "passed": true,
+          "latency_ms": 4738,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "agent_detail",
+          "path": "/agents/suite-a2a-1773799284",
+          "passed": true,
+          "latency_ms": 5920,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "delegations",
+          "path": "/delegations",
+          "passed": true,
+          "latency_ms": 6559,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "delegation_detail",
+          "path": "/delegations/b88bef82-5eaa-497b-9d45-0274aef843b1",
+          "passed": true,
+          "latency_ms": 4823,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "policies",
+          "path": "/policies",
+          "passed": true,
+          "latency_ms": 5118,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "policy_detail",
+          "path": "/policies/6cc0f748-24b1-4236-92f6-6e4aaba2a68a",
+          "passed": true,
+          "latency_ms": 4352,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "spend",
+          "path": "/spend",
+          "passed": true,
+          "latency_ms": 5996,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "audit",
+          "path": "/audit",
+          "passed": true,
+          "latency_ms": 3812,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "hitl",
+          "path": "/hitl",
+          "passed": true,
+          "latency_ms": 4097,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "trust",
+          "path": "/trust",
+          "passed": true,
+          "latency_ms": 6601,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "anomalies",
+          "path": "/anomalies",
+          "passed": true,
+          "latency_ms": 4666,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "compliance",
+          "path": "/compliance",
+          "passed": true,
+          "latency_ms": 2189,
+          "mismatches": [],
+          "errors": []
+        },
+        {
+          "route_key": "settings",
+          "path": "/settings",
+          "passed": true,
+          "latency_ms": 5570,
+          "mismatches": [],
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "mismatches_total": 0,
+  "required_mismatches": 0,
+  "route_render_failures": 0,
+  "frontend_uncaught_errors": 0,
+  "frontend_console_errors": 2,
+  "critical_failures": []
+}

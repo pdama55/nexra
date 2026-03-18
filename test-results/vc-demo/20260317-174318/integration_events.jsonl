@@ -1,0 +1,6 @@
+{"details": "{\"mode\": \"bootstrap\", \"integrations\": \"mock\"}}", "event": "vc_runner_started", "timestamp": "2026-03-18T00:43:18.318974+00:00"}
+{"event": "preflight_passed", "timestamp": "2026-03-18T00:44:56.129709+00:00"}
+{"details": "{\"inserted_delegations\": 150, \"inserted_audit_events\": 430}}", "event": "seeded_data_loaded", "timestamp": "2026-03-18T00:45:44.674984+00:00"}
+{"event": "dashboard_session_synced", "timestamp": "2026-03-18T00:45:44.745104+00:00"}
+{"base_url": "http://127.0.0.1:8000", "event": "vc_suite_start", "timestamp": "2026-03-18T00:45:44.960181+00:00"}
+{"event": "baseline_suite_finished", "exit_code": 0, "log": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-174318/baseline_run.log", "summary": "/Users/parthdama/Documents/Nexra/test-results/vc-demo/20260317-174318/baseline/summary.json", "timestamp": "2026-03-18T00:47:17.304634+00:00"}

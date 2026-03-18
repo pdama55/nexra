@@ -12,15 +12,20 @@ import hashlib
 import hmac
 import json
 import os
+from urllib.parse import urlparse
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 
-from nexra_sdk import NexraClient
+from nexra_sdk import NexraAPIError, NexraClient
 
 app = FastAPI(title="Research Agent")
 
 WEBHOOK_SECRET = "whs_research_agent_secret_key_that_is_long_enough"
+WEBHOOK_HELP = (
+    "Run `./scripts/export_research_webhook_url.sh` after `ngrok http 8001`, then export "
+    "`NEXRA_RESEARCH_WEBHOOK_URL` before starting this agent."
+)
 
 
 @app.post("/webhook")
@@ -62,42 +67,67 @@ async def handle_delegation(request: Request):
 async def register():
     api_key = os.environ["NEXRA_API_KEY"]
     base_url = os.environ.get("NEXRA_BASE_URL", "http://localhost:8000/v1")
+    webhook_url = os.environ.get("NEXRA_RESEARCH_WEBHOOK_URL", "").strip()
+
+    if not webhook_url:
+        raise RuntimeError(
+            "NEXRA_RESEARCH_WEBHOOK_URL is required and must be HTTPS. "
+            + WEBHOOK_HELP
+        )
+
+    parsed = urlparse(webhook_url)
+    if parsed.scheme.lower() != "https":
+        raise RuntimeError(
+            "NEXRA_RESEARCH_WEBHOOK_URL must start with https://. "
+            + WEBHOOK_HELP
+        )
 
     async with NexraClient(
         api_key=api_key, agent_id="research-agent-v1", base_url=base_url
     ) as client:
-        await client.register(
-            agent_id="research-agent-v1",
-            name="Research Agent",
-            description="Performs competitive research, market analysis, and pricing intelligence for B2B SaaS companies",
-            capability_type="research",
-            input_schema={
-                "type": "object",
-                "required": ["company_name"],
-                "properties": {
-                    "company_name": {"type": "string"},
-                    "focus_areas": {"type": "array", "items": {"type": "string"}},
+        try:
+            await client.register(
+                agent_id="research-agent-v1",
+                name="Research Agent",
+                description="Performs competitive research, market analysis, and pricing intelligence for B2B SaaS companies",
+                capability_type="research",
+                input_schema={
+                    "type": "object",
+                    "required": ["company_name"],
+                    "properties": {
+                        "company_name": {"type": "string"},
+                        "focus_areas": {"type": "array", "items": {"type": "string"}},
+                    },
                 },
-            },
-            output_schema={
-                "type": "object",
-                "required": ["summary"],
-                "properties": {
-                    "summary": {"type": "string"},
-                    "competitors": {"type": "array"},
-                    "market_size_usd": {"type": "number"},
+                output_schema={
+                    "type": "object",
+                    "required": ["summary"],
+                    "properties": {
+                        "summary": {"type": "string"},
+                        "competitors": {"type": "array"},
+                        "market_size_usd": {"type": "number"},
+                    },
                 },
-            },
-            pricing={"per_call_usd": 0.15},
-            sla={"p99_latency_ms": 8000, "availability": 0.99},
-            webhook_url=os.environ.get(
-                "NEXRA_RESEARCH_WEBHOOK_URL", "https://localhost:8001/webhook"
-            ),
-            webhook_secret=WEBHOOK_SECRET,
-        )
-        print("[Research Agent] Registered with Nexra.")
+                pricing={"per_call_usd": 0.15},
+                sla={"p99_latency_ms": 8000, "availability": 0.99},
+                webhook_url=webhook_url,
+                webhook_secret=WEBHOOK_SECRET,
+            )
+            print("[Research Agent] Registered with Nexra.")
+        except NexraAPIError as exc:
+            if exc.code in {"INVALID_WEBHOOK_URL", "CALLEE_WEBHOOK_FAILED"}:
+                raise RuntimeError(
+                    f"Research agent registration failed ({exc.code}): {exc.message}. "
+                    + WEBHOOK_HELP
+                ) from exc
+            raise
 
 
 if __name__ == "__main__":
-    asyncio.run(register())
+    try:
+        asyncio.run(register())
+    except Exception as exc:  # noqa: BLE001
+        print(f"[Research Agent] Startup failed: {exc}")
+        raise SystemExit(1) from exc
+
     uvicorn.run(app, host="0.0.0.0", port=8001)
