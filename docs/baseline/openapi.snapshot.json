@@ -102,6 +102,22 @@
         "title": "DataResponse[Any]",
         "type": "object"
       },
+      "DataResponse_OrgSettingsResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/OrgSettingsResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/MetaResponse",
+            "default": {}
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DataResponse[OrgSettingsResponse]",
+        "type": "object"
+      },
       "DataResponse_PolicyVersionsResponse_": {
         "properties": {
           "data": {
@@ -480,6 +496,99 @@
         "title": "OrgMemberUpdateRequest",
         "type": "object"
       },
+      "OrgSettingsResponse": {
+        "properties": {
+          "approval_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Url"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "max_delegation_depth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Delegation Depth"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notification_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notification Url"
+          },
+          "org_id": {
+            "title": "Org Id",
+            "type": "string"
+          },
+          "owner_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Email"
+          },
+          "plan": {
+            "title": "Plan",
+            "type": "string"
+          },
+          "schema_validation_enabled": {
+            "title": "Schema Validation Enabled",
+            "type": "boolean"
+          },
+          "stripe_connect_account_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stripe Connect Account Id"
+          }
+        },
+        "required": [
+          "org_id",
+          "name",
+          "plan",
+          "max_delegation_depth",
+          "schema_validation_enabled",
+          "owner_email",
+          "approval_url",
+          "notification_url",
+          "stripe_connect_account_id",
+          "created_at"
+        ],
+        "title": "OrgSettingsResponse",
+        "type": "object"
+      },
       "OrgSettingsUpdateRequest": {
         "properties": {
           "approval_url": {
@@ -529,6 +638,17 @@
               }
             ],
             "title": "Notification Url"
+          },
+          "schema_validation_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Validation Enabled"
           }
         },
         "title": "OrgSettingsUpdateRequest",
@@ -701,6 +821,17 @@
             "title": "On Violation",
             "type": "string"
           },
+          "parent_policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Policy Id"
+          },
           "priority": {
             "title": "Priority",
             "type": "integer"
@@ -712,6 +843,7 @@
         },
         "required": [
           "id",
+          "parent_policy_id",
           "name",
           "description",
           "priority",
@@ -3481,7 +3613,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataResponse_dict_"
+                  "$ref": "#/components/schemas/DataResponse_OrgSettingsResponse_"
                 }
               }
             },
@@ -3549,7 +3681,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataResponse_dict_"
+                  "$ref": "#/components/schemas/DataResponse_OrgSettingsResponse_"
                 }
               }
             },

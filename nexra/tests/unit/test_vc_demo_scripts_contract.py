@@ -54,3 +54,11 @@ def test_autoplay_supports_checkpoint_quality_flags() -> None:
 def test_autoplay_maps_policies_panel_to_policies_route() -> None:
     source = VC_AUTOPLAY.read_text(encoding="utf-8")
     assert 'if (key.includes("polic")) return "/policies";' in source
+
+
+def test_preflight_real_mode_requires_sendgrid_and_pagerduty_env() -> None:
+    source = (ROOT / "scripts" / "vc_demo_preflight.py").read_text(encoding="utf-8")
+    assert 'SENDGRID_API_KEY' in source
+    assert 'ANOMALY_PAGERDUTY_ROUTING_KEY' in source
+    assert 'PAGERDUTY_EVENTS_BASE_URL' in source
+    assert 'require_real_channel_env=True' in source

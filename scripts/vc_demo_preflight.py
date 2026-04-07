@@ -266,7 +266,12 @@ def _embedding_path_smoke(base_url: str, required: bool) -> list[CheckResult]:
     return checks
 
 
-def _real_checks(base_url: str, required: bool) -> list[CheckResult]:
+def _real_checks(
+    base_url: str,
+    required: bool,
+    *,
+    require_real_channel_env: bool,
+) -> list[CheckResult]:
     checks: list[CheckResult] = []
 
     checks.append(_http_check(
@@ -303,7 +308,7 @@ def _real_checks(base_url: str, required: bool) -> list[CheckResult]:
 
     sendgrid_key = os.getenv("SENDGRID_API_KEY", "").strip()
     sendgrid_base = os.getenv("SENDGRID_BASE_URL", "https://api.sendgrid.com").rstrip("/")
-    checks.append(_env_present("sendgrid_key", "SENDGRID_API_KEY", required=False))
+    checks.append(_env_present("sendgrid_key", "SENDGRID_API_KEY", required=require_real_channel_env))
     if sendgrid_key:
         checks.append(_http_check(
             "sendgrid_account",
@@ -328,7 +333,20 @@ def _real_checks(base_url: str, required: bool) -> list[CheckResult]:
 
     pagerduty_key = os.getenv("ANOMALY_PAGERDUTY_ROUTING_KEY", "").strip()
     pagerduty_base = os.getenv("PAGERDUTY_EVENTS_BASE_URL", "https://events.pagerduty.com").rstrip("/")
-    checks.append(_env_present("pagerduty_routing", "ANOMALY_PAGERDUTY_ROUTING_KEY", required=False))
+    checks.append(
+        _env_present(
+            "pagerduty_events_base_url",
+            "PAGERDUTY_EVENTS_BASE_URL",
+            required=require_real_channel_env,
+        )
+    )
+    checks.append(
+        _env_present(
+            "pagerduty_routing",
+            "ANOMALY_PAGERDUTY_ROUTING_KEY",
+            required=require_real_channel_env,
+        )
+    )
     if pagerduty_key:
         checks.append(_http_check(
             "pagerduty_event",
@@ -412,11 +430,19 @@ def main() -> int:
             return 1
         checks = _mock_checks(args.base_url, args.mock_sink_base_url, required=True)
     elif args.integrations == "hybrid":
-        checks = _real_checks(args.base_url, required=False)
+        checks = _real_checks(
+            args.base_url,
+            required=False,
+            require_real_channel_env=False,
+        )
         if args.mock_sink_base_url:
             checks.extend(_mock_checks(args.base_url, args.mock_sink_base_url, required=False))
     else:
-        checks = _real_checks(args.base_url, required=required)
+        checks = _real_checks(
+            args.base_url,
+            required=required,
+            require_real_channel_env=True,
+        )
 
     failed_required = [c for c in checks if c.required and not c.passed]
     failed_any = [c for c in checks if not c.passed]

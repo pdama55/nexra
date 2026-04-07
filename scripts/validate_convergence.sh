@@ -28,9 +28,13 @@ else
   echo "poetry not found; skipping ruff/mypy checks in local validation script"
 fi
 ./venv/bin/python "$ROOT/scripts/check_openapi_snapshot.py"
+./venv/bin/python "$ROOT/scripts/check_docs_drift.py"
 ./venv/bin/python -m pytest -q tests/unit
 ./venv/bin/python -m pytest -q tests/contracts
 popd >/dev/null
+
+echo "[convergence] running integration/e2e via canonical DB-backed runner"
+"$ROOT/scripts/run_db_backed_tests.sh" --infra-mode auto
 
 pushd "$ROOT/nexra/internal-dashboard" >/dev/null
 npx tsc -b --pretty false

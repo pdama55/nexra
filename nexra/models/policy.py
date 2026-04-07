@@ -25,6 +25,11 @@ class Policy(UUIDMixin, Base):
         ForeignKey("organizations.id", ondelete="CASCADE"),
         nullable=False,
     )
+    parent_policy_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("policies.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     priority: Mapped[int] = mapped_column(
@@ -55,5 +60,11 @@ class Policy(UUIDMixin, Base):
             "org_id",
             "priority",
             postgresql_where="enabled = TRUE",
+        ),
+        Index(
+            "ix_policies_org_parent_version",
+            "org_id",
+            "parent_policy_id",
+            "version",
         ),
     )

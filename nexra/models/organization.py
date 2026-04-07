@@ -28,6 +28,10 @@ class Organization(UUIDMixin, TimestampMixin, Base):
     max_delegation_depth: Mapped[int | None] = mapped_column(
         Integer, nullable=True, server_default="5"
     )
+    schema_validation_enabled: Mapped[bool] = mapped_column(
+        nullable=False,
+        server_default="true",
+    )
     delegation_count: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
     )

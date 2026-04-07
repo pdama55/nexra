@@ -1,0 +1,5 @@
+[2026-03-26T21:35:40.632Z] starting autoplay at http://127.0.0.1:5173/?nexra_api_key=nx_live_nPw1FAKRrwI3NegI_UtDeXgjKytXjrrBwVTDeYxUOSU&nexra_user_email=admin%40nexra.local
+[2026-03-26T21:36:23.391Z] checkpoint not fully resolved for act_4_trust_anomaly; missing events=governance_anomaly_detection_passed
+[2026-03-26T21:36:58.526Z] checkpoint not fully resolved for act_8_closeout; missing events=capability_matrix_passed,vc_bundle_written
+[2026-03-26T21:36:58.528Z] completed autoplay (8 captures); coverage=0.75
+[2026-03-26T21:36:58.528Z] warning: checkpoint coverage 0.75 below threshold 1

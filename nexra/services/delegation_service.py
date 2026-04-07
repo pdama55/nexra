@@ -97,7 +97,9 @@ class DelegationService:
         if callee.status == "quarantined":
             raise NexraError(403, AGENT_QUARANTINED, "Callee agent is quarantined")
 
-        if callee.input_schema and callee.input_schema.get("type"):
+        schema_validation_flag = getattr(org, "schema_validation_enabled", True)
+        should_validate_schema = True if schema_validation_flag is None else bool(schema_validation_flag)
+        if should_validate_schema and callee.input_schema and callee.input_schema.get("type"):
             try:
                 task_input = request.task.get("input", request.task)
                 jsonschema.validate(task_input, callee.input_schema)
@@ -630,7 +632,13 @@ class DelegationService:
         if not callee:
             raise NexraError(404, AGENT_NOT_FOUND, "Callee agent not found")
 
-        await self._validate_callee_output(callee, result)
+        schema_validation_flag = getattr(org, "schema_validation_enabled", True)
+        should_validate_schema = True if schema_validation_flag is None else bool(schema_validation_flag)
+        await self._validate_callee_output(
+            callee,
+            result,
+            schema_validation_enabled=should_validate_schema,
+        )
 
         computed_latency = delegation.latency_ms
         if not computed_latency:
@@ -647,8 +655,14 @@ class DelegationService:
             completion_mode="callee_complete_endpoint",
         )
 
-    async def _validate_callee_output(self, callee: Agent, result: dict) -> None:
-        if callee.output_schema and callee.output_schema.get("type"):
+    async def _validate_callee_output(
+        self,
+        callee: Agent,
+        result: dict,
+        *,
+        schema_validation_enabled: bool,
+    ) -> None:
+        if schema_validation_enabled and callee.output_schema and callee.output_schema.get("type"):
             try:
                 jsonschema.validate(result, callee.output_schema)
             except jsonschema.ValidationError as exc:

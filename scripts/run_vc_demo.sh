@@ -85,6 +85,46 @@ if [[ "$FAILURE_POLICY" != "fail-fast" && "$FAILURE_POLICY" != "fallback" && "$F
   exit 1
 fi
 
+ensure_real_env_contract() {
+  python3 - <<'PY' "$ROOT_DIR/nexra/.env"
+import os
+import sys
+from pathlib import Path
+
+env_path = Path(sys.argv[1])
+if env_path.exists():
+    for raw in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not key:
+            continue
+        os.environ.setdefault(key, value.strip().strip('"').strip("'"))
+
+required = [
+    "SENDGRID_API_KEY",
+    "ANOMALY_PAGERDUTY_ROUTING_KEY",
+    "PAGERDUTY_EVENTS_BASE_URL",
+]
+missing = [key for key in required if not os.getenv(key, "").strip()]
+if missing:
+    print(
+        "[runner] real integrations contract missing required env vars: "
+        + ", ".join(missing)
+    )
+    raise SystemExit(1)
+PY
+}
+
+if [[ "$INTEGRATIONS" == "real" ]]; then
+  if ! ensure_real_env_contract; then
+    echo "[runner] refusing to continue in --integrations real without full env contract." >&2
+    exit 1
+  fi
+fi
+
 mkdir -p "$RESULTS_DIR"
 
 echo "VC demo results: $RESULTS_DIR"
@@ -328,6 +368,7 @@ fi
 update_phase "mock_sink" "passed" "mock sink ready at $MOCK_SINK_BASE_URL"
 
 export NEXRA_MOCK_SINK_BASE_URL="$MOCK_SINK_BASE_URL"
+export NEXRA_INTEGRATIONS_MODE="$INTEGRATIONS"
 
 update_phase "stack" "in_progress" "mode=$MODE"
 if [[ "$MODE" == "bootstrap" ]]; then

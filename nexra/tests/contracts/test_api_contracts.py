@@ -249,3 +249,20 @@ def test_mcp_path_contracts_present() -> None:
     ].get("$ref")
     assert discover_body_ref == "#/components/schemas/DiscoverRequest"
     assert delegate_body_ref == "#/components/schemas/DelegateRequest"
+
+
+def test_org_settings_contract_includes_schema_validation_toggle() -> None:
+    spec = _openapi()
+    response_schema = _json_response_schema(spec, "/v1/orgs/me", "get")
+    data_schema = _resolve_schema(response_schema["properties"]["data"], spec)
+    assert "schema_validation_enabled" in data_schema.get("properties", {})
+
+    patch_request_schema = spec["paths"]["/v1/orgs/me"]["patch"]["requestBody"]["content"]["application/json"]["schema"]
+    patch_resolved = _resolve_schema(patch_request_schema, spec)
+    assert "schema_validation_enabled" in patch_resolved.get("properties", {})
+
+
+def test_policy_contract_includes_parent_policy_id() -> None:
+    spec = _openapi()
+    policy_response = spec["components"]["schemas"]["PolicyResponse"]
+    assert "parent_policy_id" in policy_response.get("properties", {})

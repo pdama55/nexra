@@ -4,7 +4,7 @@ from typing import Any
 import redis.asyncio as aioredis
 import yaml
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import RequestActor, get_authenticated_org, get_redis, require_roles
@@ -13,8 +13,8 @@ from api.schemas.policies import (
     PolicyCreateRequest,
     PolicyListResponse,
     PolicyResponse,
-    PolicyVersionsResponse,
     PolicyUpdateRequest,
+    PolicyVersionsResponse,
 )
 from core.errors import POLICY_NOT_FOUND, NexraError
 from db.session import get_db
@@ -33,6 +33,7 @@ def _policy_to_response(p: Policy) -> PolicyResponse:
     parsed = _parse_policy_yaml(p.rule_yaml)
     return PolicyResponse(
         id=str(p.id),
+        parent_policy_id=str(p.parent_policy_id) if p.parent_policy_id else None,
         name=p.name,
         description=p.description,
         priority=p.priority,
@@ -68,6 +69,8 @@ async def create_policy(
         enabled=True,
     )
     db.add(policy)
+    await db.flush()
+    policy.parent_policy_id = policy.id
     await db.commit()
     await db.refresh(policy)
 
@@ -128,9 +131,16 @@ async def get_policy(
     if not policy:
         raise NexraError(404, POLICY_NOT_FOUND, f"Policy '{policy_id}' not found")
 
+    family_root_id = policy.parent_policy_id or policy.id
     versions_result = await db.execute(
         select(Policy)
-        .where(Policy.org_id == org.id, Policy.name == policy.name)
+        .where(
+            Policy.org_id == org.id,
+            or_(
+                Policy.id == family_root_id,
+                Policy.parent_policy_id == family_root_id,
+            ),
+        )
         .order_by(Policy.version.desc())
     )
     versions = [_policy_to_response(p) for p in versions_result.scalars().all()]
@@ -165,9 +175,16 @@ async def get_policy_versions(
     if not policy:
         raise NexraError(404, POLICY_NOT_FOUND, f"Policy '{policy_id}' not found")
 
+    family_root_id = policy.parent_policy_id or policy.id
     versions_result = await db.execute(
         select(Policy)
-        .where(Policy.org_id == org.id, Policy.name == policy.name)
+        .where(
+            Policy.org_id == org.id,
+            or_(
+                Policy.id == family_root_id,
+                Policy.parent_policy_id == family_root_id,
+            ),
+        )
         .order_by(Policy.version.desc())
     )
     versions = [_policy_to_response(p) for p in versions_result.scalars().all()]
@@ -175,7 +192,7 @@ async def get_policy_versions(
     latency = round((time.perf_counter() - start) * 1000, 2)
     return DataResponse(
         data=PolicyVersionsResponse(
-            policy_id=str(policy.id),
+            policy_id=str(family_root_id),
             versions=versions,
         ),
         meta=MetaResponse(
@@ -216,16 +233,29 @@ async def update_policy(
     if body.on_violation is not None:
         current["on_violation"] = body.on_violation
 
+    family_root_id = existing.parent_policy_id or existing.id
+    max_version_result = await db.execute(
+        select(func.max(Policy.version)).where(
+            Policy.org_id == org.id,
+            or_(
+                Policy.id == family_root_id,
+                Policy.parent_policy_id == family_root_id,
+            ),
+        )
+    )
+    next_version = int(max_version_result.scalar() or existing.version) + 1
+
     existing.enabled = False
     await db.flush()
 
     new_policy = Policy(
         org_id=org.id,
+        parent_policy_id=family_root_id,
         name=existing.name,
         description=body.description if body.description is not None else existing.description,
         priority=body.priority if body.priority is not None else existing.priority,
         rule_yaml=yaml.dump(current, default_flow_style=False),
-        version=existing.version + 1,
+        version=next_version,
         enabled=True,
     )
     db.add(new_policy)

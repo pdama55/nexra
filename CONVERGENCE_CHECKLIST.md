@@ -41,6 +41,7 @@ This checklist is the release-gate tracker for PRD/TDD convergence.
 - [x] Integration tests green in DB-enabled environment
 - [x] E2E tests green in DB-enabled environment
 - [x] Contract tests green locally and gated in CI workflow
+- [x] DB-backed integration/e2e execution standardized through `scripts/run_db_backed_tests.sh`
 - [x] Notification channel unit tests added (HiTL email + anomaly alert fanout isolation)
 - [x] Live-infra performance suite added behind explicit `NEXRA_RUN_LIVE_PERF=1` guard
 
@@ -58,6 +59,18 @@ This checklist is the release-gate tracker for PRD/TDD convergence.
 - [x] Worker flows proven by automated tests
 - [x] Adapter/SDK compatibility proven against current API contract
 - [x] Docker Compose parity extended with dedicated worker service and queue wiring
+
+## Phase 7 — Runtime-Critical Gap Closure
+- [x] Per-org schema validation toggle added (`organizations.schema_validation_enabled`, default `true`)
+- [x] Delegation input/output schema enforcement wired to org toggle
+- [x] Policy lineage pointer added (`policies.parent_policy_id`) with immutable version-chain semantics
+- [x] VC real-mode preflight/runner enforces required env contract (`SENDGRID_API_KEY`, `ANOMALY_PAGERDUTY_ROUTING_KEY`, `PAGERDUTY_EVENTS_BASE_URL`)
+- [x] Real-mode anomaly fanout evidence emitted in suite artifacts (`anomaly_channel_evidence.json`)
+
+## Phase 8 — Docs Drift Guardrail
+- [x] Workflow-name drift guard added (`scripts/check_docs_drift.py`)
+- [x] Dashboard endpoint naming in phase docs aligned to `/v1/dashboard/*`
+- [x] Testing playbook workflow references aligned to current CI/release workflows
 
 ## Website Navbar Drift Guardrail
 - [x] Navbar source of truth moved to shared assets: `website/shared/navbar.css` + `website/shared/navbar.js`

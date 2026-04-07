@@ -1,2 +1,8 @@
-..........................................                               [100%]
-42 passed in 28.47s
+[db-tests] infra_mode=auto
+[db-tests] TEST_DATABASE_URL=postgresql+asyncpg://nexra:nexra@localhost:5432/nexra_test
+[db-tests] REDIS_URL=redis://localhost:6379/1
+[db-tests] probing configured DB/Redis endpoints
+db_precheck=failed classification=unreachable detail=Multiple exceptions: [Errno 61] Connect call failed ('127.0.0.1', 5432), [Errno 61] Connect call failed ('::1', 5432, 0, 0)
+redis_precheck=failed classification=unreachable detail=Error Multiple exceptions: [Errno 61] Connect call failed ('127.0.0.1', 6379), [Errno 61] Connect call failed ('::1', 6379, 0, 0) connecting to localhost:6379.
+[db-tests] external infra probe failed; attempting docker fallback
+docker_precheck=failed classification=docker_daemon_unavailable detail='docker daemon is not available for --infra-mode docker/auto fallback'

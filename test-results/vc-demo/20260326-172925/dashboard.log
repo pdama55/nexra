@@ -1,0 +1,10 @@
+
+> nexra-dashboard@0.0.0 dev
+> vite
+
+
+  VITE v6.4.1  ready in 175 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+9:23:15 PM [vite] (client) hmr update /src/views/Settings.tsx

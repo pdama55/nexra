@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-03-26T21:36:58.527Z",
+  "checkpoints_total": 8,
+  "checkpoints_seen": 6,
+  "checkpoints_missing": 2,
+  "coverage_ratio": 0.75,
+  "min_required_coverage": 1,
+  "strict_mode": false,
+  "strict_gate_passed": false,
+  "missing_by_act": [
+    {
+      "act_id": "act_4_trust_anomaly",
+      "checkpoint": "trust_and_anomaly",
+      "missing_events": [
+        "governance_anomaly_detection_passed"
+      ]
+    },
+    {
+      "act_id": "act_8_closeout",
+      "checkpoint": "closeout_bundle",
+      "missing_events": [
+        "capability_matrix_passed",
+        "vc_bundle_written"
+      ]
+    }
+  ]
+}

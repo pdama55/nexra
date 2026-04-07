@@ -1,0 +1,26 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "dashboard_url": "http://127.0.0.1:5173",
+  "failure_policy": "fail-fast",
+  "generated_at": "2026-04-07T20:42:45.964258+00:00",
+  "integrations": "mock",
+  "mode": "bootstrap",
+  "phases": {
+    "mock_sink": {
+      "details": "mock sink ready at http://127.0.0.1:8800",
+      "status": "passed",
+      "updated_at": "2026-04-07T20:42:47.176419+00:00"
+    },
+    "runner": {
+      "details": "bootstrapping vc runner",
+      "status": "in_progress",
+      "updated_at": "2026-04-07T20:42:46.000526+00:00"
+    },
+    "stack": {
+      "details": "mode=bootstrap",
+      "status": "in_progress",
+      "updated_at": "2026-04-07T20:42:47.214699+00:00"
+    }
+  },
+  "profile": "vc-12m"
+}

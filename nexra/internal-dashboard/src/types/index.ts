@@ -7,6 +7,7 @@ export interface Organization {
   name: string;
   plan: 'starter' | 'growth' | 'enterprise';
   max_delegation_depth: number | null;
+  schema_validation_enabled: boolean;
   owner_email: string | null;
   approval_url: string | null;
   notification_url: string | null;
@@ -98,6 +99,7 @@ export type PolicyDecision = 'allow' | 'block' | 'pause';
 // ── Policies ──
 export interface Policy {
   id: string;
+  parent_policy_id: string | null;
   org_id: string;
   name: string;
   description: string | null;

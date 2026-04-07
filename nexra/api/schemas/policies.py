@@ -57,6 +57,7 @@ class PolicyUpdateRequest(BaseModel):
 
 class PolicyResponse(BaseModel):
     id: str
+    parent_policy_id: str | None
     name: str
     description: str | None
     priority: int

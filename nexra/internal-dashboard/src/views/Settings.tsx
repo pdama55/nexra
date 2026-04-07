@@ -15,6 +15,7 @@ interface OrgSettings {
   name: string;
   plan: string;
   max_delegation_depth: number | null;
+  schema_validation_enabled: boolean;
   owner_email: string | null;
   approval_url: string | null;
   notification_url: string | null;
@@ -95,6 +96,7 @@ export function Settings() {
   const [approvalWebhookDraft, setApprovalWebhookDraft] = useState<string | null>(null);
   const [notificationWebhookDraft, setNotificationWebhookDraft] = useState<string | null>(null);
   const [maxDepthDraft, setMaxDepthDraft] = useState<string | null>(null);
+  const [schemaValidationDraft, setSchemaValidationDraft] = useState<boolean | null>(null);
   const [webhookTestResult, setWebhookTestResult] = useState<string | null>(null);
 
   const orgName = orgNameDraft ?? orgQuery.data?.name ?? '';
@@ -106,17 +108,20 @@ export function Settings() {
   const approvalWebhook = approvalWebhookDraft ?? webhookSettingsQuery.data?.approval_url ?? '';
   const notificationWebhook = notificationWebhookDraft ?? webhookSettingsQuery.data?.notification_url ?? '';
   const maxDelegationDepth = maxDepthDraft ?? String(orgQuery.data?.max_delegation_depth ?? 5);
+  const schemaValidationEnabled = schemaValidationDraft ?? Boolean(orgQuery.data?.schema_validation_enabled ?? true);
 
   const updateOrgMutation = useMutation({
     mutationFn: () => apiPatch('/orgs/me', {
       name: orgName,
       approval_url: approvalUrl || null,
       max_delegation_depth: Number(maxDelegationDepth),
+      schema_validation_enabled: schemaValidationEnabled,
     }),
     onSuccess: () => {
       setOrgNameDraft(null);
       setApprovalUrlDraft(null);
       setMaxDepthDraft(null);
+      setSchemaValidationDraft(null);
       queryClient.invalidateQueries({ queryKey: ['org-settings'] });
     },
   });
@@ -251,6 +256,15 @@ export function Settings() {
                   value={maxDelegationDepth}
                   onChange={(e) => setMaxDepthDraft(e.target.value)}
                 />
+                <div style={{ color: 'var(--text-tertiary)' }}>Schema Validation</div>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 0' }}>
+                  <input
+                    type="checkbox"
+                    checked={schemaValidationEnabled}
+                    onChange={(e) => setSchemaValidationDraft(e.target.checked)}
+                  />
+                  <span>{schemaValidationEnabled ? 'Enabled' : 'Disabled'}</span>
+                </label>
                 <div style={{ color: 'var(--text-tertiary)' }}>Owner Email</div>
                 <div className="mono" style={{ padding: '8px 0' }}>{orgQuery.data.owner_email ?? 'N/A'}</div>
                 <div style={{ color: 'var(--text-tertiary)' }}>Plan</div>

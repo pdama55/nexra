@@ -109,6 +109,7 @@ class SuiteRunner:
         self.mock_sink_base_url = mock_sink_base_url.rstrip("/") if mock_sink_base_url else None
         self.enable_stripe_onboard = enable_stripe_onboard
         self.strict = strict
+        self.integrations_mode = os.getenv("NEXRA_INTEGRATIONS_MODE", "real").strip().lower()
 
         env_from_file = load_env_file(APP_DIR / ".env")
         self.database_url = os.getenv("DATABASE_URL") or env_from_file.get("DATABASE_URL")
@@ -1024,27 +1025,67 @@ class SuiteRunner:
         if not entries:
             raise ScenarioFailure("anomaly_detected audit event missing")
 
-        if not self.mock_sink_base_url:
-            if self.strict:
-                raise ScenarioFailure("mock sink required for anomaly fanout assertions in strict mode")
-            raise ScenarioSkipped("mock sink not configured; skipped channel capture assertions")
-
         await asyncio.sleep(0.4)
         slack_calls = await self.sink_captures("slack")
         email_calls = await self.sink_captures("sendgrid")
         pager_calls = await self.sink_captures("pagerduty")
 
-        if not email_calls or not pager_calls:
-            msg = (
-                "expected email and pagerduty fanout captures. "
-                "Ensure bootstrap mode sets SENDGRID_* and PAGERDUTY_EVENTS_BASE_URL/ANOMALY_PAGERDUTY_ROUTING_KEY."
-            )
-            if self.strict:
-                raise ScenarioFailure(msg)
-            raise ScenarioSkipped(msg)
+        evidence_payload: dict[str, Any] = {
+            "integrations_mode": self.integrations_mode,
+            "mock_sink_base_url": self.mock_sink_base_url,
+            "capture_counts": {
+                "slack": len(slack_calls),
+                "sendgrid": len(email_calls),
+                "pagerduty": len(pager_calls),
+            },
+        }
 
-        if not slack_calls and self.strict:
-            raise ScenarioFailure("expected at least one Slack fanout capture in strict mode")
+        if self.integrations_mode == "real":
+            preflight_path = self.results_dir.parent / "preflight.json"
+            if not preflight_path.exists():
+                raise ScenarioFailure(
+                    "real-mode anomaly evidence requires preflight.json in parent results directory"
+                )
+            preflight = json.loads(preflight_path.read_text(encoding="utf-8"))
+            checks = {
+                str(item.get("name")): bool(item.get("passed"))
+                for item in (preflight.get("checks") or [])
+                if isinstance(item, dict)
+            }
+            required_checks = {
+                "sendgrid_key",
+                "sendgrid_account",
+                "pagerduty_events_base_url",
+                "pagerduty_routing",
+                "pagerduty_event",
+            }
+            missing = sorted(
+                check_name for check_name in required_checks if checks.get(check_name) is not True
+            )
+            evidence_payload["preflight_checks"] = {
+                check_name: checks.get(check_name) for check_name in sorted(required_checks)
+            }
+            if missing:
+                raise ScenarioFailure(
+                    "real-mode anomaly fanout evidence missing required preflight checks: "
+                    + ", ".join(missing)
+                )
+        else:
+            if not email_calls or not pager_calls:
+                msg = (
+                    "expected email and pagerduty fanout captures. "
+                    "Ensure mock/hybrid mode routes channels to mock sink."
+                )
+                if self.strict:
+                    raise ScenarioFailure(msg)
+                raise ScenarioSkipped(msg)
+            if not slack_calls and self.strict:
+                raise ScenarioFailure("expected at least one Slack fanout capture in strict mode")
+
+        (self.results_dir / "anomaly_channel_evidence.json").write_text(
+            json.dumps(evidence_payload, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
 
     async def scenario_marketplace(self) -> None:
         await self.call(

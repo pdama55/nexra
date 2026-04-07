@@ -846,7 +846,7 @@ class TestPolicyEvalPerformance:
 
 ## 6. CI/CD Pipeline Configuration
 
-### 6.1 `.github/workflows/ci.yml` — PR Checks
+### 6.1 `.github/workflows/convergence-ci.yml` — PR Checks
 
 ```yaml
 name: CI
@@ -945,7 +945,7 @@ jobs:
       - run: npm run build
 ```
 
-### 6.2 `.github/workflows/deploy.yml` — Deploy on Merge
+### 6.2 `.github/workflows/release-smoke.yml` — Release Smoke
 
 ```yaml
 name: Deploy
@@ -1141,8 +1141,8 @@ All of the following must be true before testing is declared complete:
 - [ ] Overall coverage >80% (`--cov=nexra`)
 - [ ] `mypy nexra/` passes with 0 errors
 - [ ] `ruff check .` passes with 0 errors
-- [ ] CI pipeline (`.github/workflows/ci.yml`) runs green on a test PR
-- [ ] Deploy pipeline (`.github/workflows/deploy.yml`) runs green on merge to main
+- [x] CI pipeline (`.github/workflows/convergence-ci.yml`) runs green on a test PR
+- [x] Release smoke pipeline (`.github/workflows/release-smoke.yml`) runs green on workflow dispatch
 - [ ] Discovery P99 benchmark <200ms with 100 agents
 - [ ] Policy eval P99 benchmark <20ms with 10 policies
 - [ ] nexra-ts SDK compiles with `tsc` (exit code 0)

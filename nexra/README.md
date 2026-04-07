@@ -31,8 +31,12 @@ What it does by default:
   - `pytest -q tests/contracts`
   - `python scripts/check_openapi_snapshot.py`
   - `npm run build` in `nexra/internal-dashboard`
-- Runs the VC demo suite in `attach` mode with `real` integrations
+- Chooses runtime mode automatically:
+  - `attach` if API is already healthy at `http://127.0.0.1:8000/health`
+  - `bootstrap` if API is not running
+- Runs the VC demo suite with `real` integrations and `fail-fast` policy
 - Auto-opens the dashboard in your browser
+- In `bootstrap + real`, probes Neon + Upstash connectivity before startup
 
 Common variants:
 

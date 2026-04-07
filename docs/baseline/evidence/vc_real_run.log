@@ -1,0 +1,2 @@
+[runner] real integrations contract missing required env vars: SENDGRID_API_KEY, ANOMALY_PAGERDUTY_ROUTING_KEY, PAGERDUTY_EVENTS_BASE_URL
+[runner] refusing to continue in --integrations real without full env contract.

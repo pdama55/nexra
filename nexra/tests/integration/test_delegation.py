@@ -2,7 +2,6 @@
 
 import os
 import uuid
-from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -15,8 +14,8 @@ from api.schemas.agents import AgentRegisterRequest
 from api.schemas.delegations import DelegateRequest
 from core.crypto import encrypt_aes_gcm, generate_api_key, generate_org_jwt_secret
 from core.errors import NexraError
-from models.delegation import Delegation
 from models.agent_budget import AgentBudget
+from models.delegation import Delegation
 from models.organization import Organization
 from models.policy import Policy
 from services.agent_service import AgentService
@@ -26,7 +25,6 @@ from services.delegation_service import DelegationService
 from services.policy_engine import PolicyEngine
 from services.trust_service import TrustService
 from services.webhook_service import WebhookService
-
 
 TEST_ENC_KEY = "a" * 64
 TEST_REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/1")
@@ -59,7 +57,13 @@ async def _create_org(db: AsyncSession) -> Organization:
 
 
 async def _register_agent(
-    db: AsyncSession, org_id: str, agent_id: str, cap_type: str = "research"
+    db: AsyncSession,
+    org_id: str,
+    agent_id: str,
+    cap_type: str = "research",
+    *,
+    input_schema: dict | None = None,
+    output_schema: dict | None = None,
 ) -> None:
     service = AgentService(db, _mock_openai())
     await service.register(
@@ -69,8 +73,8 @@ async def _register_agent(
             name=f"Agent {agent_id}",
             description="A test agent for delegation integration testing",
             capability_type=cap_type,
-            input_schema={"type": "object", "properties": {"query": {"type": "string"}}},
-            output_schema={"type": "object", "properties": {"result": {"type": "string"}}},
+            input_schema=input_schema or {"type": "object", "properties": {"query": {"type": "string"}}},
+            output_schema=output_schema or {"type": "object", "properties": {"result": {"type": "string"}}},
             pricing={"per_call_usd": 0.10},
             sla={"p99_latency_ms": 5000, "availability": 0.99},
             webhook_url="https://example.com/webhook",
@@ -311,6 +315,129 @@ class TestDelegationDepth:
             assert nested is not None
             assert nested.delegation_depth == 1
             assert str(nested.parent_delegation_id) == first.delegation_id
+        finally:
+            await redis_client.aclose()
+
+
+class TestSchemaValidationToggle:
+    @pytest.mark.asyncio
+    async def test_schema_validation_enabled_by_default(self, db_session: AsyncSession) -> None:
+        org = await _create_org(db_session)
+        await _register_agent(db_session, str(org.id), "schema-caller")
+        await _register_agent(
+            db_session,
+            str(org.id),
+            "schema-callee",
+            "analysis",
+            input_schema={
+                "type": "object",
+                "properties": {"query": {"type": "string"}},
+                "required": ["query"],
+            },
+        )
+        await _add_policy(db_session, org.id, {
+            "allow": {},
+            "conditions": [],
+            "on_violation": "block_and_alert",
+        })
+
+        redis_client = aioredis.from_url(TEST_REDIS_URL, decode_responses=True)
+        try:
+            policy_engine = PolicyEngine(redis_client, db_session)
+            budget_service = BudgetService(db_session)
+            audit_service = AuditService(db_session)
+            trust_service = TrustService(db_session)
+            webhook_service = WebhookService()
+            webhook_service.deliver_and_await = AsyncMock(
+                return_value={"result": {"result": "ok"}, "usage": {"llm_tokens": 1}}
+            )
+            service = DelegationService(
+                db_session,
+                redis_client,
+                policy_engine,
+                webhook_service,
+                budget_service,
+                audit_service,
+                trust_service,
+            )
+            caller = await AgentService(db_session, _mock_openai()).get_by_agent_id(
+                str(org.id), "schema-caller"
+            )
+            with pytest.raises(NexraError) as exc:
+                await service.initiate(
+                    org,
+                    caller,
+                    DelegateRequest(
+                        callee_agent_id="schema-callee",
+                        task={"input": {"bad": True}},
+                        budget_cap_usd=1.0,
+                    ),
+                )
+            assert exc.value.code == "SCHEMA_VALIDATION_FAILED"
+        finally:
+            await redis_client.aclose()
+
+    @pytest.mark.asyncio
+    async def test_schema_validation_disabled_bypasses_input_validation(self, db_session: AsyncSession) -> None:
+        org = await _create_org(db_session)
+        org.schema_validation_enabled = False
+        await db_session.flush()
+
+        await _register_agent(db_session, str(org.id), "schema-off-caller")
+        await _register_agent(
+            db_session,
+            str(org.id),
+            "schema-off-callee",
+            "analysis",
+            input_schema={
+                "type": "object",
+                "properties": {"query": {"type": "string"}},
+                "required": ["query"],
+            },
+            output_schema={
+                "type": "object",
+                "properties": {"result": {"type": "string"}},
+                "required": ["result"],
+            },
+        )
+        await _add_policy(db_session, org.id, {
+            "allow": {},
+            "conditions": [],
+            "on_violation": "block_and_alert",
+        })
+
+        redis_client = aioredis.from_url(TEST_REDIS_URL, decode_responses=True)
+        try:
+            policy_engine = PolicyEngine(redis_client, db_session)
+            budget_service = BudgetService(db_session)
+            audit_service = AuditService(db_session)
+            trust_service = TrustService(db_session)
+            webhook_service = WebhookService()
+            webhook_service.deliver_and_await = AsyncMock(
+                return_value={"result": {"result": "ok"}, "usage": {"llm_tokens": 1}}
+            )
+            service = DelegationService(
+                db_session,
+                redis_client,
+                policy_engine,
+                webhook_service,
+                budget_service,
+                audit_service,
+                trust_service,
+            )
+            caller = await AgentService(db_session, _mock_openai()).get_by_agent_id(
+                str(org.id), "schema-off-caller"
+            )
+            result = await service.initiate(
+                org,
+                caller,
+                DelegateRequest(
+                    callee_agent_id="schema-off-callee",
+                    task={"input": {"bad": True}},
+                    budget_cap_usd=1.0,
+                ),
+            )
+            assert result.status == "completed"
         finally:
             await redis_client.aclose()
 

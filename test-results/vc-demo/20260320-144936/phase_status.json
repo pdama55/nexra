@@ -1,0 +1,31 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "dashboard_url": "http://127.0.0.1:5173",
+  "failure_policy": "fallback",
+  "generated_at": "2026-03-20T21:49:52.152804+00:00",
+  "integrations": "real",
+  "mode": "attach",
+  "phases": {
+    "mock_sink": {
+      "details": "mock sink ready at http://127.0.0.1:8800",
+      "status": "passed",
+      "updated_at": "2026-03-20T21:49:52.332036+00:00"
+    },
+    "runner": {
+      "details": "bootstrapping vc runner",
+      "status": "in_progress",
+      "updated_at": "2026-03-20T21:49:52.190183+00:00"
+    },
+    "stack": {
+      "details": "attach mode api health failed",
+      "status": "failed",
+      "updated_at": "2026-03-20T21:51:29.253548+00:00"
+    },
+    "terminal": {
+      "details": "exit_code=1",
+      "status": "failed",
+      "updated_at": "2026-03-20T21:51:29.293774+00:00"
+    }
+  },
+  "profile": "vc-12m"
+}

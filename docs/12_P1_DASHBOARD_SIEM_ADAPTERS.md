@@ -1752,40 +1752,42 @@ console.log(result.result);
 
 ## 7. Verification Checklist
 
+Status source of truth: `CONVERGENCE_CHECKLIST.md` and `docs/baseline/evidence/*`.
+
 ### Dashboard API
-- [ ] `GET /analytics/usage/volume` returns hourly time-series data
-- [ ] `GET /analytics/usage/cost-breakdown` returns per-agent cost breakdown
-- [ ] `GET /analytics/usage/failure-rates` returns failure rate per agent
-- [ ] `GET /analytics/usage/trust-leaderboard` returns agents sorted by trust score
-- [ ] `GET /analytics/usage/budget-alerts` returns agents with >80% budget utilization
-- [ ] `GET /analytics/usage/network-graph` returns nodes and edges for graph rendering
-- [ ] All dashboard endpoints are org-scoped (no cross-org data leakage)
-- [ ] All dashboard endpoints handle empty data gracefully (no 500 errors)
+- [x] `GET /v1/dashboard/volume` returns hourly time-series data
+- [x] `GET /v1/dashboard/cost-breakdown` returns per-agent cost breakdown
+- [x] `GET /v1/dashboard/failure-rates` returns failure rate per agent
+- [x] `GET /v1/dashboard/trust-leaderboard` returns agents sorted by trust score
+- [x] `GET /v1/dashboard/budget-alerts` returns agents with >80% budget utilization
+- [x] `GET /v1/dashboard/network-graph` returns nodes and edges for graph rendering
+- [x] All dashboard endpoints are org-scoped (no cross-org data leakage)
+- [x] All dashboard endpoints handle empty data gracefully (no 500 errors)
 
 ### SIEM Export
-- [ ] `POST /siem/config` saves SIEM configuration to org
-- [ ] `GET /siem/config` returns current SIEM configuration
-- [ ] SIEM worker exports new audit events every 60 seconds
-- [ ] SIEM worker maintains cursor in Redis (no duplicate exports)
-- [ ] Splunk format includes `sourcetype`, `source`, `host` fields
-- [ ] Datadog format includes `ddsource`, `ddtags` fields
-- [ ] Elastic format includes `@timestamp`, `_index` fields
-- [ ] SIEM worker handles delivery failures gracefully (retries next cycle)
-- [ ] Event type filtering works (only configured types exported)
+- [x] `POST /v1/siem/config` saves SIEM configuration to org
+- [x] `GET /v1/siem/config` returns current SIEM configuration
+- [x] SIEM worker exports new audit events every 60 seconds
+- [x] SIEM worker maintains cursor in Redis (no duplicate exports)
+- [x] Splunk format includes `sourcetype`, `source`, `host` fields
+- [x] Datadog format includes `ddsource`, `ddtags` fields
+- [x] Elastic format includes `@timestamp`, `_index` fields
+- [x] SIEM worker handles delivery failures gracefully (retries next cycle)
+- [x] Event type filtering works (only configured types exported)
 
 ### Framework Adapters
-- [ ] LangGraph `nexra_tool()` returns a valid `@tool` function
-- [ ] LangGraph tool executes `client.hire()` and returns result dict
-- [ ] CrewAI `NexraTool._run()` executes synchronously via `asyncio.run()`
-- [ ] CrewAI tool returns string representation of result
-- [ ] Bedrock `is_bedrock_endpoint()` correctly identifies Bedrock URLs
-- [ ] Bedrock `deliver_to_bedrock()` maps Nexra payload to InvokeAgent format
-- [ ] A2A `/agents/register/a2a` accepts Agent Card and creates Nexra agent
-- [ ] A2A registration maps capabilities to closest Nexra capability_type
+- [x] LangGraph `nexra_tool()` returns a valid `@tool` function
+- [x] LangGraph tool executes `client.hire()` and returns result dict
+- [x] CrewAI `NexraTool._run()` executes synchronously via `asyncio.run()`
+- [x] CrewAI tool returns string representation of result
+- [x] Bedrock `is_bedrock_endpoint()` correctly identifies Bedrock URLs
+- [x] Bedrock `deliver_to_bedrock()` maps Nexra payload to InvokeAgent format
+- [x] A2A `/agents/register/a2a` accepts Agent Card and creates Nexra agent
+- [x] A2A registration maps capabilities to closest Nexra capability_type
 
 ### nexra-ts SDK
-- [ ] `tsc` compiles without errors
-- [ ] `dist/` contains `.js` and `.d.ts` files
+- [x] `tsc` compiles without errors
+- [x] `dist/` contains `.js` and `.d.ts` files
 - [ ] `NexraClient.hire()` calls discover then delegate
 - [ ] `NexraClient.register()` sends correct payload
 - [ ] `NexraApiError` includes status code, error code, and details

@@ -76,7 +76,6 @@ probe_external_services() {
 import asyncio
 import sys
 import time
-from urllib.parse import urlparse, urlunparse
 
 import asyncpg
 import redis.asyncio as redis
@@ -128,8 +127,27 @@ async def main() -> int:
             return 0
         await asyncio.sleep(2)
 
-    print(f"db_probe_failed: {last_db}")
-    print(f"redis_probe_failed: {last_redis}")
+    def classify_error(message: str) -> str:
+        lowered = message.lower()
+        credential_markers = [
+            "password",
+            "authentication",
+            "auth",
+            "invalid dsn",
+            "database",
+            "does not exist",
+            "unknown database",
+            "no such host",
+            "name or service not known",
+        ]
+        if any(marker in lowered for marker in credential_markers):
+            return "credential_or_config_failure"
+        return "unreachable"
+
+    db_class = classify_error(last_db)
+    redis_class = classify_error(last_redis)
+    print(f"db_precheck=failed classification={db_class} detail={last_db}")
+    print(f"redis_precheck=failed classification={redis_class} detail={last_redis}")
     return 1
 
 raise SystemExit(asyncio.run(main()))
@@ -142,7 +160,7 @@ docker_available() {
 
 start_docker_infra() {
   if ! docker_available; then
-    echo "docker daemon is not available for --infra-mode docker/auto fallback" >&2
+    echo "docker_precheck=failed classification=docker_daemon_unavailable detail='docker daemon is not available for --infra-mode docker/auto fallback'" >&2
     return 1
   fi
 

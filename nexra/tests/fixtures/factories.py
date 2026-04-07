@@ -30,6 +30,7 @@ class OrganizationFactory(factory.Factory):
     stripe_id = None
     stripe_connect_account_id = None
     plan = "growth"
+    schema_validation_enabled = True
     owner_email = "admin@example.com"
     max_delegation_depth = 5
     approval_url = None
@@ -78,6 +79,7 @@ class PolicyFactory(factory.Factory):
     org_id = factory.LazyFunction(uuid.uuid4)
     name = factory.Sequence(lambda n: f"policy-{n}")
     description = "Test policy"
+    parent_policy_id = None
     priority = 10
     rule_yaml = factory.LazyFunction(lambda: (
         "allow:\n"

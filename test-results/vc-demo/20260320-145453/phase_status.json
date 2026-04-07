@@ -1,0 +1,31 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "dashboard_url": "http://127.0.0.1:5173",
+  "failure_policy": "fail-fast",
+  "generated_at": "2026-03-20T21:57:48.252584+00:00",
+  "integrations": "real",
+  "mode": "bootstrap",
+  "phases": {
+    "mock_sink": {
+      "details": "mock sink ready at http://127.0.0.1:8800",
+      "status": "passed",
+      "updated_at": "2026-03-20T21:57:48.551604+00:00"
+    },
+    "runner": {
+      "details": "bootstrapping vc runner",
+      "status": "in_progress",
+      "updated_at": "2026-03-20T21:57:48.317422+00:00"
+    },
+    "stack": {
+      "details": "start_live_stack failed (log: /Users/parthdama/Documents/Nexra/test-results/vc-demo/20260320-145453/live-stack.log)",
+      "status": "failed",
+      "updated_at": "2026-03-20T21:58:27.302388+00:00"
+    },
+    "terminal": {
+      "details": "exit_code=1",
+      "status": "failed",
+      "updated_at": "2026-03-20T21:58:27.383178+00:00"
+    }
+  },
+  "profile": "vc-12m"
+}

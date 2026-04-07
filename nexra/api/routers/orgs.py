@@ -42,6 +42,7 @@ class OrgSettingsResponse(BaseModel):
     name: str
     plan: str
     max_delegation_depth: int | None
+    schema_validation_enabled: bool
     owner_email: str | None
     approval_url: str | None
     notification_url: str | None
@@ -52,8 +53,24 @@ class OrgSettingsResponse(BaseModel):
 class OrgSettingsUpdateRequest(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=200)
     max_delegation_depth: int | None = Field(None, ge=1, le=20)
+    schema_validation_enabled: bool | None = None
     approval_url: str | None = None
     notification_url: str | None = None
+
+
+def _org_settings_response(org: Organization) -> OrgSettingsResponse:
+    return OrgSettingsResponse(
+        org_id=str(org.id),
+        name=org.name,
+        plan=org.plan,
+        max_delegation_depth=org.max_delegation_depth,
+        schema_validation_enabled=org.schema_validation_enabled,
+        owner_email=org.owner_email,
+        approval_url=org.approval_url,
+        notification_url=org.notification_url,
+        stripe_connect_account_id=org.stripe_connect_account_id,
+        created_at=org.created_at.isoformat(),
+    )
 
 
 class OrgSessionResponse(BaseModel):
@@ -145,7 +162,7 @@ async def create_organization(
     }
 
 
-@router.get("/me", response_model=DataResponse[dict])
+@router.get("/me", response_model=DataResponse[OrgSettingsResponse])
 async def get_org_settings(
     request: Request,
     org: Organization = Depends(get_authenticated_org),
@@ -153,17 +170,7 @@ async def get_org_settings(
     start = time.perf_counter()
     latency = round((time.perf_counter() - start) * 1000, 2)
     return {
-        "data": OrgSettingsResponse(
-            org_id=str(org.id),
-            name=org.name,
-            plan=org.plan,
-            max_delegation_depth=org.max_delegation_depth,
-            owner_email=org.owner_email,
-            approval_url=org.approval_url,
-            notification_url=org.notification_url,
-            stripe_connect_account_id=org.stripe_connect_account_id,
-            created_at=org.created_at.isoformat(),
-        ).model_dump(),
+        "data": _org_settings_response(org).model_dump(),
         "meta": MetaResponse(
             request_id=getattr(request.state, "request_id", None),
             latency_ms=latency,
@@ -171,7 +178,7 @@ async def get_org_settings(
     }
 
 
-@router.patch("/me", response_model=DataResponse[dict])
+@router.patch("/me", response_model=DataResponse[OrgSettingsResponse])
 async def update_org_settings(
     request: Request,
     body: OrgSettingsUpdateRequest,
@@ -183,6 +190,8 @@ async def update_org_settings(
         org.name = body.name
     if body.max_delegation_depth is not None:
         org.max_delegation_depth = body.max_delegation_depth
+    if body.schema_validation_enabled is not None:
+        org.schema_validation_enabled = body.schema_validation_enabled
     if body.approval_url is not None:
         org.approval_url = body.approval_url
     if body.notification_url is not None:
@@ -191,14 +200,7 @@ async def update_org_settings(
     await db.commit()
     await db.refresh(org)
     return {
-        "data": {
-            "org_id": str(org.id),
-            "name": org.name,
-            "max_delegation_depth": org.max_delegation_depth,
-            "owner_email": org.owner_email,
-            "approval_url": org.approval_url,
-            "notification_url": org.notification_url,
-        },
+        "data": _org_settings_response(org).model_dump(),
         "meta": MetaResponse(
             request_id=getattr(request.state, "request_id", None),
         ).model_dump(),
