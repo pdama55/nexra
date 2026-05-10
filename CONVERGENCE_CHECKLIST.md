@@ -48,7 +48,7 @@ This checklist is the release-gate tracker for PRD/TDD convergence.
 ## Phase 5 — CI/CD Hardening
 - [x] CI workflow added for python + dashboard + sdk checks
 - [x] Postgres/Redis services wired for integration/e2e in CI
-- [ ] Branch protection configured in repository settings (blocked by GitHub plan limitation: private repo requires Pro/public for protection rules)
+- [ ] Branch protection configured in repository settings (verify/apply with `scripts/branch_protection_gate.sh`; current status may be `blocked_by_plan` on private repos without GitHub Pro/public eligibility)
 - [x] Release workflow with deploy smoke checks
 - [x] Post-release verification runbook documented (`docs/baseline/evidence/POST_RELEASE_VERIFICATION_RUNBOOK.md`)
 - [x] Scoped strict mypy gate for convergence-owned modules (`notification_service`, `hitl_service`, `anomaly_service`, `budget_service`)

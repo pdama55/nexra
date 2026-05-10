@@ -9,13 +9,74 @@ WAIT_SECONDS=90
 PREPARE_ONLY=0
 INFRA_MODE="auto"
 
-# Resolution order:
-# 1) TEST_DATABASE_URL / REDIS_URL explicit test overrides
-# 2) DATABASE_URL / REDIS_URL from runtime environment (Neon/Upstash supported)
-# 3) local defaults
-TEST_DATABASE_URL="${TEST_DATABASE_URL:-${DATABASE_URL:-postgresql+asyncpg://nexra:nexra@localhost:5432/nexra_test}}"
-REDIS_URL="${REDIS_URL:-redis://localhost:6379/1}"
-DATABASE_URL="${DATABASE_URL:-$TEST_DATABASE_URL}"
+resolve_endpoints() {
+  python3 - <<'PY' "$ROOT_DIR"
+import os
+import sys
+from pathlib import Path
+from urllib.parse import urlparse
+
+root = Path(sys.argv[1])
+env_files = [
+    root / ".env.local",
+    root / ".env",
+    root / "nexra" / ".env.local",
+    root / "nexra" / ".env",
+]
+
+allowed_keys = {"TEST_DATABASE_URL", "DATABASE_URL", "REDIS_URL"}
+file_values: dict[str, str] = {}
+
+for env_path in env_files:
+    if not env_path.exists():
+        continue
+    for raw in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if key.startswith("export "):
+            key = key[len("export "):].strip()
+        if key not in allowed_keys:
+            continue
+        file_values.setdefault(key, value.strip().strip('"').strip("'"))
+
+explicit_test_db = os.getenv("TEST_DATABASE_URL", "").strip()
+explicit_db = os.getenv("DATABASE_URL", "").strip()
+explicit_redis = os.getenv("REDIS_URL", "").strip()
+
+test_database_url = (
+    explicit_test_db
+    or explicit_db
+    or file_values.get("TEST_DATABASE_URL", "")
+    or file_values.get("DATABASE_URL", "")
+    or "postgresql+asyncpg://nexra:nexra@localhost:5432/nexra_test"
+)
+redis_url = (
+    explicit_redis
+    or file_values.get("REDIS_URL", "")
+    or "redis://localhost:6379/1"
+)
+database_url = explicit_db or file_values.get("DATABASE_URL", "") or test_database_url
+
+def _host(url: str, *, is_db: bool) -> str:
+    normalized = url
+    if is_db and normalized.startswith("postgresql+asyncpg://"):
+        normalized = normalized.replace("postgresql+asyncpg://", "postgresql://", 1)
+    return (urlparse(normalized).hostname or "").strip().lower()
+
+def _is_nonlocal_host(host: str) -> bool:
+    return bool(host) and host not in {"localhost", "127.0.0.1", "::1"}
+
+external_target_configured = _is_nonlocal_host(_host(test_database_url, is_db=True)) or _is_nonlocal_host(_host(redis_url, is_db=False))
+
+print(test_database_url)
+print(redis_url)
+print(database_url)
+print("1" if external_target_configured else "0")
+PY
+}
 
 PYTEST_ARGS=(
   -q
@@ -70,6 +131,18 @@ if [[ ! -x "$VENV_PYTHON" ]]; then
   echo "missing virtualenv python at $VENV_PYTHON" >&2
   exit 1
 fi
+
+{
+  IFS= read -r TEST_DATABASE_URL
+  IFS= read -r REDIS_URL
+  IFS= read -r DATABASE_URL
+  IFS= read -r EXTERNAL_TARGET_CONFIGURED
+} < <(resolve_endpoints)
+
+TEST_DATABASE_URL="${TEST_DATABASE_URL:-postgresql+asyncpg://nexra:nexra@localhost:5432/nexra_test}"
+REDIS_URL="${REDIS_URL:-redis://localhost:6379/1}"
+DATABASE_URL="${DATABASE_URL:-$TEST_DATABASE_URL}"
+EXTERNAL_TARGET_CONFIGURED="${EXTERNAL_TARGET_CONFIGURED:-0}"
 
 probe_external_services() {
   "$VENV_PYTHON" - <<'PY' "$TEST_DATABASE_URL" "$REDIS_URL" "$WAIT_SECONDS"
@@ -158,9 +231,72 @@ docker_available() {
   command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1
 }
 
+wait_for_docker_daemon() {
+  local timeout_s="${1:-60}"
+  local started
+  started="$(date +%s)"
+  while true; do
+    if docker_available; then
+      return 0
+    fi
+    if (( $(date +%s) - started > timeout_s )); then
+      return 1
+    fi
+    sleep 2
+  done
+}
+
+ensure_docker_daemon() {
+  if docker_available; then
+    return 0
+  fi
+
+  local attempts=()
+
+  if [[ "${OSTYPE:-}" == darwin* ]] && command -v open >/dev/null 2>&1; then
+    if [[ -d "/Applications/Docker.app" || -d "$HOME/Applications/Docker.app" ]]; then
+      echo "[db-tests] docker daemon unavailable; attempting Docker Desktop startup"
+      open -ga Docker >/dev/null 2>&1 || true
+      attempts+=("docker_desktop")
+      if wait_for_docker_daemon 75; then
+        echo "[db-tests] docker daemon ready after Docker Desktop startup"
+        return 0
+      fi
+    fi
+  fi
+
+  if command -v colima >/dev/null 2>&1; then
+    echo "[db-tests] docker daemon unavailable; attempting Colima startup"
+    colima start >/dev/null 2>&1 || true
+    attempts+=("colima")
+    if wait_for_docker_daemon 60; then
+      echo "[db-tests] docker daemon ready after Colima startup"
+      return 0
+    fi
+  fi
+
+  if command -v rdctl >/dev/null 2>&1; then
+    echo "[db-tests] docker daemon unavailable; attempting Rancher Desktop startup"
+    rdctl start >/dev/null 2>&1 || true
+    attempts+=("rancher_desktop")
+    if wait_for_docker_daemon 60; then
+      echo "[db-tests] docker daemon ready after Rancher Desktop startup"
+      return 0
+    fi
+  fi
+
+  local detail
+  if [[ ${#attempts[@]} -eq 0 ]]; then
+    detail="docker daemon unavailable; no local runtime launcher detected"
+  else
+    detail="docker daemon unavailable after startup attempts: ${attempts[*]}"
+  fi
+  echo "docker_precheck=failed classification=docker_daemon_unavailable detail='${detail}'" >&2
+  return 1
+}
+
 start_docker_infra() {
-  if ! docker_available; then
-    echo "docker_precheck=failed classification=docker_daemon_unavailable detail='docker daemon is not available for --infra-mode docker/auto fallback'" >&2
+  if ! ensure_docker_daemon; then
     return 1
   fi
 
@@ -199,9 +335,19 @@ PY
   fi
 }
 
+mask_secret_in_url() {
+  local raw="${1:-}"
+  if [[ -z "$raw" ]]; then
+    printf '%s\n' ""
+    return 0
+  fi
+  printf '%s\n' "$raw" | sed -E 's#://[^/@]*@#://***@#'
+}
+
 echo "[db-tests] infra_mode=$INFRA_MODE"
-echo "[db-tests] TEST_DATABASE_URL=$TEST_DATABASE_URL"
-echo "[db-tests] REDIS_URL=$REDIS_URL"
+echo "[db-tests] TEST_DATABASE_URL=$(mask_secret_in_url "$TEST_DATABASE_URL")"
+echo "[db-tests] REDIS_URL=$(mask_secret_in_url "$REDIS_URL")"
+echo "[db-tests] external_target_configured=$EXTERNAL_TARGET_CONFIGURED"
 
 if [[ "$INFRA_MODE" == "external" ]]; then
   echo "[db-tests] probing external DB/Redis endpoints"
@@ -214,6 +360,10 @@ else
   if probe_external_services; then
     echo "[db-tests] external infra probe succeeded; skipping docker startup"
   else
+    if [[ "$EXTERNAL_TARGET_CONFIGURED" == "1" ]]; then
+      echo "[db-tests] external endpoints are configured; skipping docker fallback in auto mode (use --infra-mode docker to force local containers)" >&2
+      exit 1
+    fi
     echo "[db-tests] external infra probe failed; attempting docker fallback"
     start_docker_infra
     probe_external_services

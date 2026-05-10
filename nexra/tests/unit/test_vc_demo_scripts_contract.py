@@ -62,3 +62,10 @@ def test_preflight_real_mode_requires_sendgrid_and_pagerduty_env() -> None:
     assert 'ANOMALY_PAGERDUTY_ROUTING_KEY' in source
     assert 'PAGERDUTY_EVENTS_BASE_URL' in source
     assert 'require_real_channel_env=True' in source
+
+
+def test_demo_env_loaders_accept_export_prefixed_keys() -> None:
+    runner = RUN_VC_DEMO.read_text(encoding="utf-8")
+    preflight = (ROOT / "scripts" / "vc_demo_preflight.py").read_text(encoding="utf-8")
+    assert 'key.startswith("export ")' in runner
+    assert 'key.startswith("export ")' in preflight

@@ -86,19 +86,30 @@ if [[ "$FAILURE_POLICY" != "fail-fast" && "$FAILURE_POLICY" != "fallback" && "$F
 fi
 
 ensure_real_env_contract() {
-  python3 - <<'PY' "$ROOT_DIR/nexra/.env"
+  python3 - <<'PY' "$ROOT_DIR"
 import os
 import sys
 from pathlib import Path
 
-env_path = Path(sys.argv[1])
-if env_path.exists():
+root = Path(sys.argv[1])
+env_files = [
+    root / ".env",
+    root / ".env.local",
+    root / "nexra" / ".env",
+    root / "nexra" / ".env.local",
+]
+
+for env_path in env_files:
+    if not env_path.exists():
+        continue
     for raw in env_path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
         key = key.strip()
+        if key.startswith("export "):
+            key = key[len("export "):].strip()
         if not key:
             continue
         os.environ.setdefault(key, value.strip().strip('"').strip("'"))

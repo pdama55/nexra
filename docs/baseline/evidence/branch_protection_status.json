@@ -1,0 +1,9 @@
+{
+  "branch": "main",
+  "error": "gh: Upgrade to GitHub Pro or make this repository public to enable this feature. (HTTP 403)",
+  "generated_at": "2026-04-07T21:08:14.282944+00:00",
+  "owner": "pdama55",
+  "pass": false,
+  "repo": "nexra",
+  "status": "blocked_by_plan"
+}

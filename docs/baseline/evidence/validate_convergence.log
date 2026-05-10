@@ -1,17 +1,58 @@
 poetry not found; skipping ruff/mypy checks in local validation script
 OpenAPI snapshot check passed
 Docs drift check passed
-........................................................................ [ 80%]
-.................                                                        [100%]
-89 passed in 4.12s
+........................................................................ [ 79%]
+...................                                                      [100%]
+91 passed in 6.13s
 .............                                                            [100%]
-13 passed in 1.41s
+13 passed in 5.89s
 [convergence] running integration/e2e via canonical DB-backed runner
 [db-tests] infra_mode=auto
 [db-tests] TEST_DATABASE_URL=postgresql+asyncpg://nexra:nexra@localhost:5432/nexra_test
 [db-tests] REDIS_URL=redis://localhost:6379/1
 [db-tests] probing configured DB/Redis endpoints
-db_precheck=failed classification=unreachable detail=Multiple exceptions: [Errno 61] Connect call failed ('127.0.0.1', 5432), [Errno 61] Connect call failed ('::1', 5432, 0, 0)
-redis_precheck=failed classification=unreachable detail=Error Multiple exceptions: [Errno 61] Connect call failed ('127.0.0.1', 6379), [Errno 61] Connect call failed ('::1', 6379, 0, 0) connecting to localhost:6379.
-[db-tests] external infra probe failed; attempting docker fallback
-docker_precheck=failed classification=docker_daemon_unavailable detail='docker daemon is not available for --infra-mode docker/auto fallback'
+external_infra_ready
+[db-tests] external infra probe succeeded; skipping docker startup
+[db-tests] ready
+[db-tests] running pytest -q tests/integration tests/e2e
+................................................                         [100%]
+48 passed in 69.84s (0:01:09)
+
+> nexra-dashboard@0.0.0 build
+> tsc -b && vite build
+
+vite v6.4.1 building for production...
+transforming...
+✓ 763 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                             0.47 kB │ gzip:   0.30 kB
+dist/assets/index-CIrw-mkW.css              8.82 kB │ gzip:   2.35 kB
+dist/assets/EmptyState-BH96zbQe.js          0.73 kB │ gzip:   0.43 kB │ map:     1.93 kB
+dist/assets/formatters-CRQ5zJIT.js          0.73 kB │ gzip:   0.41 kB │ map:     3.80 kB
+dist/assets/StatusPill-BR18yqS_.js          1.20 kB │ gzip:   0.45 kB │ map:     2.79 kB
+dist/assets/AgentRegistry-DNBW2A8S.js       3.54 kB │ gzip:   1.38 kB │ map:     8.93 kB
+dist/assets/rbac-DL1p1lf3.js                4.07 kB │ gzip:   1.58 kB │ map:    12.75 kB
+dist/assets/DelegationFeed-C7pswPEO.js      4.17 kB │ gzip:   1.51 kB │ map:    10.99 kB
+dist/assets/PolicyEngine-BEcJ1938.js        4.19 kB │ gzip:   1.73 kB │ map:    11.50 kB
+dist/assets/ComplianceExport-f0gxvdNq.js    4.56 kB │ gzip:   1.82 kB │ map:    12.47 kB
+dist/assets/DelegationDetail-B8OD0dMv.js    5.00 kB │ gzip:   1.67 kB │ map:    12.42 kB
+dist/assets/AuditLog-BroILZgL.js            5.64 kB │ gzip:   2.13 kB │ map:    15.37 kB
+dist/assets/Anomalies-B7C_kNVO.js           5.67 kB │ gzip:   1.69 kB │ map:    14.07 kB
+dist/assets/PolicyDetail-_siCB3-v.js        5.97 kB │ gzip:   2.12 kB │ map:    17.04 kB
+dist/assets/HitlQueue-Bph9EYb2.js           6.16 kB │ gzip:   2.14 kB │ map:    16.43 kB
+dist/assets/Overview-HHgUrZUZ.js            6.25 kB │ gzip:   2.08 kB │ map:    16.72 kB
+dist/assets/TrustScores-di0Ivegm.js         8.28 kB │ gzip:   3.28 kB │ map:    29.79 kB
+dist/assets/AgentDetail-CbkgbR9D.js         8.48 kB │ gzip:   2.53 kB │ map:    22.72 kB
+dist/assets/SpendBudget-CE4fpXxs.js         8.55 kB │ gzip:   2.54 kB │ map:    22.42 kB
+dist/assets/Settings-f0tRt9ev.js           13.65 kB │ gzip:   3.49 kB │ map:    39.82 kB
+dist/assets/index-DOpNcDfh.js             287.43 kB │ gzip:  90.59 kB │ map: 1,524.89 kB
+dist/assets/LineChart-CXWsA4MH.js         346.01 kB │ gzip: 103.58 kB │ map: 1,799.92 kB
+✓ built in 5.43s
+
+> @nexra/sdk@0.1.0 build
+> tsc
+
+[convergence] checking branch protection governance gate
+[convergence] branch protection gate unresolved (see docs/baseline/evidence/branch_protection_status.json)
+Convergence validation checks passed

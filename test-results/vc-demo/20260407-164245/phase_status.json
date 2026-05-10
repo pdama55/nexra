@@ -6,20 +6,50 @@
   "integrations": "mock",
   "mode": "bootstrap",
   "phases": {
+    "autoplay": {
+      "details": "running dashboard autoplay",
+      "status": "in_progress",
+      "updated_at": "2026-04-07T20:49:40.194120+00:00"
+    },
     "mock_sink": {
       "details": "mock sink ready at http://127.0.0.1:8800",
       "status": "passed",
       "updated_at": "2026-04-07T20:42:47.176419+00:00"
+    },
+    "prd_policy_flip": {
+      "details": "policy flip check passed",
+      "status": "passed",
+      "updated_at": "2026-04-07T20:49:39.978071+00:00"
+    },
+    "preflight": {
+      "details": "preflight completed",
+      "status": "passed",
+      "updated_at": "2026-04-07T20:44:30.771197+00:00"
     },
     "runner": {
       "details": "bootstrapping vc runner",
       "status": "in_progress",
       "updated_at": "2026-04-07T20:42:46.000526+00:00"
     },
+    "seed": {
+      "details": "seed completed",
+      "status": "passed",
+      "updated_at": "2026-04-07T20:46:00.506040+00:00"
+    },
     "stack": {
-      "details": "mode=bootstrap",
-      "status": "in_progress",
-      "updated_at": "2026-04-07T20:42:47.214699+00:00"
+      "details": "api+dashboard ready",
+      "status": "passed",
+      "updated_at": "2026-04-07T20:44:29.219805+00:00"
+    },
+    "suite": {
+      "details": "vc_demo_suite passed",
+      "status": "passed",
+      "updated_at": "2026-04-07T20:49:23.638067+00:00"
+    },
+    "terminal": {
+      "details": "exit_code=130",
+      "status": "failed",
+      "updated_at": "2026-04-07T20:50:07.232838+00:00"
     }
   },
   "profile": "vc-12m"

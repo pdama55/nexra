@@ -1,0 +1,1 @@
+Spend anomaly detected: {'agent_id': 'suite-callee-1775594785', 'org_id': '3f3e3c2b-411d-4d84-8b3e-22c288736eed', 'current_hour_spend': 250.0, 'mean_hourly_spend': 0.968, 'stddev': 0.0993, 'threshold': 1.2658, 'sigma_deviation': 2508.45}

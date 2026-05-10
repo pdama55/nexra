@@ -1,0 +1,9 @@
+{
+  "capture_counts": {
+    "pagerduty": 2,
+    "sendgrid": 4,
+    "slack": 2
+  },
+  "integrations_mode": "mock",
+  "mock_sink_base_url": "http://127.0.0.1:8800"
+}

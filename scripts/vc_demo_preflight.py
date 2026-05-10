@@ -15,7 +15,12 @@ from typing import Any
 import httpx
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-APP_ENV = ROOT_DIR / "nexra" / ".env"
+ENV_FILES = [
+    ROOT_DIR / ".env",
+    ROOT_DIR / ".env.local",
+    ROOT_DIR / "nexra" / ".env",
+    ROOT_DIR / "nexra" / ".env.local",
+]
 
 
 @dataclass
@@ -28,18 +33,21 @@ class CheckResult:
     latency_ms: float | None = None
 
 
-def _load_env_defaults(path: Path) -> None:
-    if not path.exists():
-        return
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#") or "=" not in line:
+def _load_env_defaults(paths: list[Path]) -> None:
+    for path in paths:
+        if not path.exists():
             continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        if not key:
-            continue
-        os.environ.setdefault(key, value.strip().strip('"').strip("'"))
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            if key.startswith("export "):
+                key = key[len("export "):].strip()
+            if not key:
+                continue
+            os.environ.setdefault(key, value.strip().strip('"').strip("'"))
 
 
 def _http_check(
@@ -418,7 +426,7 @@ def main() -> int:
     parser.add_argument("--results-dir", type=Path, required=True)
     args = parser.parse_args()
 
-    _load_env_defaults(APP_ENV)
+    _load_env_defaults(ENV_FILES)
     args.results_dir.mkdir(parents=True, exist_ok=True)
 
     required = args.failure_policy == "fail-fast"

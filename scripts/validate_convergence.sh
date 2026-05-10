@@ -45,4 +45,11 @@ pushd "$ROOT/nexra/sdk/nexra-ts" >/dev/null
 npm run build
 popd >/dev/null
 
+echo "[convergence] checking branch protection governance gate"
+if "$ROOT/scripts/branch_protection_gate.sh" --branch main >/dev/null 2>&1; then
+  echo "[convergence] branch protection gate check passed"
+else
+  echo "[convergence] branch protection gate unresolved (see docs/baseline/evidence/branch_protection_status.json)"
+fi
+
 echo "Convergence validation checks passed"

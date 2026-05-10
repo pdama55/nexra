@@ -166,19 +166,59 @@ run_full_checks() {
 }
 
 probe_external_infra() {
-  local env_file="$ROOT_DIR/nexra/.env"
   local db_url="${TEST_DATABASE_URL:-${DATABASE_URL:-}}"
   local redis_url="${REDIS_URL:-}"
 
-  if [[ -z "$db_url" && -f "$env_file" ]]; then
-    db_url="$(grep '^DATABASE_URL=' "$env_file" | tail -n 1 | cut -d= -f2- || true)"
-  fi
-  if [[ -z "$redis_url" && -f "$env_file" ]]; then
-    redis_url="$(grep '^REDIS_URL=' "$env_file" | tail -n 1 | cut -d= -f2- || true)"
+  if [[ -z "$db_url" || -z "$redis_url" ]]; then
+    local resolved
+    resolved="$(
+      python3 - <<'PY' "$ROOT_DIR"
+import os
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+env_files = [
+    root / ".env",
+    root / ".env.local",
+    root / "nexra" / ".env",
+    root / "nexra" / ".env.local",
+]
+
+values = {}
+for path in env_files:
+    if not path.exists():
+        continue
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if key.startswith("export "):
+            key = key[len("export "):].strip()
+        if key not in {"DATABASE_URL", "REDIS_URL"}:
+            continue
+        values[key] = value.strip().strip('"').strip("'")
+
+db = os.environ.get("DATABASE_URL", "").strip() or values.get("DATABASE_URL", "")
+redis = os.environ.get("REDIS_URL", "").strip() or values.get("REDIS_URL", "")
+print(db)
+print(redis)
+PY
+)"
+    if [[ -n "$resolved" ]]; then
+      if [[ -z "$db_url" ]]; then
+        db_url="$(printf '%s\n' "$resolved" | sed -n '1p')"
+      fi
+      if [[ -z "$redis_url" ]]; then
+        redis_url="$(printf '%s\n' "$resolved" | sed -n '2p')"
+      fi
+    fi
   fi
 
   if [[ -z "$db_url" || -z "$redis_url" ]]; then
-    echo "[infra] missing DATABASE_URL/REDIS_URL (env or nexra/.env) for real bootstrap mode" >&2
+    echo "[infra] missing DATABASE_URL/REDIS_URL (env, .env, .env.local, nexra/.env, or nexra/.env.local) for real bootstrap mode" >&2
     return 1
   fi
 

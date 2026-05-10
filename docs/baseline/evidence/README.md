@@ -1,6 +1,6 @@
 # Convergence Evidence Pack
 
-Generated: 2026-04-05
+Generated: 2026-04-07
 Branch: `main`
 
 ## Commands Executed
@@ -12,6 +12,7 @@ Branch: `main`
 5. `cd nexra && npm --prefix sdk/nexra-ts run build`
 6. `cd nexra/sdk/nexra-ts && npm pack --dry-run`
 7. `./scripts/run_vc_demo.sh --mode attach --integrations real --failure-policy fail-fast --strict`
+8. `./scripts/branch_protection_gate.sh --branch main`
 
 ## Output Logs
 
@@ -22,6 +23,7 @@ Branch: `main`
 - `sdk_build.log`
 - `sdk_pack_dry_run.log`
 - `vc_real_run.log`
+- `branch_protection_status.json`
 
 ## Operational Docs
 
@@ -29,10 +31,11 @@ Branch: `main`
 
 ## Result Summary
 
-- Convergence validation script: partial pass (unit/contracts/openapi/docs drift passed; DB-backed gate blocked by infra availability)
-- Integration + E2E suites: blocked (local Postgres/Redis unreachable and Docker daemon unavailable)
+- Convergence validation script: pass (unit/contracts/openapi/docs drift, DB-backed integration/e2e, dashboard build, TS SDK build)
+- Integration + E2E suites: pass (`48 passed`)
 - OpenAPI snapshot gate: passed
 - Dashboard build: passed
 - TS SDK build: passed
 - TS SDK pack dry-run: passed (LICENSE + README + dist artifacts present)
 - VC real-run precondition gate: failed early as expected when required real-integration env contract is missing (`SENDGRID_API_KEY`, `ANOMALY_PAGERDUTY_ROUTING_KEY`, `PAGERDUTY_EVENTS_BASE_URL`)
+- Branch protection governance gate: currently `blocked_by_plan` for this repository (`branch_protection_status.json`) due GitHub plan restriction on private-repo branch protection
